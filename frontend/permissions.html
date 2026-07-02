@@ -1,1 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hardware Application Mapping Rules - RS OWNER</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar glass-panel">
+            <div class="sidebar-brand">
+                <i data-lucide="shield" style="color: var(--accent-cyan);"></i>
+                <span>RS OWNER</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
+                <li class="active"><a href="/permissions"><i data-lucide="shield-check"></i> Permissions</a></li>
+                <li><a href="/notifications"><i data-lucide="bell"></i> Notifications</a></li>
+                <li><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
+                <li><a href="/logs"><i data-lucide="file-text"></i> System Logs</a></li>
+            </ul>
+        </div>
+        <main class="main-content">
+            <header class="topbar">
+                <h2 style="font-weight: 700;">Hardware System Permissions Matrix</h2>
+                <div class="device-switcher">
+                    <select id="device-select"></select>
+                </div>
+            </header>
 
+            <div class="permission-grid" id="permissions-board">
+                <!-- Programmatically populated by engine scripts -->
+            </div>
+        </main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('owner_token');
+            const activeId = localStorage.getItem('active_device_id');
+            if (!activeId) return;
+
+            try {
+                const res = await fetch(`/api/permissions?device_id=${activeId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    renderPermissionsBoard(result.data);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        });
+
+        function renderPermissionsBoard(perms) {
+            const board = document.getElementById('permissions-board');
+            if (!board) return;
+
+            const mapping = {
+                "Notification Access Level": perms.notification_access,
+                "Geographic Location Context": perms.location,
+                "Camera Module Tracking": perms.camera,
+                "Audio Microphone Feed": perms.microphone,
+                "Physical Telephony Status": perms.phone,
+                "Call Logs Capture Stream": perms.call_log,
+                "SMS Messages Log Access": perms.sms,
+                "External Directory Storage": perms.storage,
+                "Screen Frame Buffer Sync": perms.screen_recording,
+                "System Accessibility Features": perms.accessibility
+            };
+
+            board.innerHTML = '';
+            for (const [name, isGranted] of Object.entries(mapping)) {
+                const card = document.createElement('div');
+                card.className = 'glass-panel permission-item';
+                card.innerHTML = `
+                    <h4 style="font-weight: 600; font-size: 0.95rem;">${name}</h4>
+                    <span class="permission-status-badge ${isGranted ? 'status-granted' : 'status-denied'}">
+                        ${isGranted ? 'Granted' : 'Permission Not Granted'}
+                    </span>
+                    ${!isGranted ? '<p style="font-size: 0.75rem; color: var(--text-muted);">Enable permission from RS PHONE app</p>' : ''}
+                `;
+                board.appendChild(card);
+            }
+        }
+    </script>
+</body>
+</html>
