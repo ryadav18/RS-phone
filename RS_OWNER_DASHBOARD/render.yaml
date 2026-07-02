@@ -1,1 +1,13 @@
-
+services:
+  - type: web
+    name: rs-owner-dashboard
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn main:app
+    envVars:
+      - key: SUPABASE_URL
+        sync: true
+      - key: SUPABASE_KEY
+        sync: true
+      - key: SECRET_KEY
+        sync: true
