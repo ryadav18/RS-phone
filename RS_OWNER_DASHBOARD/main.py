@@ -1,13 +1,27 @@
 import os
+import sys
+
+# ================= RENDER DEPLOY DEBUGGING =================
+print("--- RENDER DEPLOY DEBUGGING ---", flush=True)
+print("Current Directory:", os.getcwd(), flush=True)
+try:
+    print("Files in current directory:", os.listdir('.'), flush=True)
+    if os.path.exists('backend'):
+        print("Backend folder exists! Contents:", os.listdir('backend'), flush=True)
+    else:
+        print("WARNING: 'backend' folder DOES NOT exist in current directory!", flush=True)
+except Exception as e:
+    print("Debug error:", str(e), flush=True)
+print("=============================================", flush=True)
+# ==========================================================
+
 from flask import Flask, send_from_directory, jsonify, session, redirect
 from flask_cors import CORS
 from config import Config
 
-# Establish structural mapping variables
 app = Flask(__name__, static_folder='static', template_folder='frontend')
 app.secret_key = Config.SECRET_KEY
 
-# Ensure proper cross-origin policy parameters for external client synchronization endpoints
 CORS(app)
 
 # Import and attach endpoints blueprint elements
@@ -31,7 +45,6 @@ app.register_blueprint(locations_bp)
 app.register_blueprint(files_bp)
 app.register_blueprint(logs_bp)
 
-# Static and page UI routing definitions
 @app.route('/')
 def index_root():
     if 'session_token' in session:
@@ -64,7 +77,6 @@ def logs_view():
 
 @app.route('/api/config')
 def get_public_config():
-    # Safely expose configuration details for front-end SDK initialization
     return jsonify({
         "supabase_url": Config.SUPABASE_URL,
         "supabase_key": Config.SUPABASE_KEY
@@ -75,6 +87,5 @@ def not_found(e):
     return jsonify({"status": "error", "message": "The requested resource was not located."}), 404
 
 if __name__ == '__main__':
-    # Default execution target port setup
     port = int(os.getenv("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
