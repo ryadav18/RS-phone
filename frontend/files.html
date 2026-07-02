@@ -1,1 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module Storage Catalog - RS OWNER</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar glass-panel">
+            <div class="sidebar-brand">
+                <i data-lucide="shield" style="color: var(--accent-cyan);"></i>
+                <span>RS OWNER</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
+                <li><a href="/permissions"><i data-lucide="shield-check"></i> Permissions</a></li>
+                <li><a href="/notifications"><i data-lucide="bell"></i> Notifications</a></li>
+                <li class="active"><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
+                <li><a href="/logs"><i data-lucide="file-text"></i> System Logs</a></li>
+            </ul>
+        </div>
+        <main class="main-content">
+            <header class="topbar">
+                <h2 style="font-weight: 700;">Synchronized Files Storage Catalog</h2>
+                <div class="device-switcher">
+                    <select id="device-select"></select>
+                </div>
+            </header>
 
+            <div class="glass-panel" id="files-wrapper" style="padding: 25px; min-height: 400px;">
+                <div class="list-container" id="files-list">
+                    <!-- Dynamic rendering target -->
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('owner_token');
+            const activeId = localStorage.getItem('active_device_id');
+            if (!activeId) return;
+
+            try {
+                // Check authorization configurations first
+                const permRes = await fetch(`/api/permissions?device_id=${activeId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const permResult = await permRes.json();
+                
+                if (permResult.status === 'success' && permResult.data.storage) {
+                    const res = await fetch(`/api/files?device_id=${activeId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const result = await res.json();
+                    if (result.status === 'success') {
+                        renderFilesList(result.data);
+                    }
+                } else {
+                    applySectionProtectionOverlay(document.getElementById('files-wrapper'));
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        });
+
+        function renderFilesList(items) {
+            const container = document.getElementById('files-list');
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (items.length === 0) {
+                container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 40px;">No synced assets stored inside the system database catalog.</div>';
+                return;
+            }
+
+            items.forEach(f => {
+                const el = document.createElement('div');
+                el.className = 'list-item';
+                el.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <i data-lucide="file" style="color: var(--accent-cyan);"></i>
+                        <div>
+                            <strong style="color: var(--text-primary);">${f.file_name}</strong>
+                            <p style="font-size: 0.8rem; color: var(--text-muted);">${f.file_type} | ${f.file_size}</p>
+                        </div>
+                    </div>
+                    <a href="${f.file_url}" target="_blank" class="primary-btn" style="padding: 8px 15px; font-size: 0.8rem; max-width: 120px; text-decoration: none; text-align: center;">Download</a>
+                `;
+                container.appendChild(el);
+            });
+            lucide.createIcons();
+        }
+
+        function applySectionProtectionOverlay(element) {
+            element.classList.add('locked-section');
+            const overlay = document.createElement('div');
+            overlay.className = 'lock-overlay';
+            overlay.innerHTML = `
+                <i class="lucide-lock-keyhole"></i>
+                <h4 style="color: #ff3b30; font-weight: 600;">Permission Not Granted</h4>
+                <p style="color: #94a3b8; font-size: 0.9rem; max-width: 250px; margin: 0 auto;">
+                    Enable storage permission from RS PHONE app
+                </p>
+            `;
+            element.appendChild(overlay);
+        }
+    </script>
+</body>
+</html>
