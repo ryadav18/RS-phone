@@ -1,1 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RS OWNER DASHBOARD - Secure System Authorization Portal</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="auth-wrapper">
+        <div class="auth-card glass-panel">
+            <div class="auth-header">
+                <h1 style="font-weight: 700; letter-spacing: 1.5px; margin-bottom: 5px;">RS OWNER</h1>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 30px;">DEVICE MANAGEMENT CONTROL SYSTEM</p>
+            </div>
 
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email">Owner Registered Email</label>
+                    <input type="email" id="email" required placeholder="owner@devicemanagement.com">
+                </div>
+                <div class="form-group">
+                    <label for="password">Security Password Key</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="primary-btn">ACCESS SECURE WORKSPACE</button>
+            </form>
+
+            <div style="margin-top: 25px; font-size: 0.85rem; color: var(--text-muted);">
+                Authorized operations validation protocol. Ensure target nodes connection.
+            </div>
+        </div>
+    </div>
+    <script src="/static/js/auth.js"></script>
+</body>
+</html>
