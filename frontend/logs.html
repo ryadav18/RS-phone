@@ -1,1 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trace Log System Logs - RS OWNER</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar glass-panel">
+            <div class="sidebar-brand">
+                <i data-lucide="shield" style="color: var(--accent-cyan);"></i>
+                <span>RS OWNER</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
+                <li><a href="/permissions"><i data-lucide="shield-check"></i> Permissions</a></li>
+                <li><a href="/notifications"><i data-lucide="bell"></i> Notifications</a></li>
+                <li><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
+                <li class="active"><a href="/logs"><i data-lucide="file-text"></i> System Logs</a></li>
+            </ul>
+        </div>
+        <main class="main-content">
+            <header class="topbar">
+                <h2 style="font-weight: 700;">System Event Audit Trail</h2>
+                <div class="device-switcher">
+                    <select id="device-select"></select>
+                </div>
+            </header>
 
+            <div class="glass-panel" style="padding: 25px;">
+                <div class="list-container" id="logs-list">
+                    <!-- Event logs container -->
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('owner_token');
+            const activeId = localStorage.getItem('active_device_id');
+            if (!activeId) return;
+
+            try {
+                const res = await fetch(`/api/logs?device_id=${activeId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    renderLogs(result.data);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        });
+
+        function renderLogs(logs) {
+            const container = document.getElementById('logs-list');
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (logs.length === 0) {
+                container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 40px;">No transaction activities logs discovered.</div>';
+                return;
+            }
+
+            logs.forEach(l => {
+                const el = document.createElement('div');
+                el.className = 'list-item';
+                el.innerHTML = `
+                    <div>
+                        <strong style="color: var(--accent-cyan);">${l.event_type}</strong>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 5px;">${l.description}</p>
+                    </div>
+                    <div style="color: var(--text-muted); font-size: 0.85rem;">${new Date(l.timestamp).toLocaleString()}</div>
+                `;
+                container.appendChild(el);
+            });
+        }
+    </script>
+</body>
+</html>
