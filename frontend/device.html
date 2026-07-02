@@ -1,1 +1,84 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Modules Configurations - RS OWNER</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar glass-panel">
+            <div class="sidebar-brand">
+                <i data-lucide="shield" style="color: var(--accent-cyan);"></i>
+                <span>RS OWNER</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
+                <li><a href="/permissions"><i data-lucide="shield-check"></i> Permissions</a></li>
+                <li><a href="/notifications"><i data-lucide="bell"></i> Notifications</a></li>
+                <li><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
+                <li><a href="/logs"><i data-lucide="file-text"></i> System Logs</a></li>
+            </ul>
+        </div>
+        <main class="main-content">
+            <header class="topbar">
+                <h2 style="font-weight: 700;">Target Modules Registry</h2>
+                <div class="status-indicator">
+                    <div id="online-badge" class="status-dot"></div>
+                </div>
+            </header>
+            <div class="glass-panel" style="padding: 30px;">
+                <h3 class="card-title" style="margin-bottom: 20px;">Simulated Dynamic Sync Testing Tool</h3>
+                <p style="color: var(--text-muted); margin-bottom: 25px;">
+                    Use this tool to trigger a backend database sync update for testing real-time events.
+                </p>
+                <div style="display: flex; gap: 15px;">
+                    <button class="primary-btn" id="simulate-battery-sync" style="max-width: 250px;">Simulate Telemetry Sync</button>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script>
+        document.getElementById('simulate-battery-sync')?.addEventListener('click', async () => {
+            const token = localStorage.getItem('owner_token');
+            const activeId = localStorage.getItem('active_device_id');
+            if (!activeId) return alert('No active target device found');
+            
+            // Execute mock system health telemetry update via endpoints direct interfaces
+            try {
+                const randomBattery = Math.floor(Math.random() * 40) + 60;
+                const randomTemp = (Math.random() * 10 + 28).toFixed(1);
+                
+                const response = await fetch('/api/devices/connect', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        device_id: "RS_SIMULATOR_TEST_2026",
+                        name: "RS PHONE 1",
+                        model: "RS PHONE Simulator",
+                        battery_level: randomBattery,
+                        temperature: parseFloat(randomTemp),
+                        network_type: "5G Link Ready",
+                        storage_used: "42%"
+                    })
+                });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    alert('Mock hardware telemetry state updated successfully.');
+                    window.location.reload();
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        });
+    </script>
+</body>
+</html>
