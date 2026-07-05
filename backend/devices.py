@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from backend.auth import token_required
 from database import supabase
 from datetime import datetime
+import uuid  # YEH LIBRARY MISSING THI
 
 devices_bp = Blueprint('devices', __name__)
 
@@ -32,6 +33,9 @@ def connect_device():
     try:
         existing = supabase.table('devices').select('*').eq('device_id', device_uid).execute()
         
+        # FIX: Generate a highly secure device token for the app to use
+        new_device_token = str(uuid.uuid4())
+        
         device_payload = {
             "name": name,
             "model": model,
@@ -44,7 +48,8 @@ def connect_device():
             "is_charging": data.get('is_charging', False),
             "network_type": data.get('network_type', 'WIFI'),
             "storage_used": data.get('storage_used', '0%'),
-            "temperature": data.get('temperature', 30.0)
+            "temperature": data.get('temperature', 30.0),
+            "device_token": new_device_token  # YEH PARAMETER DATABASE KO CHAHIYE THA
         }
 
         if existing.data:
@@ -69,6 +74,8 @@ def connect_device():
 
         return jsonify({"status": "success", "data": response.data[0]}), 200
     except Exception as e:
+        # Ab error clearly print hoga
+        print(f"Backend Exception: {str(e)}") 
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @devices_bp.route('/api/devices/status', methods=['POST'])
