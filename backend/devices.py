@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from backend.auth import token_required
 from database import supabase
 from datetime import datetime
-import uuid  # YEH LIBRARY MISSING THI
+import uuid
 
 devices_bp = Blueprint('devices', __name__)
 
@@ -32,8 +32,6 @@ def connect_device():
 
     try:
         existing = supabase.table('devices').select('*').eq('device_id', device_uid).execute()
-        
-        # FIX: Generate a highly secure device token for the app to use
         new_device_token = str(uuid.uuid4())
         
         device_payload = {
@@ -49,23 +47,20 @@ def connect_device():
             "network_type": data.get('network_type', 'WIFI'),
             "storage_used": data.get('storage_used', '0%'),
             "temperature": data.get('temperature', 30.0),
-            "device_token": new_device_token  # YEH PARAMETER DATABASE KO CHAHIYE THA
+            "device_token": new_device_token
         }
 
         if existing.data:
-            # Update existing registration
             dev_id = existing.data[0]['id']
             response = supabase.table('devices').update(device_payload).eq('id', dev_id).execute()
         else:
-            # Create new device mapping
             device_payload["device_id"] = device_uid
             response = supabase.table('devices').insert(device_payload).execute()
             dev_id = response.data[0]['id']
 
-            # Seed empty permission flags default row
+            # Seed empty permission flags
             supabase.table('permissions').insert({"device_id": dev_id}).execute()
             
-            # Seed initialization activity trace
             supabase.table('activity_logs').insert({
                 "device_id": dev_id,
                 "event_type": "Device Connected",
@@ -74,7 +69,6 @@ def connect_device():
 
         return jsonify({"status": "success", "data": response.data[0]}), 200
     except Exception as e:
-        # Ab error clearly print hoga
         print(f"Backend Exception: {str(e)}") 
         return jsonify({"status": "error", "message": str(e)}), 500
 
@@ -105,4 +99,39 @@ def update_status():
         supabase.table('devices').update(update_payload).eq('id', dev_id).execute()
         return jsonify({"status": "success", "message": "Telemetry metrics written successfully"}), 200
     except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# FIX: Naya Permission Sync Route Add Kiya
+@devices_bp.route('/api/permissions', methods=['POST'])
+def sync_permissions():
+    token = request.headers.get('X-Device-Token')
+    if not token:
+        return jsonify({"status": "error", "message": "Missing device token"}), 401
+
+    try:
+        device_check = supabase.table('devices').select('id').eq('device_token', token).execute()
+        if not device_check.data:
+            return jsonify({"status": "error", "message": "Device not authenticated"}), 403
+
+        dev_id = device_check.data[0]['id']
+        data = request.json or {}
+
+        permission_payload = {
+            "notification_access": data.get('notification_access', False),
+            "location": data.get('location', False),
+            "camera": data.get('camera', False),
+            "microphone": data.get('microphone', False),
+            "phone": data.get('phone', False),
+            "call_log": data.get('call_log', False),
+            "sms": data.get('sms', False),
+            "storage": data.get('storage', False),
+            "screen_recording": data.get('screen_recording', False),
+            "accessibility": data.get('accessibility', False),
+            "updated_at": datetime.utcnow().isoformat()
+        }
+
+        supabase.table('permissions').update(permission_payload).eq('device_id', dev_id).execute()
+        return jsonify({"status": "success", "message": "Permissions synchronized successfully"}), 200
+    except Exception as e:
+        print(f"Permissions Sync Error: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
