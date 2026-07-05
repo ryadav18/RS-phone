@@ -1,1 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RS Dashboard Workspace</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Persistent Floating Navigation Sidebar -->
+        <div class="sidebar glass-panel">
+            <div class="sidebar-brand">
+                <i data-lucide="shield" style="color: var(--accent-cyan);"></i>
+                <span>RS OWNER</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="active"><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
+                <li><a href="/permissions"><i data-lucide="shield-check"></i> Permissions</a></li>
+                <li><a href="/notifications"><i data-lucide="bell"></i> Notifications</a></li>
+                <li><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
+                <li><a href="/logs"><i data-lucide="file-text"></i> System Logs</a></li>
+            </ul>
+            <div style="margin-top: auto; padding-top: 20px;">
+                <a href="#" id="logout-action" style="display: flex; align-items: center; gap: 10px; color: var(--text-muted); text-decoration: none;">
+                    <i data-lucide="log-out"></i> Log Out
+                </a>
+            </div>
+        </div>
 
+        <!-- Dynamic Main Stage Window -->
+        <main class="main-content">
+            <header class="topbar">
+                <div class="device-switcher">
+                    <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 5px;">ACTIVE TARGET MODULE</label>
+                    <select id="device-select">
+                        <option value="">Querying associated modules...</option>
+                    </select>
+                </div>
+                <div class="topbar-right">
+                    <div class="status-indicator">
+                        <div id="online-badge" class="status-dot"></div>
+                        <span>Device Status Connection</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Device Status Card Elements -->
+            <div class="dashboard-grid">
+                <div class="glass-panel" style="padding: 25px;">
+                    <h3 class="card-title">Device Telemetry Status</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">Power Level Status</span>
+                        <span class="metric-value" id="metric-battery">N/A</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Charging State Status</span>
+                        <span class="metric-value" id="metric-charging">N/A</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">System Temperature</span>
+                        <span class="metric-value" id="metric-temp">N/A</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Transceiver Link</span>
+                        <span class="metric-value" id="metric-net">N/A</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Storage Usage Tracker</span>
+                        <span class="metric-value" id="metric-storage">N/A</span>
+                    </div>
+                </div>
+
+                <div class="glass-panel" style="padding: 25px;">
+                    <h3 class="card-title">Target Device Identification</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">Hardware Device Name</span>
+                        <span class="metric-value" id="info-name">N/A</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">System Hardware Model</span>
+                        <span class="metric-value" id="info-model">N/A</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">OS Software Level</span>
+                        <span class="metric-value" id="info-os">N/A</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Management App Version</span>
+                        <span class="metric-value" id="info-version">N/A</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Unique Identity Key</span>
+                        <span class="metric-value" id="info-id">N/A</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Initialization Date Trace</span>
+                        <span class="metric-value" id="info-connected">N/A</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Permission-Locked Features -->
+            <div class="dashboard-grid">
+                <div class="glass-panel" id="calls-wrapper" style="padding: 25px; min-height: 250px;">
+                    <h3 class="card-title">Secure Telephone Call Monitoring</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">Telephony activity tracking metrics verified under system permissions configurations.</p>
+                </div>
+
+                <div class="glass-panel" id="sms-wrapper" style="padding: 25px; min-height: 250px;">
+                    <h3 class="card-title">Text Message Transceiver History</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">Programmatic messages streams and log updates indicators storage.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Required library CDNs and orchestration script modules -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script src="/static/js/realtime.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+    <script>lucide.createIcons();</script>
+</body>
+</html>
