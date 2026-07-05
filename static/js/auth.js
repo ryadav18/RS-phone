@@ -18,7 +18,7 @@ class AuthenticationEngine {
     }
 
     async handleLogin(event) {
-        event.preventDefault();
+        event.preventDefault(); // Yeh page ko refresh hone se rokta hai
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         const btn = event.submitter;
@@ -51,7 +51,7 @@ class AuthenticationEngine {
     }
 
     async handleRegistration(event) {
-        event.preventDefault();
+        event.preventDefault(); // Yeh page ko refresh hone se rokta hai
         const name = document.getElementById('reg-name').value;
         const email = document.getElementById('reg-email').value;
         const password = document.getElementById('reg-password').value;
@@ -70,16 +70,17 @@ class AuthenticationEngine {
             const result = await response.json();
             if (result.status === 'success') {
                 alert('Account verified successfully! Directing to standard login context');
-                window.location.href = '/';
+                // Form clear karke page ko wapas login state mein laane ke liye reload
+                window.location.href = '/'; 
             } else {
                 alert(result.message || 'Registration issue');
                 btn.disabled = false;
-                btn.textContent = 'REGISTER';
+                btn.textContent = 'REGISTER NEW ACCOUNT';
             }
         } catch (error) {
             console.error('Execution failure during signup processing:', error);
             btn.disabled = false;
-            btn.textContent = 'REGISTER';
+            btn.textContent = 'REGISTER NEW ACCOUNT';
         }
     }
 
@@ -108,4 +109,7 @@ class AuthenticationEngine {
 // Global initialization logic block
 document.addEventListener('DOMContentLoaded', () => {
     AuthenticationEngine.checkAuth();
+    
+    // YEH MASTER SWITCH HAI - Iske bina forms backend se connect nahi hote
+    new AuthenticationEngine(); 
 });
