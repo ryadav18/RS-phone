@@ -83,7 +83,12 @@ class DashboardEngine {
         }
     }
 
-    evaluateSystemPermissionOverlays(perms) {
+    evaluateSystemPermissionOverlays(permsData) {
+        // THE FIX: Database array return karta hai, usme se actual object nikalna zaroori hai
+        const perms = Array.isArray(permsData) ? permsData[0] : permsData;
+        
+        if (!perms) return; 
+
         // Enforce active overlays for feature segments that are unauthorized on the physical device
         const config = {
             'calls-wrapper': perms.call_log,
@@ -94,13 +99,24 @@ class DashboardEngine {
 
         for (const [wrapperId, isGranted] of Object.entries(config)) {
             const target = document.getElementById(wrapperId);
-            if (target && !isGranted) {
-                this.applySectionProtectionOverlay(target);
+            if (target) {
+                if (!isGranted) {
+                    // Agar permission False hai, toh Lock lagao
+                    this.applySectionProtectionOverlay(target);
+                } else {
+                    // FIX: Agar permission True ho chuki hai, toh red lock ko HTML se HATAO
+                    target.classList.remove('locked-section');
+                    const lock = target.querySelector('.lock-overlay');
+                    if (lock) lock.remove();
+                }
             }
         }
     }
 
     applySectionProtectionOverlay(element) {
+        // FIX: Check karo ki lock pehle se toh nahi laga (Prevents infinite UI loop bug)
+        if (element.querySelector('.lock-overlay')) return;
+
         element.classList.add('locked-section');
         const overlay = document.createElement('div');
         overlay.className = 'lock-overlay';
@@ -134,7 +150,7 @@ window.deleteDevice = async function(deviceId) {
         if (result.status === 'success') {
             alert("Device removed successfully.");
             localStorage.removeItem('active_device_id'); 
-            window.location.reload(); // Refresh to clean state or redirect to device selection page
+            window.location.reload(); 
         } else {
             alert("Failed to remove device: " + result.message);
         }
