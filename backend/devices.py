@@ -31,7 +31,6 @@ def connect_device():
         return jsonify({"status": "error", "message": "Parameters device_id and name are required"}), 400
 
     try:
-        # STRICT DUPLICATE CHECK: Ab sirf exact device ID ko check karega
         existing = supabase.table('devices').select('*').eq('device_id', device_uid).execute()
         new_device_token = str(uuid.uuid4())
         
@@ -52,18 +51,15 @@ def connect_device():
         }
 
         if existing.data:
-            # DUPLICATE FIX: Agar device pehle se hai, toh sirf naya token aur data update karo
             dev_id = existing.data[0]['id']
             response = supabase.table('devices').update(device_payload).eq('id', dev_id).execute()
             
-            # Connection update log
             supabase.table('activity_logs').insert({
                 "device_id": dev_id,
                 "event_type": "Device Reconnected",
                 "description": f"Context re-established for {model}"
             }).execute()
         else:
-            # Sirf tabhi naya banega jab sach mein naya phone aayega
             device_payload["device_id"] = device_uid
             response = supabase.table('devices').insert(device_payload).execute()
             dev_id = response.data[0]['id']
@@ -144,9 +140,6 @@ def sync_permissions():
         print(f"Permissions Sync Error: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# ==========================================
-# NAYA ROUTE: CALL LOGS ENGINE (SMART SYNC)
-# ==========================================
 @devices_bp.route('/api/sync/calls', methods=['POST'])
 def sync_calls():
     token = request.headers.get('X-Device-Token')
@@ -154,7 +147,6 @@ def sync_calls():
         return jsonify({"status": "error", "message": "Missing device token"}), 401
 
     try:
-        # Validate Device Token
         device_check = supabase.table('devices').select('id').eq('device_token', token).execute()
         if not device_check.data:
             return jsonify({"status": "error", "message": "Device not authenticated"}), 403
@@ -166,7 +158,6 @@ def sync_calls():
         if not calls_list:
             return jsonify({"status": "success", "message": "No calls received to sync"}), 200
 
-        # Create Bulk Payload
         bulk_payload = []
         for call in calls_list:
             bulk_payload.append({
@@ -177,13 +168,30 @@ def sync_calls():
                 "timestamp": call.get("timestamp")
             })
 
-        # Smart Sync Logic: Purane records delete karke naye fresh daalo (Avoids duplicates)
         supabase.table('calls').delete().eq('device_id', dev_id).execute()
-        
-        # Insert latest 50 calls
         supabase.table('calls').insert(bulk_payload).execute()
 
         return jsonify({"status": "success", "message": f"{len(bulk_payload)} calls synchronized successfully"}), 200
     except Exception as e:
         print(f"Call Logs Sync Error: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# ==========================================
+# NAYA ROUTE: REMOVE DEVICE ENGINE
+# ==========================================
+@devices_bp.route('/api/devices/<device_id>', methods=['DELETE'])
+@token_required
+def remove_device(device_id):
+    try:
+        # Check security: Kya device isi owner ka hai?
+        check = supabase.table('devices').select('id').eq('id', device_id).eq('owner_id', request.owner_id).execute()
+        if not check.data:
+            return jsonify({"status": "error", "message": "Device not found or unauthorized"}), 404
+
+        # Cascade Delete: Device aur uska saara data Supabase se udd jayega
+        supabase.table('devices').delete().eq('id', device_id).execute()
+        
+        return jsonify({"status": "success", "message": "Device removed successfully"}), 200
+    except Exception as e:
+        print(f"Device Delete Error: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
