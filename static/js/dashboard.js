@@ -52,7 +52,19 @@ class DashboardEngine {
 
         for (const [id, value] of Object.entries(metrics)) {
             const el = document.getElementById(id);
-            if (el) el.textContent = value;
+            if (el) {
+                // INFO-NAME ke aage REMOVE BUTTON inject kiya gaya hai
+                if (id === 'info-name') {
+                    el.innerHTML = `
+                        <span style="margin-right: 15px;">${value}</span>
+                        <button onclick="deleteDevice('${dev.id}')" style="background: #ff3b30; color: white; border: none; border-radius: 5px; padding: 5px 12px; cursor: pointer; font-size: 0.85rem; font-weight: bold; box-shadow: 0 4px 6px rgba(255, 59, 48, 0.2); transition: all 0.3s ease;">
+                            Remove Device
+                        </button>
+                    `;
+                } else {
+                    el.textContent = value;
+                }
+            }
         }
     }
 
@@ -102,6 +114,35 @@ class DashboardEngine {
         element.appendChild(overlay);
     }
 }
+
+// Global scope function to handle the removal action properly
+window.deleteDevice = async function(deviceId) {
+    if (!confirm("WARNING: Are you sure you want to permanently remove this device and all its data? This action cannot be undone.")) {
+        return;
+    }
+
+    const token = localStorage.getItem('owner_token');
+    try {
+        const res = await fetch(`/api/devices/${deviceId}`, {
+            method: 'DELETE',
+            headers: { 
+                'Authorization': `Bearer ${token}` 
+            }
+        });
+
+        const result = await res.json();
+        if (result.status === 'success') {
+            alert("Device removed successfully.");
+            localStorage.removeItem('active_device_id'); 
+            window.location.reload(); // Refresh to clean state or redirect to device selection page
+        } else {
+            alert("Failed to remove device: " + result.message);
+        }
+    } catch (e) {
+        console.error("Delete Action Failed:", e);
+        alert("A network error occurred while trying to remove the device.");
+    }
+};
 
 // Instantiate dashboard scope logic on load sequence execution
 document.addEventListener('DOMContentLoaded', () => {
