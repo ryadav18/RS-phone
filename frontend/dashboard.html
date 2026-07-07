@@ -85,7 +85,7 @@
             </div>
         </div>
 
-        <!-- 2. Battery Engine (Red/Green dynamic handling will be in JS) -->
+        <!-- 2. Battery Engine -->
         <div class="flat-card bg-red" id="battery-card">
             <i data-lucide="battery-charging" class="bg-icon"></i>
             <div class="card-content">
@@ -171,7 +171,7 @@
             </div>
         </div>
 
-        <!-- 7. Live Operations (Screen & Audio) -->
+        <!-- 7. Live Operations (Screen & Audio) - SNIPPET ADDED HERE -->
         <div class="flat-card bg-teal">
             <i data-lucide="cast" class="bg-icon"></i>
             <div class="card-content">
@@ -184,8 +184,8 @@
                 </div>
             </div>
             <div class="action-row">
-                <button class="btn">Screen</button>
-                <button class="btn">Audio</button>
+                <button class="btn" onclick="requestScreenCapture()">Screen</button>
+                <button class="btn" onclick="requestAudioSync()">Audio</button>
             </div>
         </div>
 
