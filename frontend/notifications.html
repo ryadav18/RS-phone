@@ -3,60 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Synchronized Broadcast Center - RS OWNER</title>
+    <title>Live Notifications - RS Phone</title>
+    <!-- Sirf ek global style.css link hogi, no extra lag -->
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        .data-list-container {
-            max-height: 75vh;
-            overflow-y: auto;
-            padding-right: 10px;
+        /* =========================================
+           NOTIFICATION SPECIFIC UI (APP FILTERS)
+           ========================================= */
+        
+        .top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .back-btn { color: white; text-decoration: none; display: flex; align-items: center; gap: 5px; font-weight: 600; font-size: 14px; background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 4px; transition: 0.2s; }
+        .back-btn:active { background: rgba(255,255,255,0.2); }
+        
+        .wipe-btn { background: rgba(231, 76, 60, 0.1); color: var(--color-red); border: 1px solid var(--color-red); border-radius: 4px; padding: 8px 12px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; transition: 0.2s; font-size: 13px; }
+        .wipe-btn:active { background: var(--color-red); color: white; }
+
+        /* The Horizontal App Filter Engine */
+        .filter-bar {
+            display: flex; gap: 10px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 15px;
+            scrollbar-width: none; /* Firefox */
         }
+        .filter-bar::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+        
+        .filter-pill {
+            display: flex; align-items: center; gap: 6px; padding: 10px 16px;
+            background: var(--bg-card); border: 1px solid #333; border-radius: 20px;
+            color: var(--text-muted); font-size: 13px; font-weight: 600;
+            cursor: pointer; white-space: nowrap; transition: all 0.2s;
+        }
+        .filter-pill:active { transform: scale(0.95); }
+        
+        /* Active State Colors */
+        .filter-pill.active { background: var(--color-blue); color: white; border-color: var(--color-blue); }
+        .filter-pill.active[data-filter="whatsapp"] { background: var(--color-green); border-color: var(--color-green); }
+        .filter-pill.active[data-filter="instagram"] { background: var(--color-pink); border-color: var(--color-pink); }
+        .filter-pill.active[data-filter="system"] { background: var(--color-dark); border-color: #555; }
+
+        .filter-pill i { width: 16px; height: 16px; }
+
+        /* Clean Feed Container */
+        .data-list-container { display: flex; flex-direction: column; gap: 12px; max-height: 75vh; overflow-y: auto; padding-right: 5px; }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar with fully updated Hub & Spoke Links -->
-        <div class="sidebar glass-panel">
-            <div class="sidebar-brand">
-                <i data-lucide="shield" style="color: var(--accent-cyan);"></i>
-                <span>RS OWNER</span>
-            </div>
-            <ul class="sidebar-menu">
-                <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
-                <li><a href="/permissions"><i data-lucide="shield-check"></i> Permissions</a></li>
-                <li class="active"><a href="/notifications"><i data-lucide="bell"></i> Notifications</a></li>
-                <li><a href="/calls"><i data-lucide="phone"></i> Call Logs</a></li>
-                <li><a href="/messages"><i data-lucide="message-square"></i> SMS History</a></li>
-                <li><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
-                <li><a href="/logs"><i data-lucide="terminal"></i> System Logs</a></li>
-            </ul>
-        </div>
-        <main class="main-content">
-            <header class="topbar">
-                <h2 style="font-weight: 700;">Realtime Notification Feed</h2>
-                <div class="device-switcher" style="display: flex; align-items: center; gap: 15px;">
-                    <select id="device-select"></select>
-                    <!-- Connected to Notifications Engine Wipe Function -->
-                    <button onclick="wipeNotificationsHistory()" style="background: #ff3b30; color: white; border: none; border-radius: 5px; padding: 8px 15px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; transition: 0.3s;">
-                        <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i> Wipe Notifications
-                    </button>
-                </div>
-            </header>
-
-            <div class="glass-panel" style="padding: 25px;">
-                <!-- Engine targets this specific ID -->
-                <div class="data-list-container" id="dashboard-notif-feed" style="display: flex; flex-direction: column; gap: 15px;">
-                    <div style="color: #888; text-align: center; padding: 20px;">Fetching encrypted notifications...</div>
-                </div>
-            </div>
-        </main>
+    
+    <!-- Flat Header with Back Button -->
+    <div class="top-nav">
+        <a href="/dashboard" class="back-btn"><i data-lucide="chevron-left"></i> Back</a>
+        <h2 style="font-size: 18px; text-transform: uppercase; letter-spacing: 1px;">Live Stream</h2>
+        <button onclick="wipeNotificationsHistory()" class="wipe-btn">
+            <i data-lucide="trash-2"></i> Wipe
+        </button>
     </div>
+
+    <!-- Active Device Selector -->
+    <select id="device-select" class="device-selector" style="margin-bottom: 20px;"></select>
+
+    <!-- PRO APP FILTER BAR -->
+    <div class="filter-bar" id="app-filter-bar">
+        <div class="filter-pill active" data-filter="all">
+            <i data-lucide="layout-grid"></i> All Alerts
+        </div>
+        <div class="filter-pill" data-filter="whatsapp">
+            <i data-lucide="message-circle"></i> WhatsApp
+        </div>
+        <div class="filter-pill" data-filter="instagram">
+            <i data-lucide="instagram"></i> Instagram
+        </div>
+        <div class="filter-pill" data-filter="sms">
+            <i data-lucide="message-square"></i> SMS
+        </div>
+        <div class="filter-pill" data-filter="system">
+            <i data-lucide="settings"></i> System
+        </div>
+    </div>
+
+    <!-- DATA FEED CONTAINER -->
+    <div class="data-list-container" id="dashboard-notif-feed">
+        <div class="flat-card bg-card" style="text-align: center; color: #888; border: 1px dashed #333;">
+            Fetching encrypted notifications...
+        </div>
+    </div>
+
+    <!-- Backend & Engine Links -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/static/js/auth.js"></script>
     <script src="/static/js/app.js"></script>
-    <!-- Directly linked to the new engine -->
     <script src="/static/js/notifications_engine.js"></script>
-    <script>lucide.createIcons();</script>
+    
+    <!-- Render Icons & UI Toggle Logic -->
+    <script>
+        lucide.createIcons();
+        
+        // UI Logic: Filter Pill Highlight System
+        const pills = document.querySelectorAll('.filter-pill');
+        pills.forEach(pill => {
+            pill.addEventListener('click', function() {
+                // Remove active class from all
+                pills.forEach(p => p.classList.remove('active'));
+                // Add active class to clicked
+                this.classList.add('active');
+                
+                // Get the target app name (e.g., 'whatsapp')
+                const targetApp = this.getAttribute('data-filter');
+                
+                // Note: Is trigger ko hum baad mein notifications_engine.js mein connect karenge 
+                // taaki actual cards filter ho sakein.
+                console.log("Filter switched to:", targetApp);
+            });
+        });
+    </script>
 </body>
 </html>
