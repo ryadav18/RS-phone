@@ -1,4 +1,4 @@
-// CORE DASHBOARD ENGINE (Optimized for Hub Architecture)
+// CORE DASHBOARD ENGINE (Optimized for Bento Grid & Real-time Telemetry)
 class DashboardEngine {
     constructor() {
         this.activeDeviceId = localStorage.getItem('active_device_id');
@@ -7,8 +7,12 @@ class DashboardEngine {
 
     async init() {
         if (!this.activeDeviceId) return;
-        // Sirf basic telemetry load hogi. Heavy data ab dedicated pages par shift ho gaya hai.
+        
+        // Initial load
         await this.loadDeviceMetrics();
+        
+        // Real-time Zinda Polling (Har 10 second mein auto-update)
+        setInterval(() => this.loadDeviceMetrics(), 10000);
     }
 
     async loadDeviceMetrics() {
@@ -30,42 +34,43 @@ class DashboardEngine {
     }
 
     populateMetadata(dev) {
+        // 1. Zinda Online Status Badge Update
         const badge = document.getElementById('online-badge');
-        if (badge) badge.className = dev.online_status ? 'status-dot online' : 'status-dot';
+        if (badge) {
+            badge.style.color = dev.online_status ? '#30d158' : '#ff3b30';
+            badge.innerText = dev.online_status ? '● ONLINE' : '○ OFFLINE';
+        }
 
-        const metrics = {
-            'metric-battery': `${dev.battery_level}%`,
-            'metric-charging': dev.is_charging ? 'Charging' : 'Discharging',
-            'metric-temp': `${dev.temperature}°C`,
-            'metric-net': dev.network_type,
-            'metric-storage': dev.storage_used,
-            'info-name': dev.name,
-            'info-model': dev.model,
-            'info-os': `Android ${dev.android_version}`,
-            'info-version': `v${dev.app_version}`,
-            'info-id': dev.device_id,
-            'info-connected': new Date(dev.created_at).toLocaleDateString()
-        };
+        // 2. Battery Update with Charging Color Logic
+        const batteryEl = document.getElementById('metric-battery');
+        if (batteryEl) {
+            batteryEl.textContent = `${dev.battery_level}%`;
+            // Agar charge ho raha hai toh text green ho jayega
+            batteryEl.style.color = dev.is_charging ? '#30d158' : 'white'; 
+        }
 
-        for (const [id, value] of Object.entries(metrics)) {
-            const el = document.getElementById(id);
-            if (el) {
-                if (id === 'info-name') {
-                    el.innerHTML = `
-                        <span style="margin-right: 15px;">${value}</span>
-                        <button onclick="deleteDevice('${dev.id}')" style="background: #ff3b30; color: white; border: none; border-radius: 5px; padding: 5px 12px; cursor: pointer; font-size: 0.85rem; font-weight: bold; transition: all 0.3s ease;">
-                            Remove Device
-                        </button>
-                    `;
-                } else {
-                    el.textContent = value;
-                }
-            }
+        // 3. Storage Update
+        const storageEl = document.getElementById('metric-storage');
+        if (storageEl) {
+            storageEl.textContent = dev.storage_used || 'N/A';
+        }
+
+        // 4. Device Name, Model & Remove Button (Merged Logic)
+        const nameEl = document.getElementById('info-name');
+        if (nameEl) {
+            nameEl.innerHTML = `
+                <div style="font-size: 1.1rem; margin-bottom: 12px; color: white;">
+                    ${dev.name} <span style="color: #888; font-size: 0.9rem;">(${dev.model})</span>
+                </div>
+                <button onclick="deleteDevice('${dev.id}')" style="background: rgba(255, 59, 48, 0.1); color: #ff3b30; border: 1px solid #ff3b30; border-radius: 6px; padding: 6px 15px; cursor: pointer; font-size: 0.8rem; font-weight: bold; transition: all 0.3s ease;">
+                    Remove Device
+                </button>
+            `;
         }
     }
 }
 
-// Global Device Deletion Method
+// Global Device Deletion Method (Unchanged & Secure)
 window.deleteDevice = async function(deviceId) {
     if (!confirm("WARNING: Are you sure you want to permanently remove this device and all its data? This action cannot be undone.")) return;
 
@@ -88,6 +93,7 @@ window.deleteDevice = async function(deviceId) {
     }
 };
 
+// Initialize Engine on Page Load
 document.addEventListener('DOMContentLoaded', () => {
     new DashboardEngine();
 });
