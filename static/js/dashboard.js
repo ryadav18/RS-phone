@@ -9,6 +9,7 @@ class DashboardEngine {
         if (!this.activeDeviceId) return;
         await this.loadDeviceMetrics();
         await this.loadActivePermissions();
+        this.startDashboardNotificationPolling(); // Initiating Real-time fetch
     }
 
     async loadDeviceMetrics() {
@@ -30,11 +31,8 @@ class DashboardEngine {
     }
 
     populateMetadata(dev) {
-        // Set dynamic network state labels
         const badge = document.getElementById('online-badge');
-        if (badge) {
-            badge.className = dev.online_status ? 'status-dot online' : 'status-dot';
-        }
+        if (badge) badge.className = dev.online_status ? 'status-dot online' : 'status-dot';
 
         const metrics = {
             'metric-battery': `${dev.battery_level}%`,
@@ -53,11 +51,10 @@ class DashboardEngine {
         for (const [id, value] of Object.entries(metrics)) {
             const el = document.getElementById(id);
             if (el) {
-                // INFO-NAME ke aage REMOVE BUTTON inject kiya gaya hai
                 if (id === 'info-name') {
                     el.innerHTML = `
                         <span style="margin-right: 15px;">${value}</span>
-                        <button onclick="deleteDevice('${dev.id}')" style="background: #ff3b30; color: white; border: none; border-radius: 5px; padding: 5px 12px; cursor: pointer; font-size: 0.85rem; font-weight: bold; box-shadow: 0 4px 6px rgba(255, 59, 48, 0.2); transition: all 0.3s ease;">
+                        <button onclick="deleteDevice('${dev.id}')" style="background: #ff3b30; color: white; border: none; border-radius: 5px; padding: 5px 12px; cursor: pointer; font-size: 0.85rem; font-weight: bold; transition: all 0.3s ease;">
                             Remove Device
                         </button>
                     `;
@@ -84,27 +81,22 @@ class DashboardEngine {
     }
 
     evaluateSystemPermissionOverlays(permsData) {
-        // THE FIX: Database array return karta hai, usme se actual object nikalna zaroori hai
         const perms = Array.isArray(permsData) ? permsData[0] : permsData;
-        
         if (!perms) return; 
 
-        // Enforce active overlays for feature segments that are unauthorized on the physical device
         const config = {
             'calls-wrapper': perms.call_log,
             'sms-wrapper': perms.sms,
             'files-wrapper': perms.storage,
-            'location-wrapper': perms.location
+            'notifications-wrapper': perms.notifications // Hooked the new UI box to permissions DB
         };
 
         for (const [wrapperId, isGranted] of Object.entries(config)) {
             const target = document.getElementById(wrapperId);
             if (target) {
                 if (!isGranted) {
-                    // Agar permission False hai, toh Lock lagao
                     this.applySectionProtectionOverlay(target);
                 } else {
-                    // FIX: Agar permission True ho chuki hai, toh red lock ko HTML se HATAO
                     target.classList.remove('locked-section');
                     const lock = target.querySelector('.lock-overlay');
                     if (lock) lock.remove();
@@ -114,7 +106,6 @@ class DashboardEngine {
     }
 
     applySectionProtectionOverlay(element) {
-        // FIX: Check karo ki lock pehle se toh nahi laga (Prevents infinite UI loop bug)
         if (element.querySelector('.lock-overlay')) return;
 
         element.classList.add('locked-section');
@@ -124,28 +115,69 @@ class DashboardEngine {
             <i class="lucide-lock-keyhole"></i>
             <h4 style="color: #ff3b30; font-weight: 600;">Permission Not Granted</h4>
             <p style="color: #94a3b8; font-size: 0.9rem; max-width: 250px; margin: 0 auto;">
-                Enable permission profiles from the RS PHONE target context options.
+                Enable permission profiles from the target device.
             </p>
         `;
         element.appendChild(overlay);
     }
+
+    // NEW LOGIC: Background polling for mini Dashboard feed
+    startDashboardNotificationPolling() {
+        this.fetchDashboardNotifications();
+        setInterval(() => this.fetchDashboardNotifications(), 5000); // Poll every 5 seconds
+    }
+
+    async fetchDashboardNotifications() {
+        if (!this.activeDeviceId) return;
+        const targetWrapper = document.getElementById('notifications-wrapper');
+        // Do not fetch data if the UI box is permission-locked
+        if (targetWrapper && targetWrapper.classList.contains('locked-section')) return;
+
+        const token = localStorage.getItem('owner_token');
+        try {
+            const res = await fetch(`/api/notifications?device_id=${this.activeDeviceId}&limit=5`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await res.json();
+            if (result.status === 'success') {
+                this.renderDashboardNotifications(result.data);
+            }
+        } catch (e) {
+            console.error("Dashboard Feed Sync Error:", e);
+        }
+    }
+
+    renderDashboardNotifications(items) {
+        const container = document.getElementById('dashboard-notif-feed');
+        if (!container) return;
+
+        if (items.length === 0) {
+            container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.9rem;">No recent notifications received.</div>';
+            return;
+        }
+
+        container.innerHTML = items.map(n => `
+            <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border-left: 3px solid var(--accent-cyan);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <strong style="color: var(--accent-cyan); font-size: 0.85rem;">${n.app_name}</strong>
+                    <span style="color: var(--text-muted); font-size: 0.75rem;">${new Date(n.received_at).toLocaleTimeString()}</span>
+                </div>
+                <div style="font-size: 0.9rem; font-weight: 600;">${n.title}</div>
+                <div style="font-size: 0.85rem; color: #ccc; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${n.message}</div>
+            </div>
+        `).join('');
+    }
 }
 
-// Global scope function to handle the removal action properly
 window.deleteDevice = async function(deviceId) {
-    if (!confirm("WARNING: Are you sure you want to permanently remove this device and all its data? This action cannot be undone.")) {
-        return;
-    }
+    if (!confirm("WARNING: Are you sure you want to permanently remove this device and all its data? This action cannot be undone.")) return;
 
     const token = localStorage.getItem('owner_token');
     try {
         const res = await fetch(`/api/devices/${deviceId}`, {
             method: 'DELETE',
-            headers: { 
-                'Authorization': `Bearer ${token}` 
-            }
+            headers: { 'Authorization': `Bearer ${token}` }
         });
-
         const result = await res.json();
         if (result.status === 'success') {
             alert("Device removed successfully.");
@@ -156,11 +188,9 @@ window.deleteDevice = async function(deviceId) {
         }
     } catch (e) {
         console.error("Delete Action Failed:", e);
-        alert("A network error occurred while trying to remove the device.");
     }
 };
 
-// Instantiate dashboard scope logic on load sequence execution
 document.addEventListener('DOMContentLoaded', () => {
     new DashboardEngine();
 });
