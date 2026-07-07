@@ -10,9 +10,10 @@ class DashboardEngine {
         await this.loadDeviceMetrics();
         await this.loadActivePermissions();
         
-        // Dono polling engines ek sath start hongi
+        // Teeno live polling engines ek sath start
         this.startDashboardNotificationPolling(); 
         this.startDashboardCallsPolling(); 
+        this.startDashboardSMSPolling();
     }
 
     async loadDeviceMetrics() {
@@ -183,7 +184,6 @@ class DashboardEngine {
 
         const token = localStorage.getItem('owner_token');
         try {
-            // Fetching latest 5 calls for the dashboard widget
             const res = await fetch(`/api/calls?device_id=${this.activeDeviceId}&limit=5`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -206,14 +206,13 @@ class DashboardEngine {
         }
 
         container.innerHTML = items.map(c => {
-            // Setting color codes based on call type
-            let typeColor = "#30d158"; // Incoming (Green)
+            let typeColor = "#30d158"; 
             let typeIcon = "↙ Incoming";
             if (c.type.toLowerCase() === "missed") {
-                typeColor = "#ff3b30"; // Missed (Red)
+                typeColor = "#ff3b30";
                 typeIcon = "✖ Missed";
             } else if (c.type.toLowerCase() === "outgoing") {
-                typeColor = "var(--accent-cyan)"; // Outgoing (Cyan)
+                typeColor = "var(--accent-cyan)"; 
                 typeIcon = "↗ Outgoing";
             }
 
@@ -230,6 +229,53 @@ class DashboardEngine {
             </div>
             `;
         }).join('');
+    }
+
+    // --- FINAL ADDITION: SMS ENGINE ---
+    startDashboardSMSPolling() {
+        this.fetchDashboardSMS();
+        setInterval(() => this.fetchDashboardSMS(), 5000); 
+    }
+
+    async fetchDashboardSMS() {
+        if (!this.activeDeviceId) return;
+        const targetWrapper = document.getElementById('sms-wrapper');
+        // Do not fetch if locked by permissions
+        if (targetWrapper && targetWrapper.classList.contains('locked-section')) return;
+
+        const token = localStorage.getItem('owner_token');
+        try {
+            // Fetching latest 5 messages
+            const res = await fetch(`/api/messages?device_id=${this.activeDeviceId}&limit=5`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await res.json();
+            if (result.status === 'success') {
+                this.renderDashboardSMS(result.data);
+            }
+        } catch (e) {
+            console.error("Dashboard SMS Sync Error:", e);
+        }
+    }
+
+    renderDashboardSMS(items) {
+        const container = document.getElementById('dashboard-sms-feed');
+        if (!container) return;
+
+        if (items.length === 0) {
+            container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.9rem;">No SMS messages archived yet.</div>';
+            return;
+        }
+
+        container.innerHTML = items.map(m => `
+            <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border-left: 3px solid #f5a623;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <strong style="color: #f5a623; font-size: 0.9rem;">${m.sender}</strong>
+                    <span style="color: var(--text-muted); font-size: 0.75rem;">${new Date(m.timestamp).toLocaleTimeString()}</span>
+                </div>
+                <div style="font-size: 0.85rem; color: #ccc; margin-top: 3px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${m.message_preview}</div>
+            </div>
+        `).join('');
     }
 }
 
