@@ -9,7 +9,7 @@ notifications_bp = Blueprint('notifications', __name__)
 @token_required
 def get_notifications():
     device_id = request.args.get('device_id')
-    # Limit lagana zaroori h taki dashboard crash na ho
+    # Limit lagana zaroori hai taki dashboard crash na ho
     limit = request.args.get('limit', 100) 
 
     if not device_id:
@@ -19,7 +19,7 @@ def get_notifications():
         return jsonify({"status": "error", "message": "Unauthorized access attempt"}), 403
 
     try:
-        # Paginating the response to maximum 100 recent notifications
+        # Paginating the response to maximum recent notifications
         res = supabase.table('notifications').select('*').eq('device_id', device_id).order('received_at', desc=True).limit(limit).execute()
         return jsonify({"status": "success", "data": res.data}), 200
     except Exception as e:
@@ -63,6 +63,7 @@ def upload_notifications():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+# STORAGE MANAGEMENT: Clear Notifications API
 @notifications_bp.route('/api/notifications/clear', methods=['POST'])
 @token_required
 def clear_notifications():
@@ -73,7 +74,8 @@ def clear_notifications():
         return jsonify({"status": "error", "message": "Access permission denied"}), 403
 
     try:
+        # Deletes all notifications for this specific device
         supabase.table('notifications').delete().eq('device_id', device_id).execute()
-        return jsonify({"status": "success", "message": "Notifications history cleared"}), 200
+        return jsonify({"status": "success", "message": "Notifications history cleared successfully"}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
