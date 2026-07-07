@@ -3,171 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RS Dashboard Workspace</title>
+    <title>RS COMMAND CENTER</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* Pro-level Card Hover Animations */
-        .nav-card {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid transparent;
+        /* Bento Grid System */
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-auto-rows: minmax(150px, auto);
+            gap: 20px;
+            padding: 20px 0;
         }
-        .nav-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--accent-cyan);
-            box-shadow: 0 10px 20px rgba(0, 210, 255, 0.1);
-            background: rgba(255, 255, 255, 0.05);
+        .bento-card { grid-column: span 1; grid-row: span 1; }
+        .span-2 { grid-column: span 2; }
+        .row-2 { grid-row: span 2; }
+
+        /* Glowing Phone Mockup */
+        .phone-mockup {
+            width: 80px; height: 160px; border: 2px solid var(--accent-cyan);
+            border-radius: 15px; position: relative; margin: 0 auto;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.2);
         }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0, 210, 255, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(0, 210, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 210, 255, 0); } }
+
+        /* Telemetry Elements */
+        .metric-val { font-size: 1.5rem; font-weight: bold; color: white; }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <!-- Persistent Floating Navigation Sidebar -->
+        <!-- Minimalist Sidebar -->
         <div class="sidebar glass-panel">
-            <div class="sidebar-brand">
-                <i data-lucide="shield" style="color: var(--accent-cyan);"></i>
-                <span>RS OWNER</span>
-            </div>
+            <div class="sidebar-brand"><i data-lucide="shield" style="color: var(--accent-cyan);"></i></div>
             <ul class="sidebar-menu">
-                <li class="active"><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
-                <li><a href="/permissions"><i data-lucide="shield-check"></i> Permissions</a></li>
-                <li><a href="/notifications"><i data-lucide="bell"></i> Notifications</a></li>
-                <li><a href="/calls"><i data-lucide="phone"></i> Call Logs</a></li>
-                <li><a href="/messages"><i data-lucide="message-square"></i> SMS History</a></li>
-                <li><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
-                <li><a href="/logs"><i data-lucide="terminal"></i> System Logs</a></li>
+                <li class="active"><a href="/dashboard"><i data-lucide="layout-dashboard"></i></a></li>
+                <li><a href="/notifications"><i data-lucide="bell"></i></a></li>
+                <li><a href="/calls"><i data-lucide="phone"></i></a></li>
+                <li><a href="/messages"><i data-lucide="message-square"></i></a></li>
+                <li><a href="/files"><i data-lucide="folder-open"></i></a></li>
+                <li><a href="/logs"><i data-lucide="terminal"></i></a></li>
             </ul>
-            <div style="margin-top: auto; padding-top: 20px;">
-                <a href="#" id="logout-action" style="display: flex; align-items: center; gap: 10px; color: var(--text-muted); text-decoration: none;">
-                    <i data-lucide="log-out"></i> Log Out
-                </a>
-            </div>
         </div>
 
-        <!-- Dynamic Main Stage Window -->
         <main class="main-content">
             <header class="topbar">
-                <div class="device-switcher">
-                    <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 5px;">ACTIVE TARGET MODULE</label>
-                    <select id="device-select">
-                        <option value="">Querying associated modules...</option>
-                    </select>
-                </div>
-                <div class="topbar-right">
-                    <div class="status-indicator">
-                        <div id="online-badge" class="status-dot"></div>
-                        <span>Device Status Connection</span>
-                    </div>
-                </div>
+                <h2>Command Center</h2>
+                <select id="device-select" class="glass-panel" style="padding: 10px;"></select>
             </header>
 
-            <!-- Device Status Card Elements -->
-            <div class="dashboard-grid">
-                <div class="glass-panel" style="padding: 25px;">
-                    <h3 class="card-title">Device Telemetry Status</h3>
-                    <div class="metric-row">
-                        <span class="metric-label">Power Level Status</span>
-                        <span class="metric-value" id="metric-battery">N/A</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">Charging State Status</span>
-                        <span class="metric-value" id="metric-charging">N/A</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">System Temperature</span>
-                        <span class="metric-value" id="metric-temp">N/A</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">Transceiver Link</span>
-                        <span class="metric-value" id="metric-net">N/A</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">Storage Usage Tracker</span>
-                        <span class="metric-value" id="metric-storage">N/A</span>
-                    </div>
+            <div class="bento-grid">
+                <!-- 1. Zinda Phone Card -->
+                <div class="glass-panel bento-card row-2" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <div class="phone-mockup pulse"><i data-lucide="smartphone"></i></div>
+                    <p id="info-name" style="margin-top: 15px; font-weight: bold;">Loading...</p>
+                    <span id="online-badge" style="font-size: 0.7rem; color: #30d158;">● ONLINE</span>
                 </div>
 
-                <div class="glass-panel" style="padding: 25px;">
-                    <h3 class="card-title">Target Device Identification</h3>
-                    <div class="metric-row">
-                        <span class="metric-label">Hardware Device Name</span>
-                        <span class="metric-value" id="info-name">N/A</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">System Hardware Model</span>
-                        <span class="metric-value" id="info-model">N/A</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">OS Software Level</span>
-                        <span class="metric-value" id="info-os">N/A</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">Management App Version</span>
-                        <span class="metric-value" id="info-version">N/A</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">Unique Identity Key</span>
-                        <span class="metric-value" id="info-id">N/A</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">Initialization Date Trace</span>
-                        <span class="metric-value" id="info-connected">N/A</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Hub & Spoke Navigation Grid -->
-            <h3 style="margin: 30px 0 15px 0; font-weight: 600; font-size: 1.1rem;">Security & Data Modules</h3>
-            <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+                <!-- 2. Telemetry Cards -->
+                <div class="glass-panel bento-card"><p>Battery</p><div class="metric-val" id="metric-battery">0%</div></div>
+                <div class="glass-panel bento-card"><p>Storage</p><div class="metric-val" id="metric-storage">0GB</div></div>
                 
-                <!-- Notifications Module -->
-                <a href="/notifications" class="glass-panel nav-card" style="text-decoration: none; display: block; padding: 25px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <h3 class="card-title" style="margin: 0; color: white;">Live Notifications</h3>
-                        <i data-lucide="bell" style="color: var(--accent-cyan);"></i>
-                    </div>
-                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 10px;">Monitor app alerts, social media messages, and system push notifications.</p>
-                    <div style="margin-top: 15px; color: var(--accent-cyan); font-size: 0.85rem; font-weight: bold;">OPEN MODULE &raquo;</div>
-                </a>
-
-                <!-- Call Logs Module -->
-                <a href="/calls" class="glass-panel nav-card" style="text-decoration: none; display: block; padding: 25px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <h3 class="card-title" style="margin: 0; color: white;">Call Monitoring</h3>
-                        <i data-lucide="phone" style="color: var(--accent-cyan);"></i>
-                    </div>
-                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 10px;">Access complete telephony history including incoming, outgoing, and missed calls.</p>
-                    <div style="margin-top: 15px; color: var(--accent-cyan); font-size: 0.85rem; font-weight: bold;">OPEN MODULE &raquo;</div>
-                </a>
-
-                <!-- SMS Module -->
-                <a href="/messages" class="glass-panel nav-card" style="text-decoration: none; display: block; padding: 25px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <h3 class="card-title" style="margin: 0; color: white;">SMS Transceiver</h3>
-                        <i data-lucide="message-square" style="color: var(--accent-cyan);"></i>
-                    </div>
-                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 10px;">Read text message streams, OTPs, and conversational SMS logs.</p>
-                    <div style="margin-top: 15px; color: var(--accent-cyan); font-size: 0.85rem; font-weight: bold;">OPEN MODULE &raquo;</div>
-                </a>
-
-                <!-- File Storage Module -->
-                <a href="/files" class="glass-panel nav-card" style="text-decoration: none; display: block; padding: 25px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <h3 class="card-title" style="margin: 0; color: white;">File Storage</h3>
-                        <i data-lucide="folder-open" style="color: var(--accent-cyan);"></i>
-                    </div>
-                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 10px;">Browse target device internal storage, photos, and downloaded media.</p>
-                    <div style="margin-top: 15px; color: var(--accent-cyan); font-size: 0.85rem; font-weight: bold;">OPEN MODULE &raquo;</div>
-                </a>
-
+                <!-- 3. Navigation Cards -->
+                <a href="/notifications" class="glass-panel bento-card span-2 nav-card"><h3>Notifications</h3><p>Real-time stream</p></a>
+                <a href="/calls" class="glass-panel bento-card nav-card"><h3>Calls</h3></a>
+                <a href="/messages" class="glass-panel bento-card nav-card"><h3>SMS</h3></a>
+                
+                <!-- 4. System Logs & Others -->
+                <a href="/logs" class="glass-panel bento-card span-2 nav-card"><h3>System Logs</h3><p>Audit Trail</p></a>
             </div>
         </main>
     </div>
-
-    <!-- Required library CDNs and orchestration script modules -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/static/js/auth.js"></script>
-    <script src="/static/js/app.js"></script>
     <script src="/static/js/dashboard.js"></script>
     <script>lucide.createIcons();</script>
 </body>
