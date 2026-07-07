@@ -9,8 +9,8 @@ calls_bp = Blueprint('calls', __name__)
 @token_required
 def get_calls():
     device_id = request.args.get('device_id')
-    # Dashboard par sirf latest 5 ya 10 dikhane hain, limit lagana zaroori hai
-    limit = request.args.get('limit', 10) 
+    # Dedicated page ke liye limit 150
+    limit = request.args.get('limit', 150) 
 
     if not device_id or not verify_device_access(request.owner_id, device_id):
         return jsonify({"status": "error", "message": "Unauthorized target device operation"}), 403
@@ -47,7 +47,6 @@ def upload_calls():
                 "phone_number": record.get('phone_number', 'Unknown'),
                 "duration": record.get('duration', 0)
             }
-            # Crash se bachne ke liye sirf tab timestamp bhejo jab available ho
             if record.get('timestamp'):
                 row_data["timestamp"] = record.get('timestamp')
                 
@@ -55,5 +54,22 @@ def upload_calls():
 
         supabase.table('calls').insert(calls_payload).execute()
         return jsonify({"status": "success", "message": f"{len(calls_payload)} calls synced"}), 201
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# STORAGE MANAGEMENT: Clear Call Logs API
+@calls_bp.route('/api/calls/clear', methods=['POST'])
+@token_required
+def clear_calls():
+    data = request.json or {}
+    device_id = data.get('device_id')
+
+    if not device_id or not verify_device_access(request.owner_id, device_id):
+        return jsonify({"status": "error", "message": "Access permission denied"}), 403
+
+    try:
+        # Permanently wipes Call data for the specific device
+        supabase.table('calls').delete().eq('device_id', device_id).execute()
+        return jsonify({"status": "success", "message": "Call logs cleared successfully"}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
