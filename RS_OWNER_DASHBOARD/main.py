@@ -2,7 +2,6 @@ import os
 import sys
 
 # ================= AUTOMATIC PATH RESOLUTION =================
-# Ye code automatic detect karega ki folders root par hain ya sub-folder mein
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 
@@ -11,7 +10,6 @@ if not os.path.exists(os.path.join(current_dir, 'backend')) and os.path.exists(o
 else:
     base_dir = current_dir
 
-# Python ko batana ki backend folder kahan hai
 if base_dir not in sys.path:
     sys.path.insert(0, base_dir)
 # =============================================================
@@ -20,7 +18,6 @@ from flask import Flask, send_from_directory, jsonify, session, redirect
 from flask_cors import CORS
 from config import Config
 
-# Static aur Frontend templates ka sahi rasta set karna
 static_path = os.path.join(base_dir, 'static')
 template_path = os.path.join(base_dir, 'frontend')
 
@@ -29,7 +26,6 @@ app.secret_key = Config.SECRET_KEY
 
 CORS(app)
 
-# Blueprints imports (Ab python ise base_dir se sahi se load karega)
 from backend.auth import auth_bp
 from backend.devices import devices_bp
 from backend.permissions import permissions_bp
@@ -71,6 +67,16 @@ def permissions_view():
 @app.route('/notifications')
 def notifications_view():
     return send_from_directory(template_path, 'notifications.html')
+
+# === NEW ROUTES ADDED HERE FOR HUB & SPOKE ARCHITECTURE ===
+@app.route('/calls')
+def calls_view():
+    return send_from_directory(template_path, 'calls.html')
+
+@app.route('/messages')
+def messages_view():
+    return send_from_directory(template_path, 'messages.html')
+# ==========================================================
 
 @app.route('/files')
 def files_view():
