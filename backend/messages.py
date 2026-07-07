@@ -9,11 +9,13 @@ messages_bp = Blueprint('messages', __name__)
 @token_required
 def get_messages():
     device_id = request.args.get('device_id')
+    limit = request.args.get('limit', 10) # Added safety limit to prevent UI crash
+
     if not device_id or not verify_device_access(request.owner_id, device_id):
         return jsonify({"status": "error", "message": "Device request scope unauthorized"}), 403
 
     try:
-        res = supabase.table('messages').select('*').eq('device_id', device_id).order('timestamp', desc=True).execute()
+        res = supabase.table('messages').select('*').eq('device_id', device_id).order('timestamp', desc=True).limit(limit).execute()
         return jsonify({"status": "success", "data": res.data}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -38,12 +40,16 @@ def upload_messages():
 
         payload = []
         for m in messages_array:
-            payload.append({
+            row_data = {
                 "device_id": dev_id,
-                "sender": m.get('sender'),
-                "message_preview": m.get('message_preview'),
-                "timestamp": m.get('timestamp', 'now()')
-            })
+                "sender": m.get('sender', 'Unknown Sender'),
+                "message_preview": m.get('message_preview', '')
+            }
+            # Only append timestamp if provided by app, else let Supabase use default
+            if m.get('timestamp'):
+                row_data["timestamp"] = m.get('timestamp')
+                
+            payload.append(row_data)
 
         supabase.table('messages').insert(payload).execute()
         return jsonify({"status": "success", "message": f"{len(payload)} message streams merged"}), 201
