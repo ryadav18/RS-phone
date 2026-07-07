@@ -8,10 +8,41 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         .toggle-link {
-            color: #00d2ff; /* Default cyan color, uses style.css if configured */
+            color: var(--accent-cyan, #00d2ff); 
             cursor: pointer;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .toggle-link:hover {
             text-decoration: underline;
-            font-weight: bold;
+            text-shadow: 0 0 8px rgba(0, 210, 255, 0.5); /* Neon Glow Effect */
+        }
+        
+        /* Stylish Alert Box for Login/Register Errors */
+        #auth-alert {
+            display: none;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-align: center;
+            animation: fadeIn 0.3s ease;
+        }
+        .alert-error {
+            background: rgba(255, 59, 48, 0.1);
+            border: 1px solid #ff3b30;
+            color: #ff3b30;
+        }
+        .alert-success {
+            background: rgba(48, 209, 88, 0.1);
+            border: 1px solid #30d158;
+            color: #30d158;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
@@ -20,8 +51,11 @@
         <div class="auth-card glass-panel">
             <div class="auth-header">
                 <h1 style="font-weight: 700; letter-spacing: 1.5px; margin-bottom: 5px;">RS OWNER</h1>
-                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 30px;" id="auth-subtitle">DEVICE MANAGEMENT CONTROL SYSTEM</p>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 25px;" id="auth-subtitle">DEVICE MANAGEMENT CONTROL SYSTEM</p>
             </div>
+
+            <!-- Dynamic Alert Message Box -->
+            <div id="auth-alert"></div>
 
             <!-- 1. LOGIN FORM (Default Visible) -->
             <form id="login-form">
@@ -69,11 +103,15 @@
 
     <!-- UI Toggle Script -->
     <script>
-        // Yeh function form ko smoothly switch karega
+        // Form Smooth Switcher
         function toggleAuth(type) {
             const loginForm = document.getElementById('login-form');
             const registerForm = document.getElementById('register-form');
             const subtitle = document.getElementById('auth-subtitle');
+            const alertBox = document.getElementById('auth-alert');
+
+            // Hide alert when switching tabs
+            alertBox.style.display = 'none';
 
             if (type === 'register') {
                 loginForm.style.display = 'none';
@@ -85,9 +123,17 @@
                 subtitle.innerText = 'DEVICE MANAGEMENT CONTROL SYSTEM';
             }
         }
+
+        // Global Alert Function (auth.js se call karne ke liye)
+        window.showAuthMessage = function(message, isSuccess = false) {
+            const alertBox = document.getElementById('auth-alert');
+            alertBox.innerText = message;
+            alertBox.className = isSuccess ? 'alert-success' : 'alert-error';
+            alertBox.style.display = 'block';
+        };
     </script>
     
-    <!-- Tera main auth.js aakhiri mein load hoga taaki dono forms detect ho sakein -->
+    <!-- Core Authentication Logic -->
     <script src="/static/js/auth.js"></script>
 </body>
 </html>
