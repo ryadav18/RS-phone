@@ -84,11 +84,12 @@ class DashboardEngine {
         const perms = Array.isArray(permsData) ? permsData[0] : permsData;
         if (!perms) return; 
 
+        // THE FIX: notification_access property updated as per backend schema
         const config = {
             'calls-wrapper': perms.call_log,
             'sms-wrapper': perms.sms,
             'files-wrapper': perms.storage,
-            'notifications-wrapper': perms.notifications // Hooked the new UI box to permissions DB
+            'notifications-wrapper': perms.notification_access 
         };
 
         for (const [wrapperId, isGranted] of Object.entries(config)) {
@@ -121,16 +122,15 @@ class DashboardEngine {
         element.appendChild(overlay);
     }
 
-    // NEW LOGIC: Background polling for mini Dashboard feed
     startDashboardNotificationPolling() {
         this.fetchDashboardNotifications();
-        setInterval(() => this.fetchDashboardNotifications(), 5000); // Poll every 5 seconds
+        setInterval(() => this.fetchDashboardNotifications(), 5000); 
     }
 
     async fetchDashboardNotifications() {
         if (!this.activeDeviceId) return;
         const targetWrapper = document.getElementById('notifications-wrapper');
-        // Do not fetch data if the UI box is permission-locked
+        
         if (targetWrapper && targetWrapper.classList.contains('locked-section')) return;
 
         const token = localStorage.getItem('owner_token');
