@@ -103,14 +103,32 @@
 
             <!-- Permission-Locked Features -->
             <div class="dashboard-grid">
+                <!-- 1. INJECTED NOTIFICATIONS UI -->
+                <div class="glass-panel" id="notifications-wrapper" style="padding: 25px; min-height: 250px;">
+                    <h3 class="card-title">Live Notification Sync</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">Real-time incoming alerts from the target device.</p>
+                    <div id="dashboard-notif-feed" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
+                        <!-- Mini feed will dynamically load here -->
+                    </div>
+                    <a href="/notifications" style="display: block; margin-top: 15px; color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem; font-weight: bold;">View Full Logs >></a>
+                </div>
+
+                <!-- 2. UPGRADED CALL LOGS UI -->
                 <div class="glass-panel" id="calls-wrapper" style="padding: 25px; min-height: 250px;">
                     <h3 class="card-title">Secure Telephone Call Monitoring</h3>
                     <p style="color: var(--text-muted); font-size: 0.9rem;">Telephony activity tracking metrics verified under system permissions configurations.</p>
+                    <div id="dashboard-calls-feed" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
+                        <!-- Dynamic Call Logs will render here -->
+                    </div>
                 </div>
 
+                <!-- 3. UPGRADED SMS UI -->
                 <div class="glass-panel" id="sms-wrapper" style="padding: 25px; min-height: 250px;">
                     <h3 class="card-title">Text Message Transceiver History</h3>
                     <p style="color: var(--text-muted); font-size: 0.9rem;">Programmatic messages streams and log updates indicators storage.</p>
+                    <div id="dashboard-sms-feed" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
+                        <!-- Dynamic SMS will render here -->
+                    </div>
                 </div>
             </div>
         </main>
