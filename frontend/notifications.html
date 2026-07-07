@@ -32,7 +32,7 @@
             </header>
 
             <div class="glass-panel" style="padding: 25px;">
-                <div class="list-container" id="notifications-stream">
+                <div class="list-container" id="notifications-stream" style="display: flex; flex-direction: column; gap: 15px;">
                     <!-- Dynamic Stream Element Ingestion -->
                 </div>
             </div>
@@ -42,22 +42,30 @@
     <script src="/static/js/auth.js"></script>
     <script src="/static/js/app.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
+        document.addEventListener('DOMContentLoaded', () => {
             const token = localStorage.getItem('owner_token');
             const activeId = localStorage.getItem('active_device_id');
             if (!activeId) return;
 
-            try {
-                const res = await fetch(`/api/notifications?device_id=${activeId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const result = await res.json();
-                if (result.status === 'success') {
-                    renderStream(result.data);
+            // Core fetch function
+            const fetchNotifications = async () => {
+                try {
+                    const res = await fetch(`/api/notifications?device_id=${activeId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const result = await res.json();
+                    if (result.status === 'success') {
+                        renderStream(result.data);
+                    }
+                } catch (e) {
+                    console.error("Full feed sync error:", e);
                 }
-            } catch (e) {
-                console.error(e);
-            }
+            };
+
+            // First load
+            fetchNotifications();
+            // Polling interval: Auto refresh every 5 seconds
+            setInterval(fetchNotifications, 5000);
 
             document.getElementById('clear-feed')?.addEventListener('click', async () => {
                 const confirmClear = confirm('Are you sure you want to delete all notification history?');
@@ -72,7 +80,7 @@
                         },
                         body: JSON.stringify({ device_id: activeId })
                     });
-                    window.location.reload();
+                    fetchNotifications(); // Refresh list immediately after clear
                 } catch (err) {
                     console.error(err);
                 }
@@ -92,12 +100,23 @@
             items.forEach(n => {
                 const el = document.createElement('div');
                 el.className = 'list-item';
+                // Inline styling adjusted for better dark theme contrast
+                el.style.background = 'rgba(255, 255, 255, 0.05)';
+                el.style.padding = '15px';
+                el.style.borderRadius = '10px';
+                el.style.borderLeft = '4px solid var(--accent-cyan)';
+                el.style.display = 'flex';
+                el.style.justifyContent = 'space-between';
+                
                 el.innerHTML = `
-                    <div>
-                        <strong style="color: var(--accent-cyan);">${n.app_name}</strong> - ${n.title}
-                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 5px;">${n.message}</p>
+                    <div style="flex: 1;">
+                        <span style="color: var(--accent-cyan); font-weight: bold; margin-right: 10px;">[${n.app_name}]</span>
+                        <strong style="color: white; font-size: 1.1rem;">${n.title}</strong>
+                        <p style="color: #b0bec5; font-size: 0.95rem; margin-top: 8px;">${n.message}</p>
                     </div>
-                    <div style="color: var(--text-muted); font-size: 0.8rem;">${new Date(n.received_at).toLocaleTimeString()}</div>
+                    <div style="color: var(--text-muted); font-size: 0.85rem; white-space: nowrap; margin-left: 20px;">
+                        ${new Date(n.received_at).toLocaleString()}
+                    </div>
                 `;
                 container.appendChild(el);
             });
