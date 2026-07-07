@@ -7,133 +7,316 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        .toggle-link {
-            color: var(--accent-cyan, #00d2ff); 
-            cursor: pointer;
-            text-decoration: none;
-            font-weight: 600;
+        /* 1. Form Transition Animations */
+        .form-container {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 1;
+            transform: translateX(0);
+        }
+        .form-hidden {
+            opacity: 0;
+            transform: translateX(20px);
+            position: absolute;
+            pointer-events: none;
+            visibility: hidden;
+        }
+
+        /* 2. Floating Labels & Neon Glow */
+        .input-group {
+            position: relative;
+            margin-bottom: 25px;
+        }
+        .input-group input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 18px 45px 10px 15px; /* Space for icon */
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
             transition: all 0.3s ease;
         }
-        .toggle-link:hover {
-            text-decoration: underline;
-            text-shadow: 0 0 8px rgba(0, 210, 255, 0.5); /* Neon Glow Effect */
+        .input-group label {
+            position: absolute;
+            left: 15px;
+            top: 15px;
+            color: #888;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            pointer-events: none;
         }
-        
-        /* Stylish Alert Box for Login/Register Errors */
-        #auth-alert {
-            display: none;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 0.9rem;
+        .input-group input:focus, .input-group input:not(:placeholder-shown) {
+            border-color: var(--accent-cyan, #00d2ff);
+            box-shadow: 0 0 12px rgba(0, 210, 255, 0.2);
+        }
+        .input-group input:focus ~ label, .input-group input:not(:placeholder-shown) ~ label {
+            top: 4px;
+            font-size: 0.75rem;
+            color: var(--accent-cyan, #00d2ff);
             font-weight: 600;
-            text-align: center;
-            animation: fadeIn 0.3s ease;
         }
-        .alert-error {
-            background: rgba(255, 59, 48, 0.1);
-            border: 1px solid #ff3b30;
+
+        /* 3. Password Visibility Icon */
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 12px;
+            color: #888;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .toggle-password:hover { color: var(--accent-cyan); }
+
+        /* 4. Password Strength Meter */
+        .strength-meter {
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            margin-top: -15px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: all 0.3s ease;
+        }
+        .strength-weak { width: 33%; background: #ff3b30; box-shadow: 0 0 8px #ff3b30; }
+        .strength-medium { width: 66%; background: #ffcc00; box-shadow: 0 0 8px #ffcc00; }
+        .strength-strong { width: 100%; background: #30d158; box-shadow: 0 0 8px #30d158; }
+
+        /* Error Text */
+        .error-msg {
             color: #ff3b30;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            display: none;
+            text-align: left;
         }
-        .alert-success {
-            background: rgba(48, 209, 88, 0.1);
-            border: 1px solid #30d158;
-            color: #30d158;
+
+        /* Action Links */
+        .auth-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .checkbox-group { display: flex; align-items: center; gap: 8px; color: #ccc; cursor: pointer; }
+        .toggle-link { color: var(--accent-cyan, #00d2ff); cursor: pointer; text-decoration: none; font-weight: 600; transition: all 0.3s ease; }
+        .toggle-link:hover { text-shadow: 0 0 8px rgba(0, 210, 255, 0.5); }
+
+        /* Loading Spinner Animation */
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .btn-spinner { animation: spin 1s linear infinite; display: none; margin: 0 auto; }
+        
+        /* Alerts */
+        #auth-alert {
+            display: none; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; font-weight: 600; text-align: center;
+        }
+        .alert-error { background: rgba(255, 59, 48, 0.1); border: 1px solid #ff3b30; color: #ff3b30; }
+        .alert-success { background: rgba(48, 209, 88, 0.1); border: 1px solid #30d158; color: #30d158; }
+
+        /* Security Disclaimer */
+        .security-audit {
+            margin-top: 25px;
+            font-size: 0.75rem;
+            color: #555;
+            text-align: center;
+            border-top: 1px solid #222;
+            padding-top: 15px;
         }
     </style>
 </head>
 <body>
-    <div class="auth-wrapper">
-        <div class="auth-card glass-panel">
+    <div class="auth-wrapper" style="position: relative; overflow: hidden;">
+        <div class="auth-card glass-panel" style="position: relative;">
             <div class="auth-header">
+                <!-- Branding Shield -->
+                <i data-lucide="shield-alert" style="width: 40px; height: 40px; color: var(--accent-cyan); margin-bottom: 10px;"></i>
                 <h1 style="font-weight: 700; letter-spacing: 1.5px; margin-bottom: 5px;">RS OWNER</h1>
-                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 25px;" id="auth-subtitle">DEVICE MANAGEMENT CONTROL SYSTEM</p>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 25px;" id="auth-subtitle">SECURE SYSTEM AUTHORIZATION</p>
             </div>
 
-            <!-- Dynamic Alert Message Box -->
             <div id="auth-alert"></div>
 
-            <!-- 1. LOGIN FORM (Default Visible) -->
-            <form id="login-form">
-                <div class="form-group">
-                    <label for="email">Owner Registered Email</label>
-                    <input type="email" id="email" required placeholder="owner@devicemanagement.com">
-                </div>
-                <div class="form-group">
-                    <label for="password">Security Password Key</label>
-                    <input type="password" id="password" required placeholder="••••••••">
-                </div>
-                <button type="submit" class="primary-btn">ACCESS SECURE WORKSPACE</button>
-                
-                <div style="margin-top: 15px; text-align: center; font-size: 0.9rem; color: var(--text-muted);">
-                    New to RS Phone? <span class="toggle-link" onclick="toggleAuth('register')">Register here</span>
-                </div>
-            </form>
+            <div style="position: relative; min-height: 350px;">
+                <!-- 1. LOGIN FORM -->
+                <form id="login-form" class="form-container">
+                    <div class="input-group">
+                        <input type="email" id="email" required placeholder=" ">
+                        <label for="email">Registered Node Email</label>
+                    </div>
+                    
+                    <div class="input-group">
+                        <input type="password" id="password" required placeholder=" ">
+                        <label for="password">Security Authorization Key</label>
+                        <i data-lucide="eye" class="toggle-password" onclick="togglePassword('password', this)"></i>
+                    </div>
 
-            <!-- 2. REGISTRATION FORM (Hidden by Default) -->
-            <form id="register-form" style="display: none;">
-                <div class="form-group">
-                    <label for="reg-name">Full Name</label>
-                    <input type="text" id="reg-name" required placeholder="System Admin">
-                </div>
-                <div class="form-group">
-                    <label for="reg-email">Owner Email</label>
-                    <input type="email" id="reg-email" required placeholder="owner@devicemanagement.com">
-                </div>
-                <div class="form-group">
-                    <label for="reg-password">Security Password Key</label>
-                    <input type="password" id="reg-password" required placeholder="••••••••">
-                </div>
-                <button type="submit" class="primary-btn">REGISTER NEW ACCOUNT</button>
-                
-                <div style="margin-top: 15px; text-align: center; font-size: 0.9rem; color: var(--text-muted);">
-                    Already have an account? <span class="toggle-link" onclick="toggleAuth('login')">Login here</span>
-                </div>
-            </form>
+                    <div class="auth-actions">
+                        <label class="checkbox-group">
+                            <input type="checkbox" id="remember-me"> Keep Workspace Active
+                        </label>
+                        <span class="toggle-link" style="font-size: 0.8rem;">Lost Access Key?</span>
+                    </div>
 
-            <div style="margin-top: 25px; font-size: 0.85rem; color: var(--text-muted); text-align: center;">
-                Authorized operations validation protocol. Ensure target nodes connection.
+                    <button type="submit" class="primary-btn" id="login-btn">
+                        <span class="btn-text">INITIALIZE CONNECTION</span>
+                        <i data-lucide="loader-2" class="btn-spinner"></i>
+                    </button>
+                    
+                    <div style="margin-top: 20px; text-align: center; font-size: 0.9rem; color: var(--text-muted);">
+                        Require node registration? <span class="toggle-link" onclick="switchForms('register')">Request Access</span>
+                    </div>
+                </form>
+
+                <!-- 2. REGISTRATION FORM -->
+                <form id="register-form" class="form-container form-hidden">
+                    <div class="input-group">
+                        <input type="text" id="reg-name" required placeholder=" ">
+                        <label for="reg-name">Administrator Designation</label>
+                    </div>
+                    
+                    <div class="input-group">
+                        <input type="email" id="reg-email" required placeholder=" ">
+                        <label for="reg-email">Secure Communication Email</label>
+                    </div>
+                    
+                    <div class="input-group" style="margin-bottom: 10px;">
+                        <input type="password" id="reg-password" required placeholder=" ">
+                        <label for="reg-password">Generate Master Key</label>
+                        <i data-lucide="eye" class="toggle-password" onclick="togglePassword('reg-password', this)"></i>
+                    </div>
+                    <div class="strength-meter"><div id="strength-bar" class="strength-bar"></div></div>
+                    
+                    <div class="input-group">
+                        <input type="password" id="reg-confirm-password" required placeholder=" ">
+                        <label for="reg-confirm-password">Verify Master Key</label>
+                        <div id="match-error" class="error-msg">Keys do not match. Verification failed.</div>
+                    </div>
+
+                    <button type="submit" class="primary-btn" id="register-btn">
+                        <span class="btn-text">ESTABLISH NEW NODE</span>
+                        <i data-lucide="loader-2" class="btn-spinner"></i>
+                    </button>
+                    
+                    <div style="margin-top: 20px; text-align: center; font-size: 0.9rem; color: var(--text-muted);">
+                        Existing network admin? <span class="toggle-link" onclick="switchForms('login')">Authenticate Here</span>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Security Audit Disclaimer -->
+            <div class="security-audit">
+                <i data-lucide="info" style="width: 12px; height: 12px; display: inline-block; vertical-align: middle;"></i>
+                WARNING: Unauthorized access is strictly prohibited. Terminal fingerprints and network IP addresses are actively logged and monitored.
             </div>
         </div>
     </div>
 
-    <!-- UI Toggle Script -->
     <script>
-        // Form Smooth Switcher
-        function toggleAuth(type) {
+        lucide.createIcons();
+
+        // UI Form Switcher Animation
+        function switchForms(target) {
             const loginForm = document.getElementById('login-form');
             const registerForm = document.getElementById('register-form');
             const subtitle = document.getElementById('auth-subtitle');
-            const alertBox = document.getElementById('auth-alert');
+            document.getElementById('auth-alert').style.display = 'none';
 
-            // Hide alert when switching tabs
-            alertBox.style.display = 'none';
-
-            if (type === 'register') {
-                loginForm.style.display = 'none';
-                registerForm.style.display = 'block';
-                subtitle.innerText = 'CREATE NEW SECURE WORKSPACE';
+            if (target === 'register') {
+                loginForm.classList.add('form-hidden');
+                setTimeout(() => {
+                    loginForm.style.position = 'absolute';
+                    registerForm.style.position = 'relative';
+                    registerForm.classList.remove('form-hidden');
+                    subtitle.innerText = 'PROVISION NEW ADMINISTRATOR';
+                }, 300); // Wait for fade out
             } else {
-                registerForm.style.display = 'none';
-                loginForm.style.display = 'block';
-                subtitle.innerText = 'DEVICE MANAGEMENT CONTROL SYSTEM';
+                registerForm.classList.add('form-hidden');
+                setTimeout(() => {
+                    registerForm.style.position = 'absolute';
+                    loginForm.style.position = 'relative';
+                    loginForm.classList.remove('form-hidden');
+                    subtitle.innerText = 'SECURE SYSTEM AUTHORIZATION';
+                }, 300);
             }
         }
 
-        // Global Alert Function (auth.js se call karne ke liye)
+        // Password Visibility Logic
+        function togglePassword(inputId, iconElement) {
+            const input = document.getElementById(inputId);
+            if (input.type === "password") {
+                input.type = "text";
+                iconElement.setAttribute("data-lucide", "eye-off");
+            } else {
+                input.type = "password";
+                iconElement.setAttribute("data-lucide", "eye");
+            }
+            lucide.createIcons();
+        }
+
+        // Real-time Password Strength Tracker
+        const regPassword = document.getElementById('reg-password');
+        const strengthBar = document.getElementById('strength-bar');
+        
+        regPassword.addEventListener('input', function() {
+            const val = regPassword.value;
+            let strength = 0;
+            
+            if (val.length > 5) strength += 1;
+            if (val.match(/[A-Z]/) && val.match(/[0-9]/)) strength += 1;
+            if (val.match(/[^a-zA-Z\d]/) && val.length > 7) strength += 1;
+
+            strengthBar.className = 'strength-bar';
+            if (val.length === 0) return;
+            if (strength === 0 || strength === 1) strengthBar.classList.add('strength-weak');
+            else if (strength === 2) strengthBar.classList.add('strength-medium');
+            else if (strength === 3) strengthBar.classList.add('strength-strong');
+        });
+
+        // Real-time Confirm Password Match
+        const confirmPassword = document.getElementById('reg-confirm-password');
+        const matchError = document.getElementById('match-error');
+        
+        confirmPassword.addEventListener('input', function() {
+            if (confirmPassword.value !== regPassword.value && confirmPassword.value !== "") {
+                matchError.style.display = 'block';
+                confirmPassword.style.borderColor = '#ff3b30';
+            } else {
+                matchError.style.display = 'none';
+                confirmPassword.style.borderColor = ''; // reset to default
+            }
+        });
+
+        // Global Alert System & Spinner UI Hook (For your auth.js)
         window.showAuthMessage = function(message, isSuccess = false) {
             const alertBox = document.getElementById('auth-alert');
             alertBox.innerText = message;
             alertBox.className = isSuccess ? 'alert-success' : 'alert-error';
             alertBox.style.display = 'block';
         };
+
+        window.toggleButtonLoading = function(buttonId, isLoading) {
+            const btn = document.getElementById(buttonId);
+            const text = btn.querySelector('.btn-text');
+            const spinner = btn.querySelector('.btn-spinner');
+            
+            if (isLoading) {
+                text.style.display = 'none';
+                spinner.style.display = 'block';
+                btn.disabled = true;
+                btn.style.opacity = '0.7';
+            } else {
+                text.style.display = 'block';
+                spinner.style.display = 'none';
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
+        };
     </script>
-    
-    <!-- Core Authentication Logic -->
     <script src="/static/js/auth.js"></script>
 </body>
 </html>
