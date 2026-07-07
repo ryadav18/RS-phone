@@ -9,11 +9,13 @@ logs_bp = Blueprint('logs', __name__)
 @token_required
 def get_logs():
     device_id = request.args.get('device_id')
+    limit = request.args.get('limit', 150) # Prevents UI overload
+
     if not device_id or not verify_device_access(request.owner_id, device_id):
         return jsonify({"status": "error", "message": "Access permission denied for current owner context"}), 403
 
     try:
-        res = supabase.table('activity_logs').select('*').eq('device_id', device_id).order('timestamp', desc=True).execute()
+        res = supabase.table('activity_logs').select('*').eq('device_id', device_id).order('timestamp', desc=True).limit(limit).execute()
         return jsonify({"status": "success", "data": res.data}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -40,5 +42,21 @@ def create_log():
 
         res = supabase.table('activity_logs').insert(payload).execute()
         return jsonify({"status": "success", "data": res.data[0]}), 201
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# STORAGE MANAGEMENT: Clear Logs API
+@logs_bp.route('/api/logs/clear', methods=['POST'])
+@token_required
+def clear_logs():
+    data = request.json or {}
+    device_id = data.get('device_id')
+
+    if not device_id or not verify_device_access(request.owner_id, device_id):
+        return jsonify({"status": "error", "message": "Access permission denied"}), 403
+
+    try:
+        supabase.table('activity_logs').delete().eq('device_id', device_id).execute()
+        return jsonify({"status": "success", "message": "System logs wiped cleanly"}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
