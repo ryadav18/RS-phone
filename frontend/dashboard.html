@@ -10,15 +10,12 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
         body { background-color: #121212; padding: 15px; padding-bottom: 40px; color: #ffffff; }
         
-        /* Header & Selector */
         .header { text-align: center; margin-bottom: 20px; }
         .header h2 { font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #ffffff; }
         .device-selector { width: 100%; padding: 12px; margin-top: 15px; border-radius: 4px; border: 1px solid #333; background: #1e1e1e; color: white; font-size: 16px; outline: none; }
 
-        /* The Vertical Layout Engine */
         .card-container { display: flex; flex-direction: column; gap: 12px; }
         
-        /* Flat Card Architecture */
         .flat-card {
             display: flex; flex-direction: column; justify-content: center;
             padding: 22px 20px; border-radius: 4px; color: white; 
@@ -26,7 +23,6 @@
             border-bottom: 3px solid rgba(0,0,0,0.3);
         }
         
-        /* Layout Inside Cards */
         .card-content { display: flex; align-items: center; justify-content: space-between; width: 100%; }
         .card-left { display: flex; align-items: center; gap: 16px; z-index: 2; }
         .card-icon { width: 42px; height: 42px; opacity: 0.9; }
@@ -38,15 +34,12 @@
         .metric-value { font-size: 28px; font-weight: 700; }
         .metric-label { font-size: 12px; opacity: 0.8; text-transform: uppercase; }
 
-        /* Actions (Buttons inside cards) */
         .action-row { display: flex; gap: 10px; margin-top: 15px; width: 100%; z-index: 2; }
         .btn { flex: 1; padding: 12px; border: none; border-radius: 4px; font-weight: 600; font-size: 14px; text-transform: uppercase; cursor: pointer; background: rgba(255,255,255,0.2); color: white; transition: background 0.2s; }
         .btn:active { background: rgba(0,0,0,0.3); }
 
-        /* Background Watermark Icon */
         .bg-icon { position: absolute; right: -20px; top: -10px; width: 120px; height: 120px; opacity: 0.1; z-index: 1; transform: rotate(-15deg); }
 
-        /* Solid Flat Colors (No Lag Gradients) */
         .bg-dark { background-color: #2c3e50; }
         .bg-red { background-color: #e74c3c; }
         .bg-green { background-color: #2ecc71; }
@@ -55,8 +48,7 @@
         .bg-purple { background-color: #8e44ad; }
         .bg-yellow { background-color: #f39c12; }
         .bg-orange { background-color: #d35400; }
-        .bg-pink { background-color: #c0392b; } /* Deep security red/pink */
-
+        .bg-pink { background-color: #c0392b; }
     </style>
 </head>
 <body>
@@ -68,10 +60,8 @@
         </select>
     </div>
 
-    <!-- The Vertical Dashboard Stack -->
     <div class="card-container">
-
-        <!-- 1. Connection Status -->
+        <!-- 1. Connection -->
         <div class="flat-card bg-dark">
             <i data-lucide="radio" class="bg-icon"></i>
             <div class="card-content">
@@ -85,12 +75,12 @@
             </div>
         </div>
 
-        <!-- 2. Battery Engine -->
+        <!-- 2. Battery -->
         <div class="flat-card bg-red" id="battery-card">
             <i data-lucide="battery-charging" class="bg-icon"></i>
             <div class="card-content">
                 <div class="card-left">
-                    <i data-lucide="battery" class="card-icon" id="battery-icon"></i>
+                    <i data-lucide="battery" class="card-icon"></i>
                     <div class="card-text">
                         <span class="card-title">Battery</span>
                         <span class="card-subtitle" id="battery-state">Discharging</span>
@@ -120,7 +110,7 @@
             </div>
         </div>
 
-        <!-- 4. Security Shield (Device Admin) -->
+        <!-- 4. Security Shield (ID ADDED) -->
         <div class="flat-card bg-pink">
             <i data-lucide="shield-alert" class="bg-icon"></i>
             <div class="card-content">
@@ -128,7 +118,7 @@
                     <i data-lucide="shield" class="card-icon"></i>
                     <div class="card-text">
                         <span class="card-title">Security Shield</span>
-                        <span class="card-subtitle">Admin Protected</span>
+                        <span class="card-subtitle" id="metric-shield-status">Admin Protected</span>
                     </div>
                 </div>
             </div>
@@ -137,7 +127,7 @@
             </div>
         </div>
 
-        <!-- 5. App Usage (Screen Time) -->
+        <!-- 5. App Usage (ID ADDED) -->
         <div class="flat-card bg-yellow">
             <i data-lucide="activity" class="bg-icon"></i>
             <div class="card-content">
@@ -149,12 +139,12 @@
                     </div>
                 </div>
                 <div class="card-right">
-                    <div class="metric-value">Active</div>
+                    <div class="metric-value" id="metric-app-usage">Active</div>
                 </div>
             </div>
         </div>
 
-        <!-- 6. Smart Web Filter (Accessibility) -->
+        <!-- 6. Web Filter (ID ADDED) -->
         <div class="flat-card bg-orange">
             <i data-lucide="globe" class="bg-icon"></i>
             <div class="card-content">
@@ -162,7 +152,7 @@
                     <i data-lucide="eye-off" class="card-icon"></i>
                     <div class="card-text">
                         <span class="card-title">Web Filter</span>
-                        <span class="card-subtitle">Content Block Engine</span>
+                        <span class="card-subtitle" id="metric-filter-status">Content Block Engine</span>
                     </div>
                 </div>
             </div>
@@ -171,7 +161,7 @@
             </div>
         </div>
 
-        <!-- 7. Live Operations (Screen & Audio) - SNIPPET ADDED HERE -->
+        <!-- 7. Live Ops -->
         <div class="flat-card bg-teal">
             <i data-lucide="cast" class="bg-icon"></i>
             <div class="card-content">
@@ -189,7 +179,7 @@
             </div>
         </div>
 
-        <!-- 8. Core Data: Notifications -->
+        <!-- 8. Notifications -->
         <a href="/notifications" class="flat-card bg-blue">
             <i data-lucide="bell" class="bg-icon"></i>
             <div class="card-content">
@@ -200,70 +190,12 @@
                         <span class="card-subtitle">Live Stream</span>
                     </div>
                 </div>
-                <div class="card-right">
-                    <div class="metric-value">></div>
-                </div>
+                <div class="card-right"><div class="metric-value">></div></div>
             </div>
         </a>
-
-        <!-- 9. Core Data: SMS -->
-        <a href="/messages" class="flat-card bg-blue">
-            <i data-lucide="message-square" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="message-square" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">SMS Messages</span>
-                        <span class="card-subtitle">Intercepted</span>
-                    </div>
-                </div>
-                <div class="card-right">
-                    <div class="metric-value">></div>
-                </div>
-            </div>
-        </a>
-
-        <!-- 10. Core Data: Calls -->
-        <a href="/calls" class="flat-card bg-blue">
-            <i data-lucide="phone" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="phone-call" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">Call Logs</span>
-                        <span class="card-subtitle">History</span>
-                    </div>
-                </div>
-                <div class="card-right">
-                    <div class="metric-value">></div>
-                </div>
-            </div>
-        </a>
-
-        <!-- 11. System Logs -->
-        <a href="/logs" class="flat-card bg-dark">
-            <i data-lucide="terminal" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="terminal-square" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">System Logs</span>
-                        <span class="card-subtitle">Audit Trail</span>
-                    </div>
-                </div>
-                <div class="card-right">
-                    <div class="metric-value">></div>
-                </div>
-            </div>
-        </a>
-
     </div>
 
-    <!-- Render Icons -->
-    <script>
-        lucide.createIcons();
-    </script>
-    <!-- Connect Backend Data Script -->
+    <script> lucide.createIcons(); </script>
     <script src="/static/js/dashboard.js"></script>
 </body>
 </html>
