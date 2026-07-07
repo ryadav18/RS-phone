@@ -9,6 +9,9 @@ notifications_bp = Blueprint('notifications', __name__)
 @token_required
 def get_notifications():
     device_id = request.args.get('device_id')
+    # Limit lagana zaroori h taki dashboard crash na ho
+    limit = request.args.get('limit', 100) 
+
     if not device_id:
         return jsonify({"status": "error", "message": "Query parameter device_id missing"}), 400
 
@@ -16,7 +19,8 @@ def get_notifications():
         return jsonify({"status": "error", "message": "Unauthorized access attempt"}), 403
 
     try:
-        res = supabase.table('notifications').select('*').eq('device_id', device_id).order('received_at', desc=True).execute()
+        # Paginating the response to maximum 100 recent notifications
+        res = supabase.table('notifications').select('*').eq('device_id', device_id).order('received_at', desc=True).limit(limit).execute()
         return jsonify({"status": "success", "data": res.data}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -41,14 +45,18 @@ def upload_notifications():
 
         inserted_rows = []
         for n in items:
-            inserted_rows.append({
+            row_data = {
                 "device_id": dev_id,
-                "app_name": n.get('app_name', 'System'),
+                "app_name": n.get('app_name', 'System').strip(),
                 "app_icon": n.get('app_icon', ''),
-                "title": n.get('title', ''),
-                "message": n.get('message', ''),
-                "received_at": n.get('received_at', 'now()')
-            })
+                "title": n.get('title', 'Unknown').strip(),
+                "message": n.get('message', '').strip()
+            }
+            # Agar Android se timestamp aaya h tabhi bhejo, warna DB khud default set krega
+            if n.get('received_at'):
+                row_data["received_at"] = n.get('received_at')
+                
+            inserted_rows.append(row_data)
 
         supabase.table('notifications').insert(inserted_rows).execute()
         return jsonify({"status": "success", "message": f"{len(inserted_rows)} records successfully synced"}), 201
