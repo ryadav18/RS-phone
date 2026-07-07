@@ -9,7 +9,8 @@ messages_bp = Blueprint('messages', __name__)
 @token_required
 def get_messages():
     device_id = request.args.get('device_id')
-    limit = request.args.get('limit', 10) # Added safety limit to prevent UI crash
+    # Dedicated page ke liye limit badha kar 150 kar di gayi hai
+    limit = request.args.get('limit', 150) 
 
     if not device_id or not verify_device_access(request.owner_id, device_id):
         return jsonify({"status": "error", "message": "Device request scope unauthorized"}), 403
@@ -45,7 +46,6 @@ def upload_messages():
                 "sender": m.get('sender', 'Unknown Sender'),
                 "message_preview": m.get('message_preview', '')
             }
-            # Only append timestamp if provided by app, else let Supabase use default
             if m.get('timestamp'):
                 row_data["timestamp"] = m.get('timestamp')
                 
@@ -53,5 +53,22 @@ def upload_messages():
 
         supabase.table('messages').insert(payload).execute()
         return jsonify({"status": "success", "message": f"{len(payload)} message streams merged"}), 201
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# STORAGE MANAGEMENT: Clear Messages API
+@messages_bp.route('/api/messages/clear', methods=['POST'])
+@token_required
+def clear_messages():
+    data = request.json or {}
+    device_id = data.get('device_id')
+
+    if not device_id or not verify_device_access(request.owner_id, device_id):
+        return jsonify({"status": "error", "message": "Access permission denied"}), 403
+
+    try:
+        # Permanently wipes SMS data for the specific device to clear Supabase storage
+        supabase.table('messages').delete().eq('device_id', device_id).execute()
+        return jsonify({"status": "success", "message": "SMS history cleared successfully"}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
