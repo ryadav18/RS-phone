@@ -6,9 +6,17 @@
     <title>Synchronized Broadcast Center - RS OWNER</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .data-list-container {
+            max-height: 75vh;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+    </style>
 </head>
 <body>
     <div class="app-container">
+        <!-- Sidebar with fully updated Hub & Spoke Links -->
         <div class="sidebar glass-panel">
             <div class="sidebar-brand">
                 <i data-lucide="shield" style="color: var(--accent-cyan);"></i>
@@ -18,22 +26,28 @@
                 <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
                 <li><a href="/permissions"><i data-lucide="shield-check"></i> Permissions</a></li>
                 <li class="active"><a href="/notifications"><i data-lucide="bell"></i> Notifications</a></li>
+                <li><a href="/calls"><i data-lucide="phone"></i> Call Logs</a></li>
+                <li><a href="/messages"><i data-lucide="message-square"></i> SMS History</a></li>
                 <li><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
-                <li><a href="/logs"><i data-lucide="file-text"></i> System Logs</a></li>
+                <li><a href="/logs"><i data-lucide="terminal"></i> System Logs</a></li>
             </ul>
         </div>
         <main class="main-content">
             <header class="topbar">
                 <h2 style="font-weight: 700;">Realtime Notification Feed</h2>
-                <div style="display: flex; gap: 15px; align-items: center;">
-                    <button class="primary-btn" id="clear-feed" style="padding: 10px 20px;">Clear Streams</button>
-                    <select id="device-select" class="glass-panel" style="background: rgba(0,0,0,0.5); padding: 8px 15px; color: white;"></select>
+                <div class="device-switcher" style="display: flex; align-items: center; gap: 15px;">
+                    <select id="device-select"></select>
+                    <!-- Connected to Notifications Engine Wipe Function -->
+                    <button onclick="wipeNotificationsHistory()" style="background: #ff3b30; color: white; border: none; border-radius: 5px; padding: 8px 15px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; transition: 0.3s;">
+                        <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i> Wipe Notifications
+                    </button>
                 </div>
             </header>
 
             <div class="glass-panel" style="padding: 25px;">
-                <div class="list-container" id="notifications-stream" style="display: flex; flex-direction: column; gap: 15px;">
-                    <!-- Dynamic Stream Element Ingestion -->
+                <!-- Engine targets this specific ID -->
+                <div class="data-list-container" id="dashboard-notif-feed" style="display: flex; flex-direction: column; gap: 15px;">
+                    <div style="color: #888; text-align: center; padding: 20px;">Fetching encrypted notifications...</div>
                 </div>
             </div>
         </main>
@@ -41,86 +55,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/static/js/auth.js"></script>
     <script src="/static/js/app.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const token = localStorage.getItem('owner_token');
-            const activeId = localStorage.getItem('active_device_id');
-            if (!activeId) return;
-
-            // Core fetch function
-            const fetchNotifications = async () => {
-                try {
-                    const res = await fetch(`/api/notifications?device_id=${activeId}`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    const result = await res.json();
-                    if (result.status === 'success') {
-                        renderStream(result.data);
-                    }
-                } catch (e) {
-                    console.error("Full feed sync error:", e);
-                }
-            };
-
-            // First load
-            fetchNotifications();
-            // Polling interval: Auto refresh every 5 seconds
-            setInterval(fetchNotifications, 5000);
-
-            document.getElementById('clear-feed')?.addEventListener('click', async () => {
-                const confirmClear = confirm('Are you sure you want to delete all notification history?');
-                if (!confirmClear) return;
-                
-                try {
-                    await fetch('/api/notifications/clear', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({ device_id: activeId })
-                    });
-                    fetchNotifications(); // Refresh list immediately after clear
-                } catch (err) {
-                    console.error(err);
-                }
-            });
-        });
-
-        function renderStream(items) {
-            const container = document.getElementById('notifications-stream');
-            if (!container) return;
-            container.innerHTML = '';
-
-            if (items.length === 0) {
-                container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 40px;">No incoming events currently archived.</div>';
-                return;
-            }
-
-            items.forEach(n => {
-                const el = document.createElement('div');
-                el.className = 'list-item';
-                // Inline styling adjusted for better dark theme contrast
-                el.style.background = 'rgba(255, 255, 255, 0.05)';
-                el.style.padding = '15px';
-                el.style.borderRadius = '10px';
-                el.style.borderLeft = '4px solid var(--accent-cyan)';
-                el.style.display = 'flex';
-                el.style.justifyContent = 'space-between';
-                
-                el.innerHTML = `
-                    <div style="flex: 1;">
-                        <span style="color: var(--accent-cyan); font-weight: bold; margin-right: 10px;">[${n.app_name}]</span>
-                        <strong style="color: white; font-size: 1.1rem;">${n.title}</strong>
-                        <p style="color: #b0bec5; font-size: 0.95rem; margin-top: 8px;">${n.message}</p>
-                    </div>
-                    <div style="color: var(--text-muted); font-size: 0.85rem; white-space: nowrap; margin-left: 20px;">
-                        ${new Date(n.received_at).toLocaleString()}
-                    </div>
-                `;
-                container.appendChild(el);
-            });
-        }
-    </script>
+    <!-- Directly linked to the new engine -->
+    <script src="/static/js/notifications_engine.js"></script>
+    <script>lucide.createIcons();</script>
 </body>
 </html>
