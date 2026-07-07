@@ -3,9 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trace Log System Logs - RS OWNER</title>
+    <title>Trace Log System - RS OWNER</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Pro-level Terminal UI Styling */
+        .terminal-container {
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Courier New', Courier, monospace;
+            max-height: 70vh;
+            overflow-y: auto;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+        }
+        .log-entry {
+            border-bottom: 1px solid #1f1f1f;
+            padding: 10px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        .log-time {
+            color: #888;
+            font-size: 0.8rem;
+        }
+        .log-type {
+            color: var(--accent-cyan);
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+        .log-desc {
+            color: #00ff00; /* Hacker Green */
+            font-size: 0.9rem;
+        }
+    </style>
 </head>
 <body>
     <div class="app-container">
@@ -25,14 +61,19 @@
         <main class="main-content">
             <header class="topbar">
                 <h2 style="font-weight: 700;">System Event Audit Trail</h2>
-                <div class="device-switcher">
+                <div class="device-switcher" style="display: flex; align-items: center; gap: 15px;">
                     <select id="device-select"></select>
+                    <!-- Storage Cleanup Button -->
+                    <button onclick="wipeSystemLogs()" style="background: #ff3b30; color: white; border: none; border-radius: 5px; padding: 8px 15px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; transition: 0.3s;">
+                        <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i> Wipe Logs
+                    </button>
                 </div>
             </header>
 
             <div class="glass-panel" style="padding: 25px;">
-                <div class="list-container" id="logs-list">
+                <div class="terminal-container" id="logs-list">
                     <!-- Event logs container -->
+                    <div style="color: #888; text-align: center; padding: 20px;">Establishing secure connection...</div>
                 </div>
             </div>
         </main>
@@ -42,6 +83,7 @@
     <script src="/static/js/app.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
             const token = localStorage.getItem('owner_token');
             const activeId = localStorage.getItem('active_device_id');
             if (!activeId) return;
@@ -65,23 +107,49 @@
             container.innerHTML = '';
 
             if (logs.length === 0) {
-                container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 40px;">No transaction activities logs discovered.</div>';
+                container.innerHTML = '<div style="color: #555; text-align: center; padding: 40px;">> No system activity recorded in database.</div>';
                 return;
             }
 
             logs.forEach(l => {
                 const el = document.createElement('div');
-                el.className = 'list-item';
+                el.className = 'log-entry';
                 el.innerHTML = `
-                    <div>
-                        <strong style="color: var(--accent-cyan);">${l.event_type}</strong>
-                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 5px;">${l.description}</p>
-                    </div>
-                    <div style="color: var(--text-muted); font-size: 0.85rem;">${new Date(l.timestamp).toLocaleString()}</div>
+                    <div class="log-time">[${new Date(l.timestamp).toLocaleString()}]</div>
+                    <div class="log-type">>> ${l.event_type}</div>
+                    <div class="log-desc">   ${l.description}</div>
                 `;
                 container.appendChild(el);
             });
         }
+
+        // STORAGE MANAGEMENT: Trigger Backend Delete API
+        window.wipeSystemLogs = async function() {
+            if(!confirm("WARNING: Are you sure you want to permanently delete all system logs for this device? This cannot be undone.")) return;
+            
+            const token = localStorage.getItem('owner_token');
+            const activeId = localStorage.getItem('active_device_id');
+            
+            try {
+                const res = await fetch('/api/logs/clear', {
+                    method: 'POST',
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ device_id: activeId })
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    alert("System logs wiped cleanly. Storage optimized.");
+                    window.location.reload();
+                } else {
+                    alert("Failed to wipe logs: " + result.message);
+                }
+            } catch (e) {
+                console.error("Wipe Action Failed:", e);
+            }
+        };
     </script>
 </body>
 </html>
