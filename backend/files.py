@@ -9,11 +9,14 @@ files_bp = Blueprint('files', __name__)
 @token_required
 def get_files():
     device_id = request.args.get('device_id')
+    # Pagination limit taaki browser crash na ho
+    limit = request.args.get('limit', 150) 
+    
     if not device_id or not verify_device_access(request.owner_id, device_id):
         return jsonify({"status": "error", "message": "Access validation check failed"}), 403
 
     try:
-        res = supabase.table('files').select('*').eq('device_id', device_id).order('uploaded_at', desc=True).execute()
+        res = supabase.table('files').select('*').eq('device_id', device_id).order('uploaded_at', desc=True).limit(limit).execute()
         return jsonify({"status": "success", "data": res.data}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -45,5 +48,21 @@ def upload_file_tracker():
 
         res = supabase.table('files').insert(payload).execute()
         return jsonify({"status": "success", "data": res.data[0]}), 201
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# STORAGE MANAGEMENT: Clear File Logs API
+@files_bp.route('/api/files/clear', methods=['POST'])
+@token_required
+def clear_files():
+    data = request.json or {}
+    device_id = data.get('device_id')
+
+    if not device_id or not verify_device_access(request.owner_id, device_id):
+        return jsonify({"status": "error", "message": "Access permission denied"}), 403
+
+    try:
+        supabase.table('files').delete().eq('device_id', device_id).execute()
+        return jsonify({"status": "success", "message": "Storage catalog cleared"}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
