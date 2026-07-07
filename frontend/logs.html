@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* Pro-level Terminal UI Styling */
         .terminal-container {
             background: #0a0a0a;
             border: 1px solid #333;
@@ -18,33 +17,11 @@
             overflow-y: auto;
             box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
         }
-        .log-entry {
-            border-bottom: 1px solid #1f1f1f;
-            padding: 10px 0;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-        .log-entry:last-child {
-            border-bottom: none;
-        }
-        .log-time {
-            color: #888;
-            font-size: 0.8rem;
-        }
-        .log-type {
-            color: var(--accent-cyan);
-            font-weight: bold;
-            font-size: 0.95rem;
-        }
-        .log-desc {
-            color: #00ff00; /* Hacker Green */
-            font-size: 0.9rem;
-        }
     </style>
 </head>
 <body>
     <div class="app-container">
+        <!-- Sidebar with fully updated Hub & Spoke Links -->
         <div class="sidebar glass-panel">
             <div class="sidebar-brand">
                 <i data-lucide="shield" style="color: var(--accent-cyan);"></i>
@@ -54,8 +31,10 @@
                 <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
                 <li><a href="/permissions"><i data-lucide="shield-check"></i> Permissions</a></li>
                 <li><a href="/notifications"><i data-lucide="bell"></i> Notifications</a></li>
+                <li><a href="/calls"><i data-lucide="phone"></i> Call Logs</a></li>
+                <li><a href="/messages"><i data-lucide="message-square"></i> SMS History</a></li>
                 <li><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
-                <li class="active"><a href="/logs"><i data-lucide="file-text"></i> System Logs</a></li>
+                <li class="active"><a href="/logs"><i data-lucide="terminal"></i> System Logs</a></li>
             </ul>
         </div>
         <main class="main-content">
@@ -63,7 +42,7 @@
                 <h2 style="font-weight: 700;">System Event Audit Trail</h2>
                 <div class="device-switcher" style="display: flex; align-items: center; gap: 15px;">
                     <select id="device-select"></select>
-                    <!-- Storage Cleanup Button -->
+                    <!-- Connected to Logs Engine Wipe Function -->
                     <button onclick="wipeSystemLogs()" style="background: #ff3b30; color: white; border: none; border-radius: 5px; padding: 8px 15px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; transition: 0.3s;">
                         <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i> Wipe Logs
                     </button>
@@ -71,8 +50,8 @@
             </header>
 
             <div class="glass-panel" style="padding: 25px;">
+                <!-- Engine targets this specific ID -->
                 <div class="terminal-container" id="logs-list">
-                    <!-- Event logs container -->
                     <div style="color: #888; text-align: center; padding: 20px;">Establishing secure connection...</div>
                 </div>
             </div>
@@ -81,75 +60,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/static/js/auth.js"></script>
     <script src="/static/js/app.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            lucide.createIcons();
-            const token = localStorage.getItem('owner_token');
-            const activeId = localStorage.getItem('active_device_id');
-            if (!activeId) return;
-
-            try {
-                const res = await fetch(`/api/logs?device_id=${activeId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const result = await res.json();
-                if (result.status === 'success') {
-                    renderLogs(result.data);
-                }
-            } catch (e) {
-                console.error(e);
-            }
-        });
-
-        function renderLogs(logs) {
-            const container = document.getElementById('logs-list');
-            if (!container) return;
-            container.innerHTML = '';
-
-            if (logs.length === 0) {
-                container.innerHTML = '<div style="color: #555; text-align: center; padding: 40px;">> No system activity recorded in database.</div>';
-                return;
-            }
-
-            logs.forEach(l => {
-                const el = document.createElement('div');
-                el.className = 'log-entry';
-                el.innerHTML = `
-                    <div class="log-time">[${new Date(l.timestamp).toLocaleString()}]</div>
-                    <div class="log-type">>> ${l.event_type}</div>
-                    <div class="log-desc">   ${l.description}</div>
-                `;
-                container.appendChild(el);
-            });
-        }
-
-        // STORAGE MANAGEMENT: Trigger Backend Delete API
-        window.wipeSystemLogs = async function() {
-            if(!confirm("WARNING: Are you sure you want to permanently delete all system logs for this device? This cannot be undone.")) return;
-            
-            const token = localStorage.getItem('owner_token');
-            const activeId = localStorage.getItem('active_device_id');
-            
-            try {
-                const res = await fetch('/api/logs/clear', {
-                    method: 'POST',
-                    headers: { 
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ device_id: activeId })
-                });
-                const result = await res.json();
-                if (result.status === 'success') {
-                    alert("System logs wiped cleanly. Storage optimized.");
-                    window.location.reload();
-                } else {
-                    alert("Failed to wipe logs: " + result.message);
-                }
-            } catch (e) {
-                console.error("Wipe Action Failed:", e);
-            }
-        };
-    </script>
+    <!-- Directly linked to the new engine -->
+    <script src="/static/js/logs_engine.js"></script>
+    <script>lucide.createIcons();</script>
 </body>
 </html>
