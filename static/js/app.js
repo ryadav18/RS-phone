@@ -58,6 +58,18 @@ class AppCore {
         const switcher = document.getElementById('device-select');
         if (!switcher) return;
 
+        // THE FIX: Stale ID Validator (Prevents 403 Error)
+        const isDeviceValid = devices.find(d => d.id === this.selectedDeviceId);
+        
+        if (!isDeviceValid && devices.length > 0) {
+            // Agar browser cache mein old id hai, toh usko list ki nayi id se replace karo
+            this.selectedDeviceId = devices[0].id;
+            localStorage.setItem('active_device_id', this.selectedDeviceId);
+            // Turant reload karo taaki system 403 error na maare
+            window.location.reload();
+            return;
+        }
+
         switcher.innerHTML = '';
         devices.forEach(dev => {
             const opt = document.createElement('option');
