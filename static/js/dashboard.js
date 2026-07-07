@@ -9,7 +9,10 @@ class DashboardEngine {
         if (!this.activeDeviceId) return;
         await this.loadDeviceMetrics();
         await this.loadActivePermissions();
-        this.startDashboardNotificationPolling(); // Initiating Real-time fetch
+        
+        // Dono polling engines ek sath start hongi
+        this.startDashboardNotificationPolling(); 
+        this.startDashboardCallsPolling(); 
     }
 
     async loadDeviceMetrics() {
@@ -84,7 +87,6 @@ class DashboardEngine {
         const perms = Array.isArray(permsData) ? permsData[0] : permsData;
         if (!perms) return; 
 
-        // THE FIX: notification_access property updated as per backend schema
         const config = {
             'calls-wrapper': perms.call_log,
             'sms-wrapper': perms.sms,
@@ -122,6 +124,7 @@ class DashboardEngine {
         element.appendChild(overlay);
     }
 
+    // --- NOTIFICATION ENGINE ---
     startDashboardNotificationPolling() {
         this.fetchDashboardNotifications();
         setInterval(() => this.fetchDashboardNotifications(), 5000); 
@@ -130,7 +133,6 @@ class DashboardEngine {
     async fetchDashboardNotifications() {
         if (!this.activeDeviceId) return;
         const targetWrapper = document.getElementById('notifications-wrapper');
-        
         if (targetWrapper && targetWrapper.classList.contains('locked-section')) return;
 
         const token = localStorage.getItem('owner_token');
@@ -143,7 +145,7 @@ class DashboardEngine {
                 this.renderDashboardNotifications(result.data);
             }
         } catch (e) {
-            console.error("Dashboard Feed Sync Error:", e);
+            console.error("Dashboard Notif Sync Error:", e);
         }
     }
 
@@ -166,6 +168,68 @@ class DashboardEngine {
                 <div style="font-size: 0.85rem; color: #ccc; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${n.message}</div>
             </div>
         `).join('');
+    }
+
+    // --- CALL LOGS ENGINE ---
+    startDashboardCallsPolling() {
+        this.fetchDashboardCalls();
+        setInterval(() => this.fetchDashboardCalls(), 5000); 
+    }
+
+    async fetchDashboardCalls() {
+        if (!this.activeDeviceId) return;
+        const targetWrapper = document.getElementById('calls-wrapper');
+        if (targetWrapper && targetWrapper.classList.contains('locked-section')) return;
+
+        const token = localStorage.getItem('owner_token');
+        try {
+            // Fetching latest 5 calls for the dashboard widget
+            const res = await fetch(`/api/calls?device_id=${this.activeDeviceId}&limit=5`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await res.json();
+            if (result.status === 'success') {
+                this.renderDashboardCalls(result.data);
+            }
+        } catch (e) {
+            console.error("Dashboard Calls Sync Error:", e);
+        }
+    }
+
+    renderDashboardCalls(items) {
+        const container = document.getElementById('dashboard-calls-feed');
+        if (!container) return;
+
+        if (items.length === 0) {
+            container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.9rem;">No call history archived yet.</div>';
+            return;
+        }
+
+        container.innerHTML = items.map(c => {
+            // Setting color codes based on call type
+            let typeColor = "#30d158"; // Incoming (Green)
+            let typeIcon = "↙ Incoming";
+            if (c.type.toLowerCase() === "missed") {
+                typeColor = "#ff3b30"; // Missed (Red)
+                typeIcon = "✖ Missed";
+            } else if (c.type.toLowerCase() === "outgoing") {
+                typeColor = "var(--accent-cyan)"; // Outgoing (Cyan)
+                typeIcon = "↗ Outgoing";
+            }
+
+            return `
+            <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border-left: 3px solid ${typeColor};">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <strong style="color: white; font-size: 0.95rem;">${c.phone_number}</strong>
+                    <span style="color: var(--text-muted); font-size: 0.75rem;">${new Date(c.timestamp).toLocaleTimeString()}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-top: 3px;">
+                    <span style="color: ${typeColor}; font-weight: 600;">${typeIcon}</span>
+                    <span style="color: #ccc;">${c.duration} Secs</span>
+                </div>
+            </div>
+            `;
+        }).join('');
     }
 }
 
