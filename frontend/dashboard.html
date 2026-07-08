@@ -6,7 +6,6 @@
     <title>RS Phone - Command Center</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* Zero-Lag Base Reset */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
         body { background-color: #121212; padding: 15px; padding-bottom: 40px; color: #ffffff; }
         
@@ -34,13 +33,13 @@
         .metric-value { font-size: 28px; font-weight: 700; }
         .metric-label { font-size: 12px; opacity: 0.8; text-transform: uppercase; }
 
-        .action-row { display: flex; gap: 10px; margin-top: 15px; width: 100%; z-index: 2; }
+        .action-row { display: flex; gap: 10px; margin-top: 15px; width: 100%; z-index: 2; flex-wrap: wrap; }
         .btn { flex: 1; padding: 12px; border: none; border-radius: 4px; font-weight: 600; font-size: 14px; text-transform: uppercase; cursor: pointer; background: rgba(255,255,255,0.2); color: white; transition: background 0.2s; }
         .btn:active { background: rgba(0,0,0,0.3); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .bg-icon { position: absolute; right: -20px; top: -10px; width: 120px; height: 120px; opacity: 0.1; z-index: 1; transform: rotate(-15deg); }
 
-        /* Pro Color Palette */
         .bg-dark { background-color: #2c3e50; }
         .bg-red { background-color: #e74c3c; }
         .bg-green { background-color: #2ecc71; }
@@ -50,7 +49,6 @@
         .bg-yellow { background-color: #f39c12; }
         .bg-orange { background-color: #d35400; }
         .bg-pink { background-color: #c0392b; }
-        /* Naye Colors Features Ke Liye */
         .bg-indigo { background-color: #3f51b5; }
         .bg-emerald { background-color: #27ae60; }
         .bg-cyan { background-color: #00bcd4; }
@@ -134,21 +132,19 @@
         </div>
 
         <!-- 5. App Usage -->
-        <div class="flat-card bg-yellow">
+        <a href="/usage" class="flat-card bg-yellow" style="text-decoration: none;">
             <i data-lucide="activity" class="bg-icon"></i>
             <div class="card-content">
                 <div class="card-left">
                     <i data-lucide="pie-chart" class="card-icon"></i>
                     <div class="card-text">
                         <span class="card-title">App Usage</span>
-                        <span class="card-subtitle">Screen Time Stats</span>
+                        <span class="card-subtitle">Digital Wellbeing & Limits</span>
                     </div>
                 </div>
-                <div class="card-right">
-                    <div class="metric-value" id="metric-app-usage">Active</div>
-                </div>
+                <div class="card-right"><div class="metric-value">></div></div>
             </div>
-        </div>
+        </a>
 
         <!-- 6. Web Filter -->
         <div class="flat-card bg-orange">
@@ -167,7 +163,7 @@
             </div>
         </div>
 
-        <!-- 7. Live Ops -->
+        <!-- 7. Live Ops (UPGRADED ENGINE) -->
         <div class="flat-card bg-teal">
             <i data-lucide="cast" class="bg-icon"></i>
             <div class="card-content">
@@ -175,19 +171,27 @@
                     <i data-lucide="video" class="card-icon"></i>
                     <div class="card-text">
                         <span class="card-title">Live Ops</span>
-                        <span class="card-subtitle">Remote Monitoring</span>
+                        <span class="card-subtitle">Remote Media Capture</span>
                     </div>
                 </div>
             </div>
+            
             <div class="action-row">
-                <button class="btn" onclick="requestScreenCapture()">Screen</button>
-                <button class="btn" onclick="requestAudioSync()">Audio</button>
+                <button class="btn" id="btn-screenshot" onclick="requestScreenshot()">Screenshot</button>
+                <div style="display: flex; flex: 1; gap: 5px;">
+                    <select id="audio-duration" style="background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 4px; padding: 5px; outline: none; font-weight: bold;">
+                        <option value="60" style="color: black;">1 Min</option>
+                        <option value="120" style="color: black;">2 Min</option>
+                    </select>
+                    <button class="btn" id="btn-audio" onclick="requestAudioSync()">Record Audio</button>
+                </div>
+            </div>
+            
+            <!-- Dynamic Status Area (Hidden by default) -->
+            <div id="live-ops-status" style="margin-top: 15px; font-size: 14px; text-align: center; display: none; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 6px;">
+                <!-- Engine will inject Pending or Play button here -->
             </div>
         </div>
-
-        <!-- ============================================== -->
-        <!-- 🚀 NAYE FEATURES YAHAN SE SHURU HOTE HAIN 🚀 -->
-        <!-- ============================================== -->
 
         <!-- 8. Phone Calls Log -->
         <a href="/calls" class="flat-card bg-indigo">
