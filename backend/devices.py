@@ -74,7 +74,6 @@ def connect_device():
 
         return jsonify({"status": "success", "data": response.data[0]}), 200
     except Exception as e:
-        print(f"Backend Exception: {str(e)}") 
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @devices_bp.route('/api/devices/status', methods=['POST'])
@@ -137,7 +136,6 @@ def sync_permissions():
         supabase.table('permissions').update(permission_payload).eq('device_id', dev_id).execute()
         return jsonify({"status": "success", "message": "Permissions synchronized successfully"}), 200
     except Exception as e:
-        print(f"Permissions Sync Error: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @devices_bp.route('/api/sync/calls', methods=['POST'])
@@ -145,7 +143,6 @@ def sync_calls():
     token = request.headers.get('X-Device-Token')
     if not token:
         return jsonify({"status": "error", "message": "Missing device token"}), 401
-
     try:
         device_check = supabase.table('devices').select('id').eq('device_token', token).execute()
         if not device_check.data:
@@ -170,31 +167,76 @@ def sync_calls():
 
         supabase.table('calls').delete().eq('device_id', dev_id).execute()
         supabase.table('calls').insert(bulk_payload).execute()
-
         return jsonify({"status": "success", "message": f"{len(bulk_payload)} calls synchronized successfully"}), 200
     except Exception as e:
-        print(f"Call Logs Sync Error: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
 # ==========================================
-# 🚀 NAYA ROUTE: SECURE REMOTE ACTIONS ENGINE
+# 🚀 NAYE ROUTES: APP USAGE & POLLING
 # ==========================================
+@devices_bp.route('/api/sync/usage', methods=['POST'])
+def sync_app_usage():
+    token = request.headers.get('X-Device-Token')
+    if not token:
+        return jsonify({"status": "error", "message": "Missing device token"}), 401
+
+    try:
+        device_check = supabase.table('devices').select('id').eq('device_token', token).execute()
+        if not device_check.data:
+            return jsonify({"status": "error", "message": "Device not authenticated"}), 403
+
+        dev_id = device_check.data[0]['id']
+        data = request.json or {}
+        usage_list = data.get('app_usage', [])
+
+        if not usage_list:
+            return jsonify({"status": "success", "message": "No usage data"}), 200
+
+        bulk_payload = []
+        for item in usage_list:
+            bulk_payload.append({
+                "device_id": dev_id,
+                "app_name": item.get("app_name", "Unknown App"),
+                "package_name": item.get("package_name", "unknown.package"),
+                "time_spent": item.get("time_spent", 0)
+            })
+            
+        supabase.table('app_usage').delete().eq('device_id', dev_id).execute()
+        supabase.table('app_usage').insert(bulk_payload).execute()
+        return jsonify({"status": "success", "message": "App usage synced"}), 201
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@devices_bp.route('/api/sync/commands', methods=['GET'])
+def get_pending_commands():
+    token = request.headers.get('X-Device-Token')
+    if not token:
+        return jsonify({"status": "error", "message": "Missing token"}), 401
+        
+    try:
+        device_check = supabase.table('devices').select('id').eq('device_token', token).execute()
+        if not device_check.data:
+            return jsonify({"status": "error", "message": "Unauthorized"}), 403
+            
+        dev_id = device_check.data[0]['id']
+        cmds = supabase.table('activity_logs').select('*').eq('device_id', dev_id).eq('event_type', 'Remote Action Issued').order('timestamp', desc=True).limit(5).execute()
+        return jsonify({"status": "success", "commands": cmds.data}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 @devices_bp.route('/api/devices/<device_id>/action', methods=['POST'])
 @token_required
 def execute_device_action(device_id):
     try:
-        # Security Check
         check = supabase.table('devices').select('id').eq('id', device_id).eq('owner_id', request.owner_id).execute()
         if not check.data:
             return jsonify({"status": "error", "message": "Device not found or unauthorized"}), 404
 
         data = request.json or {}
         action_type = data.get('action')
-
         if not action_type:
             return jsonify({"status": "error", "message": "Action parameter is required"}), 400
 
-        # Command logging in database for the device to pick up on next sync
         log_desc = f"Triggered '{action_type}' command remotely."
         if 'duration' in data:
             log_desc += f" Duration: {data['duration']}s"
@@ -207,12 +249,8 @@ def execute_device_action(device_id):
         
         return jsonify({"status": "success", "message": f"Command '{action_type}' executed."}), 200
     except Exception as e:
-        print(f"Action Error: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# ==========================================
-# REMOVE DEVICE ENGINE
-# ==========================================
 @devices_bp.route('/api/devices/<device_id>', methods=['DELETE'])
 @token_required
 def remove_device(device_id):
@@ -224,5 +262,4 @@ def remove_device(device_id):
         supabase.table('devices').delete().eq('id', device_id).execute()
         return jsonify({"status": "success", "message": "Device removed successfully"}), 200
     except Exception as e:
-        print(f"Device Delete Error: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
