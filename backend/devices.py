@@ -177,20 +177,51 @@ def sync_calls():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 # ==========================================
-# NAYA ROUTE: REMOVE DEVICE ENGINE
+# 🚀 NAYA ROUTE: SECURE REMOTE ACTIONS ENGINE
+# ==========================================
+@devices_bp.route('/api/devices/<device_id>/action', methods=['POST'])
+@token_required
+def execute_device_action(device_id):
+    try:
+        # Security Check
+        check = supabase.table('devices').select('id').eq('id', device_id).eq('owner_id', request.owner_id).execute()
+        if not check.data:
+            return jsonify({"status": "error", "message": "Device not found or unauthorized"}), 404
+
+        data = request.json or {}
+        action_type = data.get('action')
+
+        if not action_type:
+            return jsonify({"status": "error", "message": "Action parameter is required"}), 400
+
+        # Command logging in database for the device to pick up on next sync
+        log_desc = f"Triggered '{action_type}' command remotely."
+        if 'duration' in data:
+            log_desc += f" Duration: {data['duration']}s"
+
+        supabase.table('activity_logs').insert({
+            "device_id": device_id,
+            "event_type": "Remote Action Issued",
+            "description": log_desc
+        }).execute()
+        
+        return jsonify({"status": "success", "message": f"Command '{action_type}' executed."}), 200
+    except Exception as e:
+        print(f"Action Error: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# ==========================================
+# REMOVE DEVICE ENGINE
 # ==========================================
 @devices_bp.route('/api/devices/<device_id>', methods=['DELETE'])
 @token_required
 def remove_device(device_id):
     try:
-        # Check security: Kya device isi owner ka hai?
         check = supabase.table('devices').select('id').eq('id', device_id).eq('owner_id', request.owner_id).execute()
         if not check.data:
             return jsonify({"status": "error", "message": "Device not found or unauthorized"}), 404
 
-        # Cascade Delete: Device aur uska saara data Supabase se udd jayega
         supabase.table('devices').delete().eq('id', device_id).execute()
-        
         return jsonify({"status": "success", "message": "Device removed successfully"}), 200
     except Exception as e:
         print(f"Device Delete Error: {str(e)}")
