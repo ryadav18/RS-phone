@@ -68,7 +68,6 @@ def permissions_view():
 def notifications_view():
     return send_from_directory(template_path, 'notifications.html')
 
-# === NEW ROUTES ADDED HERE FOR HUB & SPOKE ARCHITECTURE ===
 @app.route('/calls')
 def calls_view():
     return send_from_directory(template_path, 'calls.html')
@@ -76,7 +75,6 @@ def calls_view():
 @app.route('/messages')
 def messages_view():
     return send_from_directory(template_path, 'messages.html')
-# ==========================================================
 
 @app.route('/files')
 def files_view():
@@ -85,6 +83,18 @@ def files_view():
 @app.route('/logs')
 def logs_view():
     return send_from_directory(template_path, 'logs.html')
+
+# ==========================================================
+# 🚀 NAYE ROUTES (LOCATION & APP USAGE)
+# ==========================================================
+@app.route('/locations')
+def locations_view():
+    return send_from_directory(template_path, 'locations.html')
+
+@app.route('/usage')
+def usage_view():
+    return send_from_directory(template_path, 'usage.html')
+# ==========================================================
 
 @app.route('/api/config')
 def get_public_config():
