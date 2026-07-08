@@ -4,10 +4,59 @@ class MessagesEngine {
         this.init();
     }
 
-    init() {
-        if (!this.activeDeviceId) return;
+    async init() {
+        // Pro Fix: Pehle backend se devices load karo aur dropdown populate karo
+        await this.loadDevicesList();
+
+        if (!this.activeDeviceId) return; // Agar device hi nahi hai toh aage mat bado
+        
         this.fetchMessages();
         setInterval(() => this.fetchMessages(), 5000);
+    }
+
+    // Naya Engine: Dropdown Manager
+    async loadDevicesList() {
+        const token = localStorage.getItem('owner_token');
+        try {
+            const res = await fetch('/api/devices', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await res.json();
+
+            if (result.status === 'success') {
+                const selectEl = document.getElementById('device-select');
+                if (selectEl) {
+                    selectEl.innerHTML = ''; 
+                    if (result.data.length === 0) {
+                        selectEl.innerHTML = '<option value="">No Devices Found</option>';
+                        return;
+                    }
+
+                    result.data.forEach(dev => {
+                        const option = document.createElement('option');
+                        option.value = dev.id;
+                        option.textContent = dev.name;
+                        selectEl.appendChild(option);
+                    });
+
+                    // Auto-select first device
+                    if (!this.activeDeviceId && result.data.length > 0) {
+                        this.activeDeviceId = result.data[0].id;
+                        localStorage.setItem('active_device_id', this.activeDeviceId);
+                    }
+                    selectEl.value = this.activeDeviceId;
+
+                    // Switch logic
+                    selectEl.addEventListener('change', (e) => {
+                        this.activeDeviceId = e.target.value;
+                        localStorage.setItem('active_device_id', this.activeDeviceId);
+                        this.fetchMessages(); 
+                    });
+                }
+            }
+        } catch (e) {
+            console.error("Failed to load devices:", e);
+        }
     }
 
     async fetchMessages() {
@@ -25,6 +74,7 @@ class MessagesEngine {
         }
     }
 
+    // Tera original UI Renderer
     renderMessages(items) {
         const container = document.getElementById('sms-list');
         if (!container) return;
@@ -46,6 +96,7 @@ class MessagesEngine {
     }
 }
 
+// Tera original Wipe Action
 window.wipeSMSHistory = async function() {
     if(!confirm("WARNING: Permanently delete all SMS logs?")) return;
     const token = localStorage.getItem('owner_token');
