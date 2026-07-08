@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS Tracking - RS OWNER</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Pro Map Library (Leaflet) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        #map {
+            height: 60vh;
+            width: 100%;
+            border-radius: 8px;
+            background-color: #1e1e1e;
+            border: 1px solid #333;
+        }
+        .data-list-container {
+            max-height: 20vh;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar glass-panel">
+            <div class="sidebar-brand">
+                <i data-lucide="shield" style="color: var(--accent-cyan);"></i>
+                <span>RS OWNER</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
+                <li><a href="/permissions"><i data-lucide="shield-check"></i> Permissions</a></li>
+                <li class="active"><a href="/locations"><i data-lucide="map-pin"></i> GPS Tracking</a></li>
+                <li><a href="/calls"><i data-lucide="phone"></i> Call Logs</a></li>
+                <li><a href="/messages"><i data-lucide="message-square"></i> SMS History</a></li>
+                <li><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="topbar">
+                <h2 style="font-weight: 700;">Live Device Radar</h2>
+                <div class="device-switcher">
+                    <select id="device-select"></select>
+                </div>
+            </header>
+
+            <div class="glass-panel" style="padding: 25px;">
+                <!-- Map Container -->
+                <div id="map"></div>
+
+                <!-- Last Known Locations List -->
+                <div class="data-list-container" id="location-list">
+                    <div style="color: #888; text-align: center; padding: 20px;">Establishing satellite link...</div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/js/locations_engine.js"></script>
+    <script>lucide.createIcons();</script>
+</body>
+</html>
