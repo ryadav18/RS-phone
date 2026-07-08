@@ -5,11 +5,11 @@ from database import supabase
 
 messages_bp = Blueprint('messages', __name__)
 
+# GET ROUTE: Dashboard ke liye (Isko change nahi kiya)
 @messages_bp.route('/api/messages', methods=['GET'])
 @token_required
 def get_messages():
     device_id = request.args.get('device_id')
-    # Dedicated page ke liye limit badha kar 150 kar di gayi hai
     limit = request.args.get('limit', 150) 
 
     if not device_id or not verify_device_access(request.owner_id, device_id):
@@ -21,7 +21,8 @@ def get_messages():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-@messages_bp.route('/api/messages', methods=['POST'])
+# 🚀 POST ROUTE FIX: App ke sync engine ke liye update kiya gaya
+@messages_bp.route('/api/sync/messages', methods=['POST'])
 def upload_messages():
     token = request.headers.get('X-Device-Token')
     if not token:
@@ -41,10 +42,12 @@ def upload_messages():
 
         payload = []
         for m in messages_array:
+            # Keys ab Android app ke `SmsData` model se properly map ho rahi hain
             row_data = {
                 "device_id": dev_id,
                 "sender": m.get('sender', 'Unknown Sender'),
-                "message_preview": m.get('message_preview', '')
+                "message_preview": m.get('message', ''), # App se 'message' aayega, DB me 'message_preview' jayega
+                "message_type": m.get('type', 'UNKNOWN') # SMS Type (Inbox/Sent)
             }
             if m.get('timestamp'):
                 row_data["timestamp"] = m.get('timestamp')
@@ -67,7 +70,6 @@ def clear_messages():
         return jsonify({"status": "error", "message": "Access permission denied"}), 403
 
     try:
-        # Permanently wipes SMS data for the specific device to clear Supabase storage
         supabase.table('messages').delete().eq('device_id', device_id).execute()
         return jsonify({"status": "success", "message": "SMS history cleared successfully"}), 200
     except Exception as e:
