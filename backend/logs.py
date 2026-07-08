@@ -9,7 +9,7 @@ logs_bp = Blueprint('logs', __name__)
 @token_required
 def get_logs():
     device_id = request.args.get('device_id')
-    limit = request.args.get('limit', 150) # Prevents UI overload
+    limit = request.args.get('limit', 150)
 
     if not device_id or not verify_device_access(request.owner_id, device_id):
         return jsonify({"status": "error", "message": "Access permission denied for current owner context"}), 403
@@ -45,7 +45,6 @@ def create_log():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# STORAGE MANAGEMENT: Clear Logs API
 @logs_bp.route('/api/logs/clear', methods=['POST'])
 @token_required
 def clear_logs():
@@ -58,5 +57,23 @@ def clear_logs():
     try:
         supabase.table('activity_logs').delete().eq('device_id', device_id).execute()
         return jsonify({"status": "success", "message": "System logs wiped cleanly"}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# ==========================================
+# 🚀 NAYA ROUTE: FETCH APP USAGE FOR DASHBOARD
+# ==========================================
+@logs_bp.route('/api/usage', methods=['GET'])
+@token_required
+def get_app_usage():
+    device_id = request.args.get('device_id')
+    
+    if not device_id or not verify_device_access(request.owner_id, device_id):
+        return jsonify({"status": "error", "message": "Unauthorized"}), 403
+
+    try:
+        # Fetching app usage sorted by most time spent
+        res = supabase.table('app_usage').select('*').eq('device_id', device_id).order('time_spent', desc=True).execute()
+        return jsonify({"status": "success", "data": res.data}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
