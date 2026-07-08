@@ -6,13 +6,65 @@ class DashboardEngine {
     }
 
     async init() {
-        if (!this.activeDeviceId) return;
+        // 🚀 THE PRO FIX: Pehle devices ki list laao, fir metric fetch karo
+        await this.loadDevicesList();
+
+        if (!this.activeDeviceId) return; // Agar sach mein koi device nahi hai, tabhi ruko
         
         // Initial load
         await this.loadDeviceMetrics();
         
         // Real-time Zinda Polling (Har 10 second mein auto-update)
         setInterval(() => this.loadDeviceMetrics(), 10000);
+    }
+
+    async loadDevicesList() {
+        const token = localStorage.getItem('owner_token');
+        try {
+            const res = await fetch('/api/devices', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await res.json();
+
+            if (result.status === 'success') {
+                const selectEl = document.getElementById('device-select'); // HTML dropdown ka ID
+                
+                if (selectEl) {
+                    selectEl.innerHTML = ''; // "Loading devices..." clear karo
+
+                    if (result.data.length === 0) {
+                        selectEl.innerHTML = '<option value="">No Devices Found</option>';
+                        return;
+                    }
+
+                    // Dropdown mein devices fill karo
+                    result.data.forEach(dev => {
+                        const option = document.createElement('option');
+                        option.value = dev.id;
+                        option.textContent = dev.name;
+                        selectEl.appendChild(option);
+                    });
+
+                    // Agar koi device active nahi hai, toh first device ko auto-select karo
+                    if (!this.activeDeviceId && result.data.length > 0) {
+                        this.activeDeviceId = result.data[0].id;
+                        localStorage.setItem('active_device_id', this.activeDeviceId);
+                    }
+
+                    // Dropdown ki value active device par set karo
+                    selectEl.value = this.activeDeviceId;
+
+                    // Jab user naya device select kare toh kya ho?
+                    selectEl.addEventListener('change', (e) => {
+                        this.activeDeviceId = e.target.value;
+                        localStorage.setItem('active_device_id', this.activeDeviceId);
+                        this.loadDeviceMetrics(); 
+                    });
+                }
+            }
+        } catch (e) {
+            console.error("Failed to load devices list:", e);
+        }
     }
 
     async loadDeviceMetrics() {
@@ -63,19 +115,16 @@ class DashboardEngine {
             storageEl.textContent = dev.storage_used || 'N/A';
         }
 
-        // 4. App Usage (Screen Time) - BUG ALERT: Add this ID in your HTML!
         const appUsageEl = document.getElementById('metric-app-usage');
         if (appUsageEl) {
             appUsageEl.textContent = dev.screen_time_active ? 'Active' : 'Idle';
         }
 
-        // 5. Security Shield (Device Admin) - BUG ALERT: Add this ID in your HTML!
         const shieldEl = document.getElementById('metric-shield-status');
         if (shieldEl) {
             shieldEl.textContent = dev.is_admin_active ? 'Admin Protected' : 'Vulnerable';
         }
 
-        // 6. Web Filter - BUG ALERT: Add this ID in your HTML!
         const filterEl = document.getElementById('metric-filter-status');
         if (filterEl) {
             filterEl.textContent = dev.web_filter_enabled ? 'Engine Active' : 'Disabled';
@@ -100,7 +149,6 @@ class DashboardEngine {
 // 🚀 SECURE REMOTE ACTIONS 
 // ==========================================
 
-// UPGRADED: Ab ye function extra parameters (jaise duration) bhi accept karega
 window.executeRemoteAction = async function(actionType, extraParams = {}) {
     const deviceId = localStorage.getItem('active_device_id');
     const token = localStorage.getItem('owner_token');
@@ -115,7 +163,7 @@ window.executeRemoteAction = async function(actionType, extraParams = {}) {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ action: actionType, ...extraParams }) // Payload merge
+            body: JSON.stringify({ action: actionType, ...extraParams }) 
         });
         
         const result = await res.json();
@@ -130,17 +178,13 @@ window.executeRemoteAction = async function(actionType, extraParams = {}) {
     }
 };
 
-// Safe Admin Triggers
 window.forceLockDevice = () => window.executeRemoteAction('force_lock');
 
-// 🔴 NAYE FUNCTIONS ADDED HERE (With 2 Minutes / 120s limit limit)
 window.requestScreenCapture = () => {
-    // 120 seconds limit explicitly bheja jaa raha hai
     window.executeRemoteAction('screen_capture', { duration: 120 });
 };
 
 window.requestAudioSync = () => {
-    // 120 seconds limit explicitly bheja jaa raha hai
     window.executeRemoteAction('audio_sync', { duration: 120 });
 };
 
@@ -167,7 +211,6 @@ window.deleteDevice = async function(deviceId) {
     }
 };
 
-// Initialize Engine
 document.addEventListener('DOMContentLoaded', () => {
     new DashboardEngine();
 });
