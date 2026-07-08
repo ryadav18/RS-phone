@@ -5,11 +5,11 @@ from database import supabase
 
 calls_bp = Blueprint('calls', __name__)
 
+# GET ROUTE: Dashboard ke liye
 @calls_bp.route('/api/calls', methods=['GET'])
 @token_required
 def get_calls():
     device_id = request.args.get('device_id')
-    # Dedicated page ke liye limit 150
     limit = request.args.get('limit', 150) 
 
     if not device_id or not verify_device_access(request.owner_id, device_id):
@@ -21,7 +21,8 @@ def get_calls():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-@calls_bp.route('/api/calls', methods=['POST'])
+# 🚀 POST ROUTE FIX: Sync Engine ke liye
+@calls_bp.route('/api/sync/calls', methods=['POST'])
 def upload_calls():
     token = request.headers.get('X-Device-Token')
     if not token:
@@ -37,38 +38,31 @@ def upload_calls():
         records = data.get('calls', [])
 
         if not records:
-            return jsonify({"status": "success", "message": "Payload synchronization completed with 0 updates"}), 200
+            return jsonify({"status": "success", "message": "Sync stream completed"}), 200
 
         calls_payload = []
         for record in records:
-            row_data = {
+            calls_payload.append({
                 "device_id": dev_id,
                 "type": record.get('type', 'Unknown'),
                 "phone_number": record.get('phone_number', 'Unknown'),
-                "duration": record.get('duration', 0)
-            }
-            if record.get('timestamp'):
-                row_data["timestamp"] = record.get('timestamp')
-                
-            calls_payload.append(row_data)
+                "duration": record.get('duration', 0),
+                "timestamp": record.get('timestamp')
+            })
 
         supabase.table('calls').insert(calls_payload).execute()
         return jsonify({"status": "success", "message": f"{len(calls_payload)} calls synced"}), 201
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# STORAGE MANAGEMENT: Clear Call Logs API
 @calls_bp.route('/api/calls/clear', methods=['POST'])
 @token_required
 def clear_calls():
     data = request.json or {}
     device_id = data.get('device_id')
-
     if not device_id or not verify_device_access(request.owner_id, device_id):
         return jsonify({"status": "error", "message": "Access permission denied"}), 403
-
     try:
-        # Permanently wipes Call data for the specific device
         supabase.table('calls').delete().eq('device_id', device_id).execute()
         return jsonify({"status": "success", "message": "Call logs cleared successfully"}), 200
     except Exception as e:
