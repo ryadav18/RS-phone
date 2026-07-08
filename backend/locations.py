@@ -5,6 +5,7 @@ from database import supabase
 
 locations_bp = Blueprint('locations', __name__)
 
+# GET ROUTE: Dashboard map ke liye
 @locations_bp.route('/api/locations', methods=['GET'])
 @token_required
 def get_locations():
@@ -18,7 +19,8 @@ def get_locations():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-@locations_bp.route('/api/locations', methods=['POST'])
+# 🚀 POST ROUTE FIX: App ke sync engine ke liye update kiya gaya
+@locations_bp.route('/api/sync/locations', methods=['POST'])
 def upload_location():
     token = request.headers.get('X-Device-Token')
     if not token:
