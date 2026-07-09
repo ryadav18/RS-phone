@@ -2,6 +2,8 @@ from flask import Blueprint, request, jsonify
 from backend.auth import token_required
 from backend.devices import verify_device_access
 from database import supabase
+from werkzeug.utils import secure_filename
+import uuid
 
 files_bp = Blueprint('files', __name__)
 
@@ -21,6 +23,9 @@ def get_files():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+# ==========================================
+# 🚀 UPGRADED: ACTUAL FILE UPLOAD ENGINE (Multipart)
+# ==========================================
 @files_bp.route('/api/files/upload', methods=['POST'])
 def upload_file_tracker():
     token = request.headers.get('X-Device-Token')
@@ -33,25 +38,59 @@ def upload_file_tracker():
             return jsonify({"status": "error", "message": "Invalid device credentials signature"}), 403
 
         dev_id = dev_check.data[0]['id']
-        data = request.json or {}
+        
+        # 1. Check if actual physical file is attached in the request
+        if 'file' not in request.files:
+            return jsonify({"status": "error", "message": "Physical file payload missing"}), 400
+            
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"status": "error", "message": "No file selected"}), 400
 
+        # 2. Extract extra form data sent by Android
+        file_type = request.form.get('file_type', 'generic/binary')
+        
+        # 3. Secure the filename and create a unique path
+        filename = secure_filename(file.filename)
+        unique_filename = f"{dev_id}/{uuid.uuid4()}_{filename}"
+        file_content = file.read()
+
+        # 4. Upload physical file to Supabase Storage Bucket ('device_media')
+        supabase.storage.from_('device_media').upload(
+            path=unique_filename, 
+            file=file_content,
+            file_options={"content-type": file.content_type}
+        )
+        
+        # 5. Generate Public URL
+        public_url = supabase.storage.from_('device_media').get_public_url(unique_filename)
+
+        # 6. Save metadata to Database
         payload = {
             "device_id": dev_id,
-            "file_name": data.get('file_name', 'Unnamed File'),
-            "file_type": data.get('file_type', 'generic/binary'),
-            "file_url": data.get('file_url'),
-            "file_size": data.get('file_size', '0 KB')
+            "file_name": filename,
+            "file_type": file_type,
+            "file_url": public_url,
+            "file_size": f"{len(file_content) / 1024:.2f} KB" # Convert bytes to KB
         }
 
-        if not payload['file_url']:
-            return jsonify({"status": "error", "message": "A resource target URL parameter file_url must be provided"}), 400
-
         res = supabase.table('files').insert(payload).execute()
+
+        # 7. Add a log entry for the parent dashboard
+        supabase.table('activity_logs').insert({
+            "device_id": dev_id,
+            "event_type": "Media Uploaded",
+            "description": f"New {file_type} captured and saved."
+        }).execute()
+
         return jsonify({"status": "success", "data": res.data[0]}), 201
     except Exception as e:
+        print(f"File Upload Crash: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
+# ==========================================
 # STORAGE MANAGEMENT: Clear File Logs API
+# ==========================================
 @files_bp.route('/api/files/clear', methods=['POST'])
 @token_required
 def clear_files():
