@@ -1,93 +1,114 @@
-from flask import Blueprint, request, jsonify
-from backend.auth import token_required
-from backend.devices import verify_device_access
-from database import supabase
-from werkzeug.utils import secure_filename
-import uuid
+import os
+import sys
 
-files_bp = Blueprint('files', __name__)
+# ================= AUTOMATIC PATH RESOLUTION =================
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
 
-# ==========================================
-# 🚀 MEDIA UPLOAD ENGINE (For Android App)
-# ==========================================
-@files_bp.route('/api/files/upload', methods=['POST'])
-def upload_file():
-    token = request.headers.get('X-Device-Token')
-    if not token:
-        return jsonify({"status": "error", "message": "Missing device token"}), 401
-        
-    try:
-        # 1. Authenticate Device
-        device_check = supabase.table('devices').select('id').eq('device_token', token).execute()
-        if not device_check.data:
-            return jsonify({"status": "error", "message": "Unauthorized"}), 403
-            
-        dev_id = device_check.data[0]['id']
-        
-        # 2. Check if file is in the request
-        if 'file' not in request.files:
-            return jsonify({"status": "error", "message": "No file part in request"}), 400
-            
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({"status": "error", "message": "No selected file"}), 400
-            
-        # 3. Get metadata sent from Android
-        file_type = request.form.get('file_type', 'unknown') # e.g., 'screenshot', 'audio'
-        
-        # 4. Secure & Rename File
-        filename = secure_filename(file.filename)
-        unique_filename = f"{dev_id}/{uuid.uuid4()}_{filename}" # Folder structure inside bucket
-        file_content = file.read()
-        
-        # 5. Upload to Supabase Storage Bucket ('device_media')
-        res = supabase.storage.from_('device_media').upload(
-            path=unique_filename, 
-            file=file_content,
-            file_options={"content-type": file.content_type}
-        )
-        
-        # 6. Generate Public URL for Dashboard
-        public_url = supabase.storage.from_('device_media').get_public_url(unique_filename)
-        
-        # 7. Save to Database Table
-        file_payload = {
-            "device_id": dev_id,
-            "file_name": filename,
-            "file_url": public_url,
-            "file_type": file_type,
-            "file_size": str(len(file_content))
-        }
-        supabase.table('files').insert(file_payload).execute()
-        
-        # 8. Add a Log Entry so parent gets notified
-        supabase.table('activity_logs').insert({
-            "device_id": dev_id,
-            "event_type": f"New {file_type.capitalize()} Ready",
-            "description": f"Media file {filename} uploaded successfully."
-        }).execute()
-        
-        return jsonify({"status": "success", "message": "File uploaded successfully", "url": public_url}), 201
-        
-    except Exception as e:
-        print(f"File Upload Error: {str(e)}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+if not os.path.exists(os.path.join(current_dir, 'backend')) and os.path.exists(os.path.join(parent_dir, 'backend')):
+    base_dir = parent_dir
+else:
+    base_dir = current_dir
 
+if base_dir not in sys.path:
+    sys.path.insert(0, base_dir)
+# =============================================================
 
-# ==========================================
-# 🚀 FETCH FILES ENGINE (For Dashboard UI)
-# ==========================================
-@files_bp.route('/api/files', methods=['GET'])
-@token_required
-def get_files():
-    device_id = request.args.get('device_id')
-    
-    if not device_id or not verify_device_access(request.owner_id, device_id):
-        return jsonify({"status": "error", "message": "Unauthorized access to files"}), 403
-        
-    try:
-        # Fetching files sorted by latest first
-        res = supabase.table('files').select('*').eq('device_id', device_id).order('uploaded_at', desc=True).execute()
-        return jsonify({"status": "success", "data": res.data}), 200
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+from flask import Flask, send_from_directory, jsonify, session, redirect
+from flask_cors import CORS
+from config import Config
+
+static_path = os.path.join(base_dir, 'static')
+template_path = os.path.join(base_dir, 'frontend')
+
+app = Flask(__name__, static_folder=static_path, template_folder=template_path)
+app.secret_key = Config.SECRET_KEY
+
+CORS(app)
+
+from backend.auth import auth_bp
+from backend.devices import devices_bp
+from backend.permissions import permissions_bp
+from backend.notifications import notifications_bp
+from backend.calls import calls_bp
+from backend.messages import messages_bp
+from backend.locations import locations_bp
+from backend.files import files_bp
+from backend.logs import logs_bp
+
+# ================= BLUEPRINTS REGISTRATION =================
+app.register_blueprint(auth_bp)
+app.register_blueprint(devices_bp)
+app.register_blueprint(permissions_bp)
+app.register_blueprint(notifications_bp)
+app.register_blueprint(calls_bp)
+app.register_blueprint(messages_bp)
+app.register_blueprint(locations_bp)
+app.register_blueprint(files_bp)
+app.register_blueprint(logs_bp)
+# ===========================================================
+
+# ================= FRONTEND ROUTES =========================
+@app.route('/')
+def index_root():
+    if 'session_token' in session:
+        return redirect('/dashboard')
+    return send_from_directory(template_path, 'index.html')
+
+@app.route('/dashboard')
+def dashboard_view():
+    return send_from_directory(template_path, 'dashboard.html')
+
+@app.route('/device')
+def device_view():
+    return send_from_directory(template_path, 'device.html')
+
+@app.route('/permissions')
+def permissions_view():
+    return send_from_directory(template_path, 'permissions.html')
+
+@app.route('/notifications')
+def notifications_view():
+    return send_from_directory(template_path, 'notifications.html')
+
+@app.route('/calls')
+def calls_view():
+    return send_from_directory(template_path, 'calls.html')
+
+@app.route('/messages')
+def messages_view():
+    return send_from_directory(template_path, 'messages.html')
+
+@app.route('/files')
+def files_view():
+    return send_from_directory(template_path, 'files.html')
+
+@app.route('/logs')
+def logs_view():
+    return send_from_directory(template_path, 'logs.html')
+
+@app.route('/locations')
+def locations_view():
+    return send_from_directory(template_path, 'locations.html')
+
+@app.route('/usage')
+def usage_view():
+    return send_from_directory(template_path, 'usage.html')
+# ===========================================================
+
+# ================= API CONFIG & ERRORS =====================
+@app.route('/api/config')
+def get_public_config():
+    return jsonify({
+        "supabase_url": Config.SUPABASE_URL,
+        "supabase_key": Config.SUPABASE_KEY
+    })
+
+@app.errorhandler(404)
+def not_found(e):
+    return jsonify({"status": "error", "message": "The requested resource was not located."}), 404
+# ===========================================================
+
+if __name__ == '__main__':
+    port = int(os.getenv("PORT", 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
