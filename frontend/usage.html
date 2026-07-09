@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Wellbeing & App Control - RS Phone</title>
+    <style>
+        body { 
+            background-color: #121212; 
+            color: #ffffff; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+        }
+        .container { padding: 20px; max-width: 800px; margin: auto; }
+        .header { 
+            border-bottom: 1px solid #333; 
+            padding-bottom: 15px; 
+            margin-bottom: 20px; 
+        }
+        .header h2 { margin: 0 0 5px 0; color: #ff9800; }
+        .header p { margin: 0 0 15px 0; color: #aaa; font-size: 0.9em; }
+        .back-link { color: #4caf50; text-decoration: none; font-weight: bold; }
+        .back-link:hover { text-decoration: underline; }
+        
+        .app-card { 
+            background: #1e1e1e; 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin-bottom: 10px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-left: 4px solid #ff9800;
+        }
+        .app-info { display: flex; flex-direction: column; }
+        .app-name { font-size: 1.1em; font-weight: bold; letter-spacing: 0.5px; }
+        .app-pkg { color: #888; font-size: 0.85em; margin-top: 2px; }
+        .app-time { color: #4caf50; font-size: 0.9em; margin-top: 8px; font-weight: bold; }
+        
+        .block-btn { 
+            background: #d32f2f; 
+            color: white; 
+            border: none; 
+            padding: 10px 15px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            transition: 0.2s;
+        }
+        .block-btn:hover { background: #b71c1c; transform: scale(1.05); }
+        
+        #loading-text { color: #888; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>App Usage & Restrictions</h2>
+            <p>Monitor real-time screen usage and restrict access to specific applications dynamically.</p>
+            <a href="/dashboard" class="back-link">&larr; Return to Command Center</a>
+        </div>
+        <div id="usage-container">
+            <p id="loading-text">Fetching live telemetry data from database...</p>
+        </div>
+    </div>
+
+    <!-- Engine Link -->
+    <script src="/static/js/usage_engine.js"></script>
+</body>
+</html>
