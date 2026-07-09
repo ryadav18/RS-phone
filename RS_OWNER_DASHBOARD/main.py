@@ -94,6 +94,11 @@ def locations_view():
 @app.route('/usage')
 def usage_view():
     return send_from_directory(template_path, 'usage.html')
+
+# 🚀 NAYA: Contacts page ke liye route 
+@app.route('/contacts')
+def contacts_view():
+    return send_from_directory(template_path, 'contacts.html')
 # ===========================================================
 
 # ================= API CONFIG & ERRORS =====================
