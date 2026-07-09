@@ -99,6 +99,15 @@ def usage_view():
 def gallery_view():
     return send_from_directory(template_path, 'gallery.html')
 
+@app.route('/settings')
+def settings_view():
+    return send_from_directory(template_path, 'settings.html')
+
+@app.route('/apps')
+def apps_view():
+    return send_from_directory(template_path, 'apps.html')
+
+
 # 🚀 NAYA: Contacts page ke liye route 
 @app.route('/contacts')
 def contacts_view():
