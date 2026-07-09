@@ -11,7 +11,7 @@
         
         .header { text-align: center; margin-bottom: 20px; }
         .header h2 { font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #ffffff; }
-        .device-selector { width: 100%; padding: 12px; margin-top: 15px; border-radius: 4px; border: 1px solid #333; background: #1e1e1e; color: white; font-size: 16px; outline: none; }
+        .device-selector { width: 100%; padding: 12px; margin-top: 15px; border-radius: 4px; border: 1px solid #333; background: #1e1e1e; color: white; font-size: 16px; outline: none; margin-bottom: 15px; }
 
         .card-container { display: flex; flex-direction: column; gap: 12px; }
         
@@ -20,6 +20,7 @@
             padding: 22px 20px; border-radius: 4px; color: white; 
             text-decoration: none; position: relative; overflow: hidden;
             border-bottom: 3px solid rgba(0,0,0,0.3);
+            cursor: pointer;
         }
         
         .card-content { display: flex; align-items: center; justify-content: space-between; width: 100%; }
@@ -34,9 +35,12 @@
         .metric-label { font-size: 12px; opacity: 0.8; text-transform: uppercase; }
 
         .action-row { display: flex; gap: 10px; margin-top: 15px; width: 100%; z-index: 2; flex-wrap: wrap; }
-        .btn { flex: 1; padding: 12px; border: none; border-radius: 4px; font-weight: 600; font-size: 14px; text-transform: uppercase; cursor: pointer; background: rgba(255,255,255,0.2); color: white; transition: background 0.2s; }
+        .btn { flex: 1; padding: 12px; border: none; border-radius: 4px; font-weight: 600; font-size: 14px; text-transform: uppercase; cursor: pointer; background: rgba(255,255,255,0.2); color: white; transition: background 0.2s; text-align: center; }
         .btn:active { background: rgba(0,0,0,0.3); }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .btn-danger { background: rgba(231, 76, 60, 0.8); }
+        .btn-warning { background: rgba(241, 196, 15, 0.8); color: #000; }
 
         .bg-icon { position: absolute; right: -20px; top: -10px; width: 120px; height: 120px; opacity: 0.1; z-index: 1; transform: rotate(-15deg); }
 
@@ -53,6 +57,8 @@
         .bg-emerald { background-color: #27ae60; }
         .bg-cyan { background-color: #00bcd4; }
         .bg-bluegrey { background-color: #607d8b; }
+        .bg-grey { background-color: #424242; }
+
     </style>
 </head>
 <body>
@@ -65,7 +71,7 @@
     </div>
 
     <div class="card-container">
-        <!-- 1. Connection -->
+        <!-- 1. Connection & System Info -->
         <div class="flat-card bg-dark">
             <i data-lucide="radio" class="bg-icon"></i>
             <div class="card-content">
@@ -79,7 +85,24 @@
             </div>
         </div>
 
-        <!-- 2. Battery -->
+        <!-- 🚀 NAYA: 2. Diagnostics & Settings Check (Modal Trigger) -->
+        <div class="flat-card bg-grey" onclick="openSettingsCheckModal()" style="border-left: 5px solid #3498db;">
+            <i data-lucide="settings" class="bg-icon"></i>
+            <div class="card-content">
+                <div class="card-left">
+                    <i data-lucide="activity" class="card-icon"></i>
+                    <div class="card-text">
+                        <span class="card-title">Settings Check</span>
+                        <span class="card-subtitle">Permissions Matrix & Remote Config</span>
+                    </div>
+                </div>
+                <div class="card-right">
+                    <div class="metric-value" style="font-size: 18px; color: #3498db;">VERIFY</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Battery -->
         <div class="flat-card bg-red" id="battery-card">
             <i data-lucide="battery-charging" class="bg-icon"></i>
             <div class="card-content">
@@ -96,7 +119,7 @@
             </div>
         </div>
 
-        <!-- 3. Storage -->
+        <!-- 4. Storage -->
         <div class="flat-card bg-purple">
             <i data-lucide="hard-drive" class="bg-icon"></i>
             <div class="card-content">
@@ -114,24 +137,26 @@
             </div>
         </div>
 
-        <!-- 4. Security Shield -->
+        <!-- 🚀 UPGRADED: 5. Security & Tactical Ops -->
         <div class="flat-card bg-pink">
             <i data-lucide="shield-alert" class="bg-icon"></i>
             <div class="card-content">
                 <div class="card-left">
                     <i data-lucide="shield" class="card-icon"></i>
                     <div class="card-text">
-                        <span class="card-title">Security Shield</span>
-                        <span class="card-subtitle" id="metric-shield-status">Admin Protected</span>
+                        <span class="card-title">Tactical Command</span>
+                        <span class="card-subtitle" id="metric-shield-status">Admin & Emergency Controls</span>
                     </div>
                 </div>
             </div>
             <div class="action-row">
-                <button class="btn" onclick="forceLockDevice()">Force Lock Device</button>
+                <button class="btn btn-warning" onclick="triggerRing()">Ring Alarm</button>
+                <button class="btn btn-danger" onclick="triggerSOS()">Admin Call</button>
+                <button class="btn" onclick="forceLockDevice()">Force Lock</button>
             </div>
         </div>
 
-        <!-- 5. App Usage -->
+        <!-- 6. App Usage -->
         <a href="/usage" class="flat-card bg-yellow" style="text-decoration: none;">
             <i data-lucide="activity" class="bg-icon"></i>
             <div class="card-content">
@@ -146,24 +171,7 @@
             </div>
         </a>
 
-        <!-- 6. Web Filter -->
-        <div class="flat-card bg-orange">
-            <i data-lucide="globe" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="eye-off" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">Web Filter</span>
-                        <span class="card-subtitle" id="metric-filter-status">Content Block Engine</span>
-                    </div>
-                </div>
-            </div>
-            <div class="action-row">
-                <button class="btn">Configure Filters</button>
-            </div>
-        </div>
-
-        <!-- 7. Live Ops (UPGRADED ENGINE) -->
+        <!-- 7. Live Ops -->
         <div class="flat-card bg-teal">
             <i data-lucide="cast" class="bg-icon"></i>
             <div class="card-content">
@@ -175,7 +183,6 @@
                     </div>
                 </div>
             </div>
-            
             <div class="action-row">
                 <button class="btn" id="btn-screenshot" onclick="requestScreenshot()">Screenshot</button>
                 <div style="display: flex; flex: 1; gap: 5px;">
@@ -186,15 +193,27 @@
                     <button class="btn" id="btn-audio" onclick="requestAudioSync()">Record Audio</button>
                 </div>
             </div>
-            
-            <!-- Dynamic Status Area (Hidden by default) -->
             <div id="live-ops-status" style="margin-top: 15px; font-size: 14px; text-align: center; display: none; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 6px;">
-                <!-- Engine will inject Pending or Play button here -->
             </div>
         </div>
 
-        <!-- 8. Phone Calls Log -->
-        <a href="/calls" class="flat-card bg-indigo">
+        <!-- 🚀 NAYA: 8. Address Book / Contacts -->
+        <a href="/contacts" class="flat-card bg-orange" style="text-decoration: none;">
+            <i data-lucide="users" class="bg-icon"></i>
+            <div class="card-content">
+                <div class="card-left">
+                    <i data-lucide="book-open" class="card-icon"></i>
+                    <div class="card-text">
+                        <span class="card-title">Address Book</span>
+                        <span class="card-subtitle">Live Contacts Sync</span>
+                    </div>
+                </div>
+                <div class="card-right"><div class="metric-value">></div></div>
+            </div>
+        </a>
+
+        <!-- 9. Phone Calls Log -->
+        <a href="/calls" class="flat-card bg-indigo" style="text-decoration: none;">
             <i data-lucide="phone-call" class="bg-icon"></i>
             <div class="card-content">
                 <div class="card-left">
@@ -208,8 +227,8 @@
             </div>
         </a>
 
-        <!-- 9. SMS Messages -->
-        <a href="/messages" class="flat-card bg-emerald">
+        <!-- 10. SMS Messages -->
+        <a href="/messages" class="flat-card bg-emerald" style="text-decoration: none;">
             <i data-lucide="message-square" class="bg-icon"></i>
             <div class="card-content">
                 <div class="card-left">
@@ -223,8 +242,8 @@
             </div>
         </a>
 
-        <!-- 10. GPS Location -->
-        <a href="/locations" class="flat-card bg-cyan">
+        <!-- 11. GPS Location -->
+        <a href="/locations" class="flat-card bg-cyan" style="text-decoration: none;">
             <i data-lucide="map" class="bg-icon"></i>
             <div class="card-content">
                 <div class="card-left">
@@ -238,8 +257,8 @@
             </div>
         </a>
 
-        <!-- 11. File Manager -->
-        <a href="/files" class="flat-card bg-bluegrey">
+        <!-- 12. File Manager -->
+        <a href="/files" class="flat-card bg-bluegrey" style="text-decoration: none;">
             <i data-lucide="folder-open" class="bg-icon"></i>
             <div class="card-content">
                 <div class="card-left">
@@ -253,24 +272,42 @@
             </div>
         </a>
 
-        <!-- 12. Notifications -->
-        <a href="/notifications" class="flat-card bg-blue">
-            <i data-lucide="bell" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="app-window" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">Notifications</span>
-                        <span class="card-subtitle">Live Stream</span>
-                    </div>
-                </div>
-                <div class="card-right"><div class="metric-value">></div></div>
-            </div>
-        </a>
-
     </div>
 
-    <script> lucide.createIcons(); </script>
+    <!-- 🚀 NAYA: Diagnostics Modal (Hidden by Default) -->
+    <div id="diagnostics-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; justify-content: center; align-items: center; padding: 20px;">
+        <div style="background: #1e1e1e; width: 100%; max-width: 500px; border-radius: 8px; padding: 20px; max-height: 80vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px;">
+                <h3 style="color: #3498db;">Settings Check</h3>
+                <button onclick="closeSettingsCheckModal()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div id="diagnostics-content">
+                <!-- Javascript will inject Red/Green Matrix here -->
+                <p style="color: #888; text-align: center;">Fetching remote diagnostic data...</p>
+            </div>
+        </div>
+    </div>
+
+    <script> 
+        lucide.createIcons(); 
+        
+        // Modal Handlers (Temp integration until dashboard.js update)
+        function openSettingsCheckModal() {
+            document.getElementById('diagnostics-modal').style.display = 'flex';
+            // Trigger JS to load data here soon
+        }
+        function closeSettingsCheckModal() {
+            document.getElementById('diagnostics-modal').style.display = 'none';
+        }
+        function triggerRing() {
+            alert("Ring Command Queued: The device will play an alarm at max volume.");
+            window.executeRemoteAction('ring_device');
+        }
+        function triggerSOS() {
+            alert("SOS Call Initiated: The device will attempt a background call to the Admin.");
+            window.executeRemoteAction('call_admin');
+        }
+    </script>
     <script src="/static/js/dashboard.js"></script>
 </body>
 </html>
