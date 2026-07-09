@@ -224,6 +224,9 @@ def get_pending_commands():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+# ==========================================
+# 🚀 UPGRADED ROUTE: SECURE REMOTE ACTIONS (With App Blocker Logic)
+# ==========================================
 @devices_bp.route('/api/devices/<device_id>/action', methods=['POST'])
 @token_required
 def execute_device_action(device_id):
@@ -236,6 +239,11 @@ def execute_device_action(device_id):
         action_type = data.get('action')
         if not action_type:
             return jsonify({"status": "error", "message": "Action parameter is required"}), 400
+
+        # 🚀 THE PRO FIX: Package name ko command ke sath jodna (e.g. block_app:com.whatsapp)
+        if action_type == 'block_app':
+            target = data.get('target_package', 'unknown')
+            action_type = f"block_app:{target}"
 
         log_desc = f"Triggered '{action_type}' command remotely."
         if 'duration' in data:
