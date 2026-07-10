@@ -58,7 +58,6 @@
         .bg-cyan { background-color: #00bcd4; }
         .bg-bluegrey { background-color: #607d8b; }
         .bg-grey { background-color: #424242; }
-
     </style>
 </head>
 <body>
@@ -70,7 +69,9 @@
         </select>
     </div>
 
+    <!-- 🚀 FIX: Saare cards ab is ek container ke andar hain -->
     <div class="card-container">
+        
         <!-- 1. Connection & System Info -->
         <div class="flat-card bg-dark">
             <i data-lucide="radio" class="bg-icon"></i>
@@ -85,7 +86,7 @@
             </div>
         </div>
 
-        <!-- 🚀 NAYA: 2. Diagnostics & Settings Check (Modal Trigger) -->
+        <!-- 2. Diagnostics & Settings Check -->
         <div class="flat-card bg-grey" onclick="openSettingsCheckModal()" style="border-left: 5px solid #3498db;">
             <i data-lucide="settings" class="bg-icon"></i>
             <div class="card-content">
@@ -137,7 +138,7 @@
             </div>
         </div>
 
-        <!-- 🚀 UPGRADED: 5. Security & Tactical Ops -->
+        <!-- 5. Security & Tactical Ops -->
         <div class="flat-card bg-pink">
             <i data-lucide="shield-alert" class="bg-icon"></i>
             <div class="card-content">
@@ -150,13 +151,52 @@
                 </div>
             </div>
             <div class="action-row">
-                <button class="btn btn-warning" onclick="triggerRing()">Ring Alarm</button>
-                <button class="btn btn-danger" onclick="triggerSOS()">Admin Call</button>
-                <button class="btn" onclick="forceLockDevice()">Force Lock</button>
+                <button class="btn btn-warning" onclick="triggerCommand('ring_device', 'Ring Alarm')">Ring Alarm</button>
+                <button class="btn btn-danger" onclick="triggerCommand('call_admin', 'Admin Call')">Admin Call</button>
+                <button class="btn" onclick="triggerCommand('force_lock', 'Force Lock')">Force Lock</button>
             </div>
         </div>
 
-        <!-- 6. App Usage -->
+        <!-- 6. Live Ops (Media Capture Triggers) -->
+        <div class="flat-card bg-teal">
+            <i data-lucide="cast" class="bg-icon"></i>
+            <div class="card-content">
+                <div class="card-left">
+                    <i data-lucide="video" class="card-icon"></i>
+                    <div class="card-text">
+                        <span class="card-title">Live Ops</span>
+                        <span class="card-subtitle">Remote Media Capture</span>
+                    </div>
+                </div>
+            </div>
+            <div class="action-row">
+                <button class="btn" id="btn-screenshot" onclick="triggerCommand('take_screenshot', 'Screenshot')">Screenshot</button>
+                <div style="display: flex; flex: 1; gap: 5px;">
+                    <select id="audio-duration" style="background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 4px; padding: 5px; outline: none; font-weight: bold;">
+                        <option value="60" style="color: black;">1 Min</option>
+                        <option value="120" style="color: black;">2 Min</option>
+                    </select>
+                    <button class="btn" id="btn-audio" onclick="triggerCommand('record_audio', 'Record Audio')">Record Audio</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🚀 NAYA: 7. Operations Vault (Global Page Link) -->
+        <a href="/ops" class="flat-card bg-blue" style="text-decoration: none; border-left: 5px solid #00d2d3;">
+            <i data-lucide="terminal" class="bg-icon"></i>
+            <div class="card-content">
+                <div class="card-left">
+                    <i data-lucide="activity" class="card-icon"></i>
+                    <div class="card-text">
+                        <span class="card-title">Operations Vault</span>
+                        <span class="card-subtitle">Live Status of Executed Commands</span>
+                    </div>
+                </div>
+                <div class="card-right"><div class="metric-value">></div></div>
+            </div>
+        </a>
+
+        <!-- 8. App Usage -->
         <a href="/usage" class="flat-card bg-yellow" style="text-decoration: none;">
             <i data-lucide="activity" class="bg-icon"></i>
             <div class="card-content">
@@ -171,33 +211,7 @@
             </div>
         </a>
 
-        <!-- 7. Live Ops -->
-        <div class="flat-card bg-teal">
-            <i data-lucide="cast" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="video" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">Live Ops</span>
-                        <span class="card-subtitle">Remote Media Capture</span>
-                    </div>
-                </div>
-            </div>
-            <div class="action-row">
-                <button class="btn" id="btn-screenshot" onclick="requestScreenshot()">Screenshot</button>
-                <div style="display: flex; flex: 1; gap: 5px;">
-                    <select id="audio-duration" style="background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 4px; padding: 5px; outline: none; font-weight: bold;">
-                        <option value="60" style="color: black;">1 Min</option>
-                        <option value="120" style="color: black;">2 Min</option>
-                    </select>
-                    <button class="btn" id="btn-audio" onclick="requestAudioSync()">Record Audio</button>
-                </div>
-            </div>
-            <div id="live-ops-status" style="margin-top: 15px; font-size: 14px; text-align: center; display: none; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 6px;">
-            </div>
-        </div>
-
-        <!-- 🚀 NAYA: 8. Address Book / Contacts -->
+        <!-- 9. Address Book / Contacts -->
         <a href="/contacts" class="flat-card bg-orange" style="text-decoration: none;">
             <i data-lucide="users" class="bg-icon"></i>
             <div class="card-content">
@@ -212,7 +226,7 @@
             </div>
         </a>
 
-        <!-- 9. Phone Calls Log -->
+        <!-- 10. Phone Calls Log -->
         <a href="/calls" class="flat-card bg-indigo" style="text-decoration: none;">
             <i data-lucide="phone-call" class="bg-icon"></i>
             <div class="card-content">
@@ -227,7 +241,7 @@
             </div>
         </a>
 
-        <!-- 10. SMS Messages -->
+        <!-- 11. SMS Messages -->
         <a href="/messages" class="flat-card bg-emerald" style="text-decoration: none;">
             <i data-lucide="message-square" class="bg-icon"></i>
             <div class="card-content">
@@ -242,7 +256,7 @@
             </div>
         </a>
 
-        <!-- 11. GPS Location -->
+        <!-- 12. GPS Location -->
         <a href="/locations" class="flat-card bg-cyan" style="text-decoration: none;">
             <i data-lucide="map" class="bg-icon"></i>
             <div class="card-content">
@@ -257,7 +271,7 @@
             </div>
         </a>
 
-        <!-- 12. File Manager -->
+        <!-- 13. File Manager -->
         <a href="/files" class="flat-card bg-bluegrey" style="text-decoration: none;">
             <i data-lucide="folder-open" class="bg-icon"></i>
             <div class="card-content">
@@ -272,10 +286,7 @@
             </div>
         </a>
 
-    </div>
-
-
-        <!-- 🚀 NAYA: Live Media Gallery -->
+        <!-- 14. Live Media Gallery -->
         <a href="/gallery" class="flat-card bg-pink" style="text-decoration: none;">
             <i data-lucide="image" class="bg-icon"></i>
             <div class="card-content">
@@ -290,6 +301,7 @@
             </div>
         </a>
 
+        <!-- 15. Installed Apps -->
         <a href="/apps" class="flat-card bg-cyan" style="text-decoration: none;">
             <i data-lucide="layers" class="bg-icon"></i>
             <div class="card-content">
@@ -304,6 +316,7 @@
             </div>
         </a>
 
+        <!-- 16. Feature Selection -->
         <a href="/settings" class="flat-card bg-grey" style="text-decoration: none; border-left: 5px solid #f1c40f;">
             <i data-lucide="sliders" class="bg-icon"></i>
             <div class="card-content">
@@ -318,8 +331,10 @@
             </div>
         </a>
 
+    </div> <!-- Card Container End -->
 
-    <!-- 🚀 NAYA: Diagnostics Modal (Hidden by Default) -->
+
+    <!-- Diagnostics Modal -->
     <div id="diagnostics-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; justify-content: center; align-items: center; padding: 20px;">
         <div style="background: #1e1e1e; width: 100%; max-width: 500px; border-radius: 8px; padding: 20px; max-height: 80vh; overflow-y: auto;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px;">
@@ -327,30 +342,40 @@
                 <button onclick="closeSettingsCheckModal()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">&times;</button>
             </div>
             <div id="diagnostics-content">
-                <!-- Javascript will inject Red/Green Matrix here -->
                 <p style="color: #888; text-align: center;">Fetching remote diagnostic data...</p>
             </div>
         </div>
     </div>
 
+    <!-- Script Block -->
     <script> 
         lucide.createIcons(); 
         
-        // Modal Handlers (Temp integration until dashboard.js update)
-        function openSettingsCheckModal() {
-            document.getElementById('diagnostics-modal').style.display = 'flex';
-            // Trigger JS to load data here soon
-        }
-        function closeSettingsCheckModal() {
-            document.getElementById('diagnostics-modal').style.display = 'none';
-        }
-        function triggerRing() {
-            alert("Ring Command Queued: The device will play an alarm at max volume.");
-            window.executeRemoteAction('ring_device');
-        }
-        function triggerSOS() {
-            alert("SOS Call Initiated: The device will attempt a background call to the Admin.");
-            window.executeRemoteAction('call_admin');
+        function openSettingsCheckModal() { document.getElementById('diagnostics-modal').style.display = 'flex'; }
+        function closeSettingsCheckModal() { document.getElementById('diagnostics-modal').style.display = 'none'; }
+        
+        // 🚀 THE REDIRECT ENGINE
+        function triggerCommand(commandString, commandName) {
+            const isConfirmed = confirm(`Are you sure you want to trigger: ${commandName}?`);
+            if (!isConfirmed) return;
+
+            // Optional: Agar audio duration pass karni ho server ko
+            if (commandString === 'record_audio') {
+                const duration = document.getElementById('audio-duration').value;
+                commandString = `record_audio:${duration}`;
+            }
+
+            // Call the actual function from dashboard.js
+            if(window.executeRemoteAction) {
+                window.executeRemoteAction(commandString);
+            } else {
+                alert('Connection Engine missing. Action Queued.');
+            }
+
+            // Redirect automatically to the Global Ops Page to see the result
+            setTimeout(() => {
+                window.location.href = "/ops";
+            }, 1000); // 1 second delay so the server registers it first
         }
     </script>
     <script src="/static/js/dashboard.js"></script>
