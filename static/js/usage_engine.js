@@ -1,7 +1,9 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const container = document.getElementById('usage-container');
-    const token = localStorage.getItem('session_token');
-    const deviceId = localStorage.getItem('current_device_id');
+    
+    // 🚀 BUG FIX: Matched LocalStorage Keys with the rest of the application
+    const token = localStorage.getItem('owner_token');
+    const deviceId = localStorage.getItem('active_device_id');
 
     if (!token || !deviceId) {
         container.innerHTML = '<p style="color: #d32f2f;">Critical Error: Session or Target Device ID missing. Please re-authenticate from the dashboard.</p>';
@@ -9,11 +11,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     try {
-        // 1. Fetch Supabase Public Config
         const configRes = await fetch('/api/config');
         const config = await configRes.json();
         
-        // 2. Fetch Usage Data directly from Supabase REST API (Order by highest usage)
         const usageRes = await fetch(`${config.supabase_url}/rest/v1/app_usage?device_id=eq.${deviceId}&order=time_spent.desc`, {
             headers: {
                 'apikey': config.supabase_key,
@@ -28,14 +28,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        container.innerHTML = ''; // Clear loading state
+        container.innerHTML = ''; 
 
-        // 3. Render DOM Elements dynamically
         usageData.forEach(app => {
             const card = document.createElement('div');
             card.className = 'app-card';
             
-            // Format time intelligently
             let timeText = `${app.time_spent} seconds`;
             if (app.time_spent >= 3600) {
                 timeText = `${(app.time_spent / 3600).toFixed(1)} hours`;
@@ -60,15 +58,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-// ==========================================
-// 🚀 THE BLOCKING ENGINE EXECUTOR
-// ==========================================
 async function triggerAppBlock(packageName, appName) {
     const isConfirmed = confirm(`SECURITY WARNING: Are you sure you want to enforce a remote block on ${appName}?`);
     if (!isConfirmed) return;
 
-    const token = localStorage.getItem('session_token');
-    const deviceId = localStorage.getItem('current_device_id');
+    // 🚀 BUG FIX: Syncing token keys for block engine as well
+    const token = localStorage.getItem('owner_token');
+    const deviceId = localStorage.getItem('active_device_id');
 
     try {
         const res = await fetch(`/api/devices/${deviceId}/action`, {
