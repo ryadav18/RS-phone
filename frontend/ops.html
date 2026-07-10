@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Operations - RS Phone</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .ops-container { padding: 20px; }
+        .op-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .op-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #222;
+            padding-bottom: 10px;
+        }
+        .op-title { font-weight: bold; font-size: 1.1rem; color: #fff; text-transform: uppercase;}
+        .op-time { color: #888; font-size: 0.85rem; font-family: monospace;}
+        
+        /* Simple Badges */
+        .status { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+        .status-pending { background: #f39c12; color: #000; }
+        .status-success { background: #27ae60; color: #fff; }
+        .status-failed { background: #c0392b; color: #fff; }
+        
+        /* Result Viewers */
+        .result-box { background: #111; padding: 10px; border-radius: 4px; margin-top: 5px; }
+        .result-img { max-width: 100%; max-height: 400px; border: 1px solid #444; border-radius: 4px; display: block; }
+        audio { width: 100%; height: 40px; }
+        .error-text { color: #e74c3c; font-family: monospace; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar glass-panel">
+            <div class="sidebar-brand">
+                <i data-lucide="shield" style="color: var(--accent-cyan);"></i>
+                <span>RS OWNER</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
+                <!-- 🚀 NAYA LINK ADD KIYA HAI -->
+                <li class="active"><a href="/ops"><i data-lucide="activity"></i> Live Operations</a></li>
+                <li><a href="/calls"><i data-lucide="phone"></i> Call Logs</a></li>
+                <li><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
+                <li><a href="/logs"><i data-lucide="terminal"></i> System Logs</a></li>
+            </ul>
+        </div>
+        
+        <main class="main-content">
+            <header class="topbar">
+                <h2>Live Operations & Commands</h2>
+                <span id="auto-refresh-status" style="color: #27ae60; font-size: 0.8rem; font-family: monospace;">
+                    Auto-syncing every 5s...
+                </span>
+            </header>
+
+            <div class="ops-container" id="ops-list">
+                <p style="color: #888;">Fetching operational data...</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/ops_engine.js"></script>
+    <script>lucide.createIcons();</script>
+</body>
+</html>
