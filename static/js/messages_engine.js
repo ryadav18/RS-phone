@@ -5,16 +5,14 @@ class MessagesEngine {
     }
 
     async init() {
-        // Pro Fix: Pehle backend se devices load karo aur dropdown populate karo
         await this.loadDevicesList();
-
-        if (!this.activeDeviceId) return; // Agar device hi nahi hai toh aage mat bado
+        if (!this.activeDeviceId) return; 
         
         this.fetchMessages();
-        setInterval(() => this.fetchMessages(), 5000);
+        // 15 seconds polling taaki limit=10 par server overload na ho
+        setInterval(() => this.fetchMessages(), 15000);
     }
 
-    // Naya Engine: Dropdown Manager
     async loadDevicesList() {
         const token = localStorage.getItem('owner_token');
         try {
@@ -31,22 +29,17 @@ class MessagesEngine {
                         selectEl.innerHTML = '<option value="">No Devices Found</option>';
                         return;
                     }
-
                     result.data.forEach(dev => {
                         const option = document.createElement('option');
                         option.value = dev.id;
                         option.textContent = dev.name;
                         selectEl.appendChild(option);
                     });
-
-                    // Auto-select first device
                     if (!this.activeDeviceId && result.data.length > 0) {
                         this.activeDeviceId = result.data[0].id;
                         localStorage.setItem('active_device_id', this.activeDeviceId);
                     }
                     selectEl.value = this.activeDeviceId;
-
-                    // Switch logic
                     selectEl.addEventListener('change', (e) => {
                         this.activeDeviceId = e.target.value;
                         localStorage.setItem('active_device_id', this.activeDeviceId);
@@ -54,51 +47,81 @@ class MessagesEngine {
                     });
                 }
             }
-        } catch (e) {
-            console.error("Failed to load devices:", e);
-        }
+        } catch (e) { console.error("Failed to load devices:", e); }
     }
 
     async fetchMessages() {
         const token = localStorage.getItem('owner_token');
         try {
-            const res = await fetch(`/api/messages?device_id=${this.activeDeviceId}&limit=150`, {
+            // Strict Limit = 10
+            const res = await fetch(`/api/messages?device_id=${this.activeDeviceId}&limit=10`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const result = await res.json();
             if (result.status === 'success') {
                 this.renderMessages(result.data);
             }
-        } catch (e) {
-            console.error("Messages Engine Error:", e);
-        }
+        } catch (e) { console.error("Messages Engine Error:", e); }
     }
 
-    // Tera original UI Renderer
     renderMessages(items) {
         const container = document.getElementById('sms-list');
         if (!container) return;
 
         if (items.length === 0) {
-            container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px;">No SMS streams detected.</div>';
+            container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 40px;">No communication logged. Waiting for sync...</div>';
             return;
         }
 
-        container.innerHTML = items.map(m => `
-            <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; border-left: 4px solid #f5a623; margin-bottom: 10px;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                    <strong style="color: #f5a623; font-size: 0.95rem;">${m.sender}</strong>
-                    <span style="color: var(--text-muted); font-size: 0.8rem;">${new Date(m.timestamp).toLocaleString()}</span>
+        container.innerHTML = items.map(m => {
+            // Android Type Logic: 1 = Inbox (Received), 2 = Sent (Outgoing)
+            let directionText = 'UNKNOWN';
+            let badgeColor = '#95a5a6';
+            let arrowIcon = '↔️';
+
+            if (m.message_type === '1' || m.message_type.toLowerCase() === 'inbox') {
+                directionText = 'RECEIVED';
+                badgeColor = '#2ecc71';
+                arrowIcon = '↙️';
+            } else if (m.message_type === '2' || m.message_type.toLowerCase() === 'sent') {
+                directionText = 'SENT';
+                badgeColor = '#3498db';
+                arrowIcon = '↗️';
+            }
+
+            // Timestamp Formatting
+            const dateObj = new Date(m.timestamp);
+            const dateStr = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+            const timeStr = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+            return `
+            <div style="background: rgba(255,255,255,0.05); padding: 18px; border-radius: 8px; border-left: 4px solid ${badgeColor}; margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.2rem;">${arrowIcon}</span>
+                        <strong style="color: #fff; font-size: 1.1rem; letter-spacing: 0.5px;">${m.sender}</strong>
+                    </div>
+                    <span style="background: ${badgeColor}33; color: ${badgeColor}; padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; border: 1px solid ${badgeColor};">
+                        ${directionText}
+                    </span>
                 </div>
-                <div style="font-size: 0.95rem; color: #e2e8f0; line-height: 1.4;">${m.message_preview}</div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #333; padding-top: 10px; margin-top: 5px;">
+                    <span style="color: #666; font-size: 0.85rem; font-weight: bold;">
+                        🔒 ENCRYPTED / CONTENT HIDDEN
+                    </span>
+                    <span style="color: #aaa; font-size: 0.85rem; font-family: monospace;">
+                        ${dateStr} &bull; ${timeStr}
+                    </span>
+                </div>
             </div>
-        `).join('');
+            `;
+        }).join('');
     }
 }
 
-// Tera original Wipe Action
 window.wipeSMSHistory = async function() {
-    if(!confirm("WARNING: Permanently delete all SMS logs?")) return;
+    if(!confirm("WARNING: Permanently delete all 10 SMS logs?")) return;
     const token = localStorage.getItem('owner_token');
     const activeId = localStorage.getItem('active_device_id');
     
@@ -115,9 +138,7 @@ window.wipeSMSHistory = async function() {
         } else {
             alert("Error: " + result.message);
         }
-    } catch (e) {
-        console.error(e);
-    }
+    } catch (e) { console.error(e); }
 };
 
 document.addEventListener('DOMContentLoaded', () => new MessagesEngine());
