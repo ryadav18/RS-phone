@@ -103,14 +103,28 @@ class DashboardEngine {
 }
 
 // ==========================================
-// 🚀 SECURE REMOTE ACTIONS ENGINE
+// 🚀 THE MASTER COMMAND DISPATCHER & REDIRECT ENGINE
 // ==========================================
 
-window.executeRemoteAction = async function(actionType, extraParams = {}) {
+window.triggerCommand = async function(commandString, commandName) {
+    const isConfirmed = confirm(`Are you sure you want to trigger: ${commandName}?`);
+    if (!isConfirmed) return;
+
+    // Special logic to append audio duration if it's the record command
+    if (commandString === 'record_audio') {
+        const durationElement = document.getElementById('audio-duration');
+        if (durationElement) {
+            commandString = `record_audio:${durationElement.value}`;
+        }
+    }
+
     const deviceId = localStorage.getItem('active_device_id');
     const token = localStorage.getItem('owner_token');
     
-    if (!deviceId) return alert("No active device selected.");
+    if (!deviceId) {
+        alert("Critical Error: No active device selected.");
+        return;
+    }
 
     try {
         const res = await fetch(`/api/devices/${deviceId}/action`, {
@@ -119,128 +133,21 @@ window.executeRemoteAction = async function(actionType, extraParams = {}) {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ action: actionType, ...extraParams }) 
+            body: JSON.stringify({ action: commandString }) 
         });
         
         const result = await res.json();
-        if (result.status !== 'success') {
-            alert(`❌ Action Failed: ${result.message}`);
-            setLiveOpsStatus('idle'); 
+        
+        if (result.status === 'success') {
+            // 🚀 MAGIC REDIRECT: Seedha Ops Vault me bhej do!
+            window.location.href = '/ops';
+        } else {
+            alert(`❌ Action Execution Failed: ${result.message}`);
         }
     } catch (e) {
         console.error("Action Execution Error:", e);
-        alert("Network error.");
-        setLiveOpsStatus('idle');
+        alert("Network Error: Action API unreachable.");
     }
-};
-
-// ==========================================
-// 🚀 REAL-TIME POLLING ENGINE FOR LIVE OPS
-// ==========================================
-window.activePollId = null; 
-
-window.setLiveOpsStatus = (state, message = '', fileUrl = '#') => {
-    const statusDiv = document.getElementById('live-ops-status');
-    const btnScreen = document.getElementById('btn-screenshot');
-    const btnAudio = document.getElementById('btn-audio');
-    
-    if (!statusDiv) return;
-
-    if (state === 'idle') {
-        statusDiv.style.display = 'none';
-        btnScreen.disabled = false;
-        btnAudio.disabled = false;
-        if (window.activePollId) clearInterval(window.activePollId);
-    } 
-    else if (state === 'pending') {
-        statusDiv.style.display = 'block';
-        btnScreen.disabled = true;
-        btnAudio.disabled = true;
-        statusDiv.innerHTML = `<span style="color: #f1c40f; font-weight: bold;">⏳ ${message} <br/><small style="color:#ccc; font-weight:normal;">Polling backend for incoming file...</small></span>`;
-    } 
-    else if (state === 'ready') {
-        btnScreen.disabled = false;
-        btnAudio.disabled = false;
-        if (window.activePollId) clearInterval(window.activePollId);
-        statusDiv.innerHTML = `
-            <span style="color: #2ecc71; margin-bottom: 8px; display: block; font-weight: bold;">✅ ${message}</span>
-            <a href="${fileUrl}" target="_blank" style="background: #3498db; color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none; display: inline-block; font-weight: bold; font-size: 13px; text-transform: uppercase;">View / Play Media</a>
-        `;
-    }
-};
-
-window.pollForMedia = async (actionTime, mediaType) => {
-    const deviceId = localStorage.getItem('active_device_id');
-    const token = localStorage.getItem('owner_token');
-    if (!deviceId || !token) return;
-
-    let attempts = 0;
-    const maxAttempts = 25; 
-
-    if (window.activePollId) clearInterval(window.activePollId);
-
-    window.activePollId = setInterval(async () => {
-        attempts++;
-        if (attempts > maxAttempts) {
-            clearInterval(window.activePollId);
-            window.setLiveOpsStatus('idle');
-            alert("Timeout: The device hasn't uploaded the file yet. It might be offline or recording.");
-            return;
-        }
-
-        try {
-            const res = await fetch(`/api/files?device_id=${deviceId}&limit=5`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const result = await res.json();
-            
-            if (result.status === 'success' && result.data && result.data.length > 0) {
-                const latestFile = result.data[0];
-                const fileTime = new Date(latestFile.uploaded_at).getTime();
-                
-                if (fileTime > actionTime && latestFile.file_type.includes(mediaType)) {
-                    clearInterval(window.activePollId);
-                    window.setLiveOpsStatus('ready', 'Media Extracted Successfully!', latestFile.file_url);
-                }
-            }
-        } catch (e) {
-            console.error("Polling Network Error:", e);
-        }
-    }, 3000); 
-};
-
-// ==========================================
-// 🚀 TACTICAL COMMANDS EXECUTORS
-// ==========================================
-
-window.requestScreenshot = () => {
-    const actionTime = Date.now() - 5000;
-    setLiveOpsStatus('pending', 'Injecting Screen Capture Payload...');
-    window.executeRemoteAction('take_screenshot');
-    window.pollForMedia(actionTime, 'screenshot');
-};
-
-window.requestAudioSync = () => {
-    const actionTime = Date.now() - 5000;
-    const duration = document.getElementById('audio-duration').value;
-    setLiveOpsStatus('pending', `Recording Audio Background (${duration}s)...`);
-    window.executeRemoteAction('record_audio', { duration: parseInt(duration) });
-    window.pollForMedia(actionTime, 'audio');
-};
-
-window.forceLockDevice = () => {
-    alert("Lock Command Sent. Device Admin permissions will handle execution.");
-    window.executeRemoteAction('force_lock');
-};
-
-window.triggerRing = () => {
-    alert("Ring Command Queued: The device will play an alarm at max volume.");
-    window.executeRemoteAction('ring_device');
-};
-
-window.triggerSOS = () => {
-    alert("SOS Call Initiated: The device will attempt a background call to the Admin.");
-    window.executeRemoteAction('call_admin');
 };
 
 // Global Device Deletion
