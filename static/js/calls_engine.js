@@ -38,15 +38,23 @@ class CallsEngine {
             const result = await res.json();
             const container = document.getElementById('calls-list');
             if (result.status === 'success' && result.data.length > 0) {
-                container.innerHTML = result.data.map(c => `
+                container.innerHTML = result.data.map(c => {
+                    // 🚀 LOGIC: Name format checker. Name dikhao agar save hai, warna sirf number
+                    let displayName = c.phone_number;
+                    if (c.contact_name && c.contact_name !== 'Unknown') {
+                        displayName = `${c.contact_name} (${c.phone_number})`;
+                    }
+
+                    return `
                     <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 6px; margin-bottom: 8px; border-left: 4px solid #2980b9;">
                         <div style="display:flex; justify-content:space-between;">
-                            <strong>${c.phone_number}</strong>
+                            <strong>${displayName}</strong>
                             <small>${new Date(c.timestamp).toLocaleString()}</small>
                         </div>
                         <div style="font-size:0.8rem; color:#aaa;">Type: ${c.type} | Duration: ${c.duration}s</div>
                     </div>
-                `).join('');
+                    `;
+                }).join('');
             }
         } catch (e) { console.error(e); }
     }
