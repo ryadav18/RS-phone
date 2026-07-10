@@ -16,13 +16,32 @@
             height: 60vh;
             width: 100%;
             border-radius: 8px;
-            background-color: #1e1e1e;
-            border: 1px solid #333;
+            background-color: #111;
+            border: 2px solid #00bcd4;
+            box-shadow: 0 0 15px rgba(0, 188, 212, 0.2);
         }
         .data-list-container {
-            max-height: 20vh;
+            max-height: 25vh;
             overflow-y: auto;
             margin-top: 20px;
+        }
+        /* 🚀 NAYA: Aggressive GPS Warning Modal */
+        #gps-warning {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 9999;
+            justify-content: center; align-items: center; flex-direction: column;
+        }
+        .warning-box {
+            background: #e74c3c; color: white; padding: 30px; border-radius: 8px;
+            text-align: center; max-width: 400px; border: 2px solid #c0392b;
+            box-shadow: 0 0 30px rgba(231, 76, 60, 0.5);
+        }
+        .warning-box h2 { margin-top: 0; font-size: 24px; text-transform: uppercase; }
+        .warning-box p { font-size: 16px; margin-bottom: 20px; }
+        .warning-btn {
+            background: #fff; color: #e74c3c; border: none; padding: 10px 20px;
+            font-weight: bold; border-radius: 4px; cursor: pointer; text-transform: uppercase;
         }
     </style>
 </head>
@@ -47,9 +66,9 @@
         <!-- Main Content -->
         <main class="main-content">
             <header class="topbar">
-                <h2 style="font-weight: 700;">Live Device Radar</h2>
+                <h2 style="font-weight: 700; color: #00bcd4;">LIVE SATELLITE RADAR</h2>
                 <div class="device-switcher">
-                    <select id="device-select"></select>
+                    <select id="device-select" style="padding: 8px; border-radius: 4px; background: #1e1e1e; color: white; border: 1px solid #333;"></select>
                 </div>
             </header>
 
@@ -64,8 +83,20 @@
             </div>
         </main>
     </div>
+
+    <!-- 🚀 NAYA: GPS Warning Overlay -->
+    <div id="gps-warning">
+        <div class="warning-box">
+            <i data-lucide="map-pin-off" style="width: 60px; height: 60px; margin-bottom: 15px;"></i>
+            <h2>Target GPS is OFF</h2>
+            <p>The target device has disabled Location Services. We cannot fetch live coordinates until it is turned back on.</p>
+            <button class="warning-btn" onclick="document.getElementById('gps-warning').style.display='none'">View Last Known Location</button>
+        </div>
+    </div>
     
     <script src="/static/js/auth.js"></script>
+    <!-- Use direct supabase CDN for config checks -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/static/js/locations_engine.js"></script>
     <script>lucide.createIcons();</script>
 </body>
