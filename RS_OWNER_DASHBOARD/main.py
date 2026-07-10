@@ -36,6 +36,7 @@ from backend.locations import locations_bp
 from backend.files import files_bp
 from backend.logs import logs_bp
 from backend.ops import ops_bp
+from backend.apps import apps_bp
 
 # ================= BLUEPRINTS REGISTRATION =================
 app.register_blueprint(auth_bp)
@@ -48,6 +49,7 @@ app.register_blueprint(locations_bp)
 app.register_blueprint(files_bp)
 app.register_blueprint(logs_bp)
 app.register_blueprint(ops_bp)
+app.register_blueprint(apps_bp)
 
 # ===========================================================
 
@@ -114,6 +116,10 @@ def apps_view():
 def live_operations_page():
     # Jaise tune baaki HTML files render ki hain, waise hi isko add kar de
     return send_file('frontend/ops.html') 
+
+@app.route('/apps')
+def installed_apps_page():
+    return send_file('frontend/apps.html')
 
 
 # 🚀 NAYA: Contacts page ke liye route 
