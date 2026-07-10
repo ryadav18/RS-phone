@@ -5,7 +5,6 @@ from database import supabase
 
 locations_bp = Blueprint('locations', __name__)
 
-# GET ROUTE: Dashboard map ke liye
 @locations_bp.route('/api/locations', methods=['GET'])
 @token_required
 def get_locations():
@@ -14,22 +13,22 @@ def get_locations():
         return jsonify({"status": "error", "message": "Device security restriction matched"}), 403
 
     try:
-        res = supabase.table('locations').select('*').eq('device_id', device_id).order('timestamp', desc=True).execute()
+        # Fetch top 50 recent locations
+        res = supabase.table('locations').select('*').eq('device_id', device_id).order('timestamp', desc=True).limit(50).execute()
         return jsonify({"status": "success", "data": res.data}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# 🚀 POST ROUTE FIX: App ke sync engine ke liye update kiya gaya
 @locations_bp.route('/api/sync/locations', methods=['POST'])
 def upload_location():
     token = request.headers.get('X-Device-Token')
     if not token:
-        return jsonify({"status": "error", "message": "Missing device registration identification header"}), 401
+        return jsonify({"status": "error", "message": "Missing device token"}), 401
 
     try:
         dev_check = supabase.table('devices').select('id').eq('device_token', token).execute()
         if not dev_check.data:
-            return jsonify({"status": "error", "message": "Unauthorized target context mapping"}), 403
+            return jsonify({"status": "error", "message": "Unauthorized target"}), 403
 
         dev_id = dev_check.data[0]['id']
         data = request.json or {}
@@ -38,13 +37,13 @@ def upload_location():
         lng = data.get('longitude')
 
         if lat is None or lng is None:
-            return jsonify({"status": "error", "message": "Incomplete coordinates parameters"}), 400
+            return jsonify({"status": "error", "message": "Incomplete coordinates"}), 400
 
         payload = {
             "device_id": dev_id,
-            "latitude": lat,
-            "longitude": lng,
-            "accuracy": data.get('accuracy', 0.0),
+            "latitude": float(lat),
+            "longitude": float(lng),
+            "accuracy": float(data.get('accuracy', 0.0)),
             "timestamp": data.get('timestamp', 'now()')
         }
 
