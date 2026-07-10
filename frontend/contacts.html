@@ -20,7 +20,8 @@
             justify-content: space-between;
             align-items: center;
         }
-        .header h2 { margin: 0 0 5px 0; color: #3498db; }
+        /* Color updated to match the Green theme of Contacts Engine */
+        .header h2 { margin: 0 0 5px 0; color: #27ae60; }
         .header p { margin: 0; color: #aaa; font-size: 0.9em; }
         .back-link { color: #4caf50; text-decoration: none; font-weight: bold; }
         .back-link:hover { text-decoration: underline; }
@@ -34,8 +35,9 @@
             border-radius: 6px;
             margin-bottom: 20px;
             font-size: 16px;
+            box-sizing: border-box;
         }
-        .search-box:focus { outline: none; border-color: #3498db; }
+        .search-box:focus { outline: none; border-color: #27ae60; }
 
         .contact-card { 
             background: #1e1e1e; 
@@ -61,8 +63,6 @@
             font-weight: bold;
             font-size: 0.8rem;
         }
-        
-        #loading-text { color: #888; font-style: italic; }
     </style>
 </head>
 <body>
@@ -75,13 +75,37 @@
             <a href="/dashboard" class="back-link">&larr; Dashboard</a>
         </div>
         
-        <input type="text" id="search-input" class="search-box" placeholder="Search by name or number...">
+        <!-- Added onkeyup event to trigger the live search filter -->
+        <input type="text" id="search-input" class="search-box" placeholder="Search by name or number..." onkeyup="filterContacts()">
 
-        <div id="contacts-container">
-            <p id="loading-text">Establishing secure connection... Fetching contacts...</p>
+        <!-- 🚀 FIX: ID changed from 'contacts-container' to 'contacts-list' -->
+        <div id="contacts-list">
+            <p id="loading-text" style="color: #888; font-style: italic;">Establishing secure connection... Fetching contacts...</p>
         </div>
     </div>
 
+    <!-- The actual JS Engine that communicates with backend -->
     <script src="/static/js/contacts_engine.js"></script>
+
+    <!-- 🚀 ADDED: Live Search Filter Script -->
+    <script>
+        function filterContacts() {
+            let input = document.getElementById('search-input').value.toLowerCase();
+            let list = document.getElementById('contacts-list');
+            let items = list.getElementsByTagName('div'); // Gets all contact cards inside the list
+
+            for (let i = 0; i < items.length; i++) {
+                // Ensure we only filter contact cards, not the pagination button wrapper
+                if (items[i].style.background.includes('rgba')) {
+                    let text = items[i].innerText.toLowerCase();
+                    if (text.indexOf(input) > -1) {
+                        items[i].style.display = "";
+                    } else {
+                        items[i].style.display = "none";
+                    }
+                }
+            }
+        }
+    </script>
 </body>
 </html>
