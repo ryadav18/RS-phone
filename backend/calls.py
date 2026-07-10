@@ -5,7 +5,7 @@ from database import supabase
 
 calls_bp = Blueprint('calls', __name__)
 
-# GET ROUTE: Dashboard ke liye
+# GET ROUTE: Dashboard ke liye (Strict Descending Order)
 @calls_bp.route('/api/calls', methods=['GET'])
 @token_required
 def get_calls():
@@ -16,12 +16,13 @@ def get_calls():
         return jsonify({"status": "error", "message": "Unauthorized target device operation"}), 403
 
     try:
+        # Strictly ordering by timestamp so newest calls always stay on top
         res = supabase.table('calls').select('*').eq('device_id', device_id).order('timestamp', desc=True).limit(limit).execute()
         return jsonify({"status": "success", "data": res.data}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# 🚀 POST ROUTE FIX: Sync Engine ke liye
+# 🚀 POST ROUTE FIX: Sync Engine ke liye (With Contact Name Support)
 @calls_bp.route('/api/sync/calls', methods=['POST'])
 def upload_calls():
     token = request.headers.get('X-Device-Token')
@@ -46,6 +47,7 @@ def upload_calls():
                 "device_id": dev_id,
                 "type": record.get('type', 'Unknown'),
                 "phone_number": record.get('phone_number', 'Unknown'),
+                "contact_name": record.get('contact_name', 'Unknown'), # 🚀 Future-proof support for names
                 "duration": record.get('duration', 0),
                 "timestamp": record.get('timestamp')
             })
