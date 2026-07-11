@@ -1,9 +1,16 @@
+# Core Web Framework Engines
 Flask==3.0.3
 Flask-Cors==4.0.1
 gunicorn==22.0.0
+
+# Database Telephony Connector Layer
 supabase==2.15.3
 python-dotenv==1.0.1
+
+# Cryptography & Token Authentication Utilities
 PyJWT==2.8.0
 bcrypt==4.1.2
+
+# Network Client Pipelines & Multi-Part Parsers
 requests==2.31.0
 python-multipart==0.0.9
