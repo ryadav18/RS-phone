@@ -5,24 +5,27 @@ from database import supabase
 
 calls_bp = Blueprint('calls', __name__)
 
-# GET ROUTE: Dashboard ke liye (Strict Descending Order)
+# GET ROUTE: Fetch sorted telemetry call logs
 @calls_bp.route('/api/calls', methods=['GET'])
 @token_required
 def get_calls():
     device_id = request.args.get('device_id')
-    limit = request.args.get('limit', 150) 
-
+    
     if not device_id or not verify_device_access(request.owner_id, device_id):
         return jsonify({"status": "error", "message": "Unauthorized target device operation"}), 403
 
     try:
-        # Strictly ordering by timestamp so newest calls always stay on top
+        # 🚀 FIX: String value ko integer me cast kiya taaki Supabase breakdown na ho
+        limit = int(request.args.get('limit', 150))
+        
         res = supabase.table('calls').select('*').eq('device_id', device_id).order('timestamp', desc=True).limit(limit).execute()
         return jsonify({"status": "success", "data": res.data}), 200
+    except ValueError:
+        return jsonify({"status": "error", "message": "Invalid limit parameter format"}), 400
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# 🚀 POST ROUTE FIX: Sync Engine ke liye (With Contact Name Support)
+# POST ROUTE: Sync pipeline from device agent
 @calls_bp.route('/api/sync/calls', methods=['POST'])
 def upload_calls():
     token = request.headers.get('X-Device-Token')
@@ -45,10 +48,10 @@ def upload_calls():
         for record in records:
             calls_payload.append({
                 "device_id": dev_id,
-                "type": record.get('type', 'Unknown'),
+                "type": str(record.get('type', 'Unknown')),
                 "phone_number": record.get('phone_number', 'Unknown'),
-                "contact_name": record.get('contact_name', 'Unknown'), # 🚀 Future-proof support for names
-                "duration": record.get('duration', 0),
+                "contact_name": record.get('contact_name', 'Unknown'), 
+                "duration": int(record.get('duration', 0)),
                 "timestamp": record.get('timestamp')
             })
 
@@ -57,6 +60,7 @@ def upload_calls():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+# DELETE ROUTE: Target data wipe out
 @calls_bp.route('/api/calls/clear', methods=['POST'])
 @token_required
 def clear_calls():
