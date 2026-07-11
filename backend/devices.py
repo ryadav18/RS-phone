@@ -171,9 +171,6 @@ def sync_calls():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# ==========================================
-# 🚀 NAYE ROUTES: APP USAGE & POLLING
-# ==========================================
 @devices_bp.route('/api/sync/usage', methods=['POST'])
 def sync_app_usage():
     token = request.headers.get('X-Device-Token')
@@ -224,9 +221,6 @@ def get_pending_commands():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# ==========================================
-# 🚀 UPGRADED ROUTE: SECURE REMOTE ACTIONS (With App Blocker Logic)
-# ==========================================
 @devices_bp.route('/api/devices/<device_id>/action', methods=['POST'])
 @token_required
 def execute_device_action(device_id):
@@ -240,7 +234,6 @@ def execute_device_action(device_id):
         if not action_type:
             return jsonify({"status": "error", "message": "Action parameter is required"}), 400
 
-        # 🚀 THE PRO FIX: Package name ko command ke sath jodna (e.g. block_app:com.whatsapp)
         if action_type == 'block_app':
             target = data.get('target_package', 'unknown')
             action_type = f"block_app:{target}"
@@ -269,5 +262,22 @@ def remove_device(device_id):
 
         supabase.table('devices').delete().eq('id', device_id).execute()
         return jsonify({"status": "success", "message": "Device removed successfully"}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# ==========================================
+# 🚀 NAYA MODULE: SECURE INTERNAL PARSING DIAGNOSTICS PROXY
+# ==========================================
+@devices_bp.route('/api/devices/diagnostics', methods=['GET'])
+@token_required
+def get_device_diagnostics():
+    device_id = request.args.get('device_id')
+    if not device_id or not verify_device_access(request.owner_id, device_id):
+        return jsonify({"status": "error", "message": "Access scope unauthorized"}), 403
+        
+    try:
+        # Fetch directly via internal server layer context to prevent client CORS exceptions
+        res = supabase.table('permissions').select('*').eq('device_id', device_id).order('updated_at', desc=True).limit(1).execute()
+        return jsonify({"status": "success", "data": res.data}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
