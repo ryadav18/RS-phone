@@ -14,7 +14,8 @@ if base_dir not in sys.path:
     sys.path.insert(0, base_dir)
 # =============================================================
 
-from flask import Flask, send_from_directory, jsonify, session, redirect
+# 🚀 FIX: Added 'send_file' directly into the core Flask context imports
+from flask import Flask, send_from_directory, jsonify, session, redirect, send_file
 from flask_cors import CORS
 from config import Config
 
@@ -26,6 +27,7 @@ app.secret_key = Config.SECRET_KEY
 
 CORS(app)
 
+# ================= CORE BACKEND ENGINE IMPORTS =================
 from backend.auth import auth_bp
 from backend.devices import devices_bp
 from backend.permissions import permissions_bp
@@ -38,6 +40,8 @@ from backend.logs import logs_bp
 from backend.ops import ops_bp
 from backend.apps import apps_bp
 from backend.usage import usage_bp
+# 🚀 FIX: Resolved missing contacts sync blueprint module mapping
+from backend.contacts import contacts_bp
 
 # ================= BLUEPRINTS REGISTRATION =================
 app.register_blueprint(auth_bp)
@@ -52,10 +56,10 @@ app.register_blueprint(logs_bp)
 app.register_blueprint(ops_bp)
 app.register_blueprint(apps_bp)
 app.register_blueprint(usage_bp)
-
+app.register_blueprint(contacts_bp)
 # ===========================================================
 
-# ================= FRONTEND ROUTES =========================
+# ================= FRONTEND ROUTES UNIFICATION =============
 @app.route('/')
 def index_root():
     if 'session_token' in session:
@@ -98,10 +102,6 @@ def logs_view():
 def locations_view():
     return send_from_directory(template_path, 'locations.html')
 
-@app.route('/usage')
-def usage_view():
-    return send_from_directory(template_path, 'usage.html')
-
 @app.route('/gallery')
 def gallery_view():
     return send_from_directory(template_path, 'gallery.html')
@@ -110,27 +110,22 @@ def gallery_view():
 def settings_view():
     return send_from_directory(template_path, 'settings.html')
 
+@app.route('/contacts')
+def contacts_view():
+    return send_from_directory(template_path, 'contacts.html')
+
+# 🚀 FIX: Resolved Route Collisions. Standardized endpoint targets using send_from_directory
 @app.route('/apps')
 def apps_view():
     return send_from_directory(template_path, 'apps.html')
 
+@app.route('/usage')
+def usage_view():
+    return send_from_directory(template_path, 'usage.html')
+
 @app.route('/ops')
 def live_operations_page():
-    # Jaise tune baaki HTML files render ki hain, waise hi isko add kar de
-    return send_file('frontend/ops.html') 
-
-@app.route('/apps')
-def installed_apps_page():
-    return send_file('frontend/apps.html')
-
-@app.route('/usage')
-def dynamic_wellbeing_page():
-    return send_file('frontend/usage.html')
-
-# 🚀 NAYA: Contacts page ke liye route 
-@app.route('/contacts')
-def contacts_view():
-    return send_from_directory(template_path, 'contacts.html')
+    return send_from_directory(template_path, 'ops.html') 
 # ===========================================================
 
 # ================= API CONFIG & ERRORS =====================
