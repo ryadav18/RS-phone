@@ -19,7 +19,6 @@
         
         body { background-color: var(--bg-dark); }
         
-        /* 🚀 UPGRADED GRID & CARDS */
         .file-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -83,7 +82,7 @@
             font-size: 0.9rem;
             font-weight: 600;
             color: var(--text-main);
-            word-break: break-word;
+            word-break: break-all;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
@@ -101,7 +100,6 @@
             width: fit-content;
         }
 
-        /* 🚀 STATUS BADGES */
         .status-badge {
             position: absolute;
             top: -8px;
@@ -118,7 +116,6 @@
         .badge-blocked { background: var(--accent-red); color: #fff; }
         .badge-cloud { background: var(--accent-cyan); color: #000; }
 
-        /* 🚀 SLEEK BREADCRUMBS */
         .breadcrumb-container {
             display: flex;
             align-items: center;
@@ -131,40 +128,21 @@
         }
 
         .back-btn {
-            background: rgba(255,255,255,0.1);
-            border: none;
-            color: white;
-            padding: 8px 15px;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-weight: 600;
-            transition: background 0.2s;
+            background: rgba(255,255,255,0.1); border: none; color: white;
+            padding: 8px 15px; border-radius: 8px; cursor: pointer;
+            display: flex; align-items: center; gap: 6px; font-weight: 600;
         }
         .back-btn:hover { background: rgba(255,255,255,0.2); }
         
         .path-text {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 0.95rem;
-            color: var(--accent-cyan);
-            word-break: break-all;
+            font-family: 'Courier New', Courier, monospace; font-size: 0.95rem;
+            color: var(--accent-cyan); word-break: break-all;
         }
         
-        /* 🚀 SYNC BUTTON */
         .btn-sync {
             background: linear-gradient(135deg, var(--accent-cyan), #3b82f6);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 10px 20px;
-            cursor: pointer;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: opacity 0.2s;
+            color: white; border: none; border-radius: 8px; padding: 10px 20px;
+            cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px;
             box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
         }
         .btn-sync:hover { opacity: 0.9; }
@@ -172,7 +150,7 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar remains untouched -->
+        <!-- 🚀 FIX: Synchronized Navigation Menu with Global Unified Settings Layout -->
         <div class="sidebar glass-panel">
             <div class="sidebar-brand">
                 <i data-lucide="shield" style="color: var(--accent-cyan);"></i>
@@ -181,11 +159,10 @@
             <ul class="sidebar-menu">
                 <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
                 <li><a href="/permissions"><i data-lucide="shield-check"></i> Permissions</a></li>
-                <li><a href="/notifications"><i data-lucide="bell"></i> Notifications</a></li>
+                <li><a href="/ops"><i data-lucide="activity"></i> Live Operations</a></li>
                 <li><a href="/calls"><i data-lucide="phone"></i> Call Logs</a></li>
-                <li><a href="/messages"><i data-lucide="message-square"></i> SMS History</a></li>
+                <li><a href="/messages"><i data-lucide="message-square"></i> SMS Audit</a></li>
                 <li class="active"><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
-                <li><a href="/logs"><i data-lucide="terminal"></i> System Logs</a></li>
             </ul>
         </div>
         
@@ -203,7 +180,7 @@
             <div style="padding: 20px;">
                 <!-- Modern Breadcrumb -->
                 <div class="breadcrumb-container" id="path-breadcrumb" style="display: none;">
-                    <button class="back-btn" onclick="filesEngine.goUp()">
+                    <button class="back-btn" onclick="window.filesEngine.goUp()">
                         <i data-lucide="chevron-left" style="width: 18px; height: 18px;"></i> Back
                     </button>
                     <i data-lucide="hard-drive" style="color: var(--text-muted); width: 20px;"></i>
@@ -214,16 +191,14 @@
                 <div class="file-grid" id="files-list">
                     <div style="color: var(--text-muted); text-align: center; grid-column: 1 / -1; padding: 60px; font-size: 1.1rem;">
                         <i data-lucide="lock" style="width: 40px; height: 40px; margin-bottom: 15px; opacity: 0.5;"></i><br>
-                        Verifying secure tunnel to target device...
+                        Establishing secure tracking tunnel...
                     </div>
                 </div>
             </div>
         </main>
     </div>
     
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/static/js/auth.js"></script>
-    <script src="/static/js/app.js"></script>
     <script src="/static/js/files_engine.js"></script>
     <script>lucide.createIcons();</script>
 </body>
