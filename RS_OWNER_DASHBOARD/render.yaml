@@ -3,7 +3,13 @@ services:
     name: rs-owner-dashboard
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn main:app
+    # 🚀 SMARTER: Thread concurrency enabled. -w 2 aur --threads 4 ka matlab hai server 
+    # ek sath 8 heavy parallel incoming tracking streams ko bina delay ke process kar sakta hai.
+    startCommand: gunicorn -w 2 --threads 4 -k gthread main:app
+    
+    # 🚀 SAFEGUARD: Zero-Downtime Deployment. Dynamic updates ke time data routing drop nahi hogi.
+    healthCheckPath: /api/config
+    
     envVars:
       - key: SUPABASE_URL
         sync: true
@@ -11,3 +17,6 @@ services:
         sync: true
       - key: SECRET_KEY
         sync: true
+      # Enforces global environment runtime stability
+      - key: PYTHON_VERSION
+        value: 3.10.12
