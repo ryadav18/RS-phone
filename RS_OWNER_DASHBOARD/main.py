@@ -40,6 +40,7 @@ from backend.logs import logs_bp
 from backend.ops import ops_bp
 from backend.apps import apps_bp
 from backend.usage import usage_bp
+from backend.settings import settings_bp
 # 🚀 FIX: Resolved missing contacts sync blueprint module mapping
 from backend.contacts import contacts_bp
 
@@ -57,6 +58,7 @@ app.register_blueprint(ops_bp)
 app.register_blueprint(apps_bp)
 app.register_blueprint(usage_bp)
 app.register_blueprint(contacts_bp)
+app.register_blueprint(settings_bp)
 # ===========================================================
 
 # ================= FRONTEND ROUTES UNIFICATION =============
