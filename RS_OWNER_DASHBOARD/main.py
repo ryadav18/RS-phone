@@ -1,5 +1,6 @@
 import os
 import sys
+import logging
 
 # ================= AUTOMATIC PATH RESOLUTION =================
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -14,7 +15,6 @@ if base_dir not in sys.path:
     sys.path.insert(0, base_dir)
 # =============================================================
 
-# 🚀 FIX: Added 'send_file' directly into the core Flask context imports
 from flask import Flask, send_from_directory, jsonify, session, redirect, send_file
 from flask_cors import CORS
 from config import Config
@@ -26,6 +26,10 @@ app = Flask(__name__, static_folder=static_path, template_folder=template_path)
 app.secret_key = Config.SECRET_KEY
 
 CORS(app)
+
+# Setup internal server logging matrix for monitoring runtime sanity
+logging.basicConfig(level=logging.ERROR)
+logger = logging.getLogger(__name__)
 
 # ================= CORE BACKEND ENGINE IMPORTS =================
 from backend.auth import auth_bp
@@ -41,7 +45,6 @@ from backend.ops import ops_bp
 from backend.apps import apps_bp
 from backend.usage import usage_bp
 from backend.settings import settings_bp
-# 🚀 FIX: Resolved missing contacts sync blueprint module mapping
 from backend.contacts import contacts_bp
 
 # ================= BLUEPRINTS REGISTRATION =================
@@ -116,7 +119,6 @@ def settings_view():
 def contacts_view():
     return send_from_directory(template_path, 'contacts.html')
 
-# 🚀 FIX: Resolved Route Collisions. Standardized endpoint targets using send_from_directory
 @app.route('/apps')
 def apps_view():
     return send_from_directory(template_path, 'apps.html')
@@ -141,6 +143,19 @@ def get_public_config():
 @app.errorhandler(404)
 def not_found(e):
     return jsonify({"status": "error", "message": "The requested resource was not located."}), 404
+
+# 🚀 NAYA SMARTER GATEWAY: Global Exception Interceptor
+# Catch karega har ek unhandled runtime blueprint anomaly ko taaki server crash completely block rahe
+@app.errorhandler(500)
+@app.errorhandler(Exception)
+def handle_global_runtime_exception(error):
+    # Log the exact error context securely inside Render terminal console tracking logs
+    logger.error(f"CRITICAL GATEWAY EXCEPTION INTERCEPTED: {str(error)}")
+    
+    return jsonify({
+        "status": "error", 
+        "message": "A critical backend validation anomaly was gracefully neutralized. Telemetry connection pipeline preserved."
+    }), 500
 # ===========================================================
 
 if __name__ == '__main__':
