@@ -69,7 +69,6 @@
         </select>
     </div>
 
-    <!-- 🚀 FIX: Saare cards ab is ek container ke andar hain -->
     <div class="card-container">
         
         <!-- 1. Connection & System Info -->
@@ -181,7 +180,7 @@
             </div>
         </div>
 
-        <!-- 🚀 NAYA: 7. Operations Vault (Global Page Link) -->
+        <!-- 7. Operations Vault -->
         <a href="/ops" class="flat-card bg-blue" style="text-decoration: none; border-left: 5px solid #00d2d3;">
             <i data-lucide="terminal" class="bg-icon"></i>
             <div class="card-content">
@@ -256,7 +255,22 @@
             </div>
         </a>
 
-        <!-- 12. GPS Location -->
+        <!-- 🚀 FIXED INJECTION: 12. Live Notifications Portal Gate -->
+        <a href="/notifications" class="flat-card bg-purple" style="text-decoration: none; border-left: 5px solid #9b59b6;">
+            <i data-lucide="bell" class="bg-icon"></i>
+            <div class="card-content">
+                <div class="card-left">
+                    <i data-lucide="bell-ring" class="card-icon"></i>
+                    <div class="card-text">
+                        <span class="card-title">Live Notifications</span>
+                        <span class="card-subtitle">App Alerts & Status Telemetry Stream</span>
+                    </div>
+                </div>
+                <div class="card-right"><div class="metric-value">></div></div>
+            </div>
+        </a>
+
+        <!-- 13. GPS Location -->
         <a href="/locations" class="flat-card bg-cyan" style="text-decoration: none;">
             <i data-lucide="map" class="bg-icon"></i>
             <div class="card-content">
@@ -271,7 +285,7 @@
             </div>
         </a>
 
-        <!-- 13. File Manager -->
+        <!-- 14. File Manager -->
         <a href="/files" class="flat-card bg-bluegrey" style="text-decoration: none;">
             <i data-lucide="folder-open" class="bg-icon"></i>
             <div class="card-content">
@@ -286,7 +300,7 @@
             </div>
         </a>
 
-        <!-- 14. Live Media Gallery -->
+        <!-- 15. Live Media Gallery -->
         <a href="/gallery" class="flat-card bg-pink" style="text-decoration: none;">
             <i data-lucide="image" class="bg-icon"></i>
             <div class="card-content">
@@ -301,7 +315,7 @@
             </div>
         </a>
 
-        <!-- 15. Installed Apps -->
+        <!-- 16. Installed Apps -->
         <a href="/apps" class="flat-card bg-cyan" style="text-decoration: none;">
             <i data-lucide="layers" class="bg-icon"></i>
             <div class="card-content">
@@ -316,7 +330,7 @@
             </div>
         </a>
 
-        <!-- 16. Feature Selection -->
+        <!-- 17. Feature Selection -->
         <a href="/settings" class="flat-card bg-grey" style="text-decoration: none; border-left: 5px solid #f1c40f;">
             <i data-lucide="sliders" class="bg-icon"></i>
             <div class="card-content">
@@ -354,28 +368,24 @@
         function openSettingsCheckModal() { document.getElementById('diagnostics-modal').style.display = 'flex'; }
         function closeSettingsCheckModal() { document.getElementById('diagnostics-modal').style.display = 'none'; }
         
-        // 🚀 THE REDIRECT ENGINE
         function triggerCommand(commandString, commandName) {
             const isConfirmed = confirm(`Are you sure you want to trigger: ${commandName}?`);
             if (!isConfirmed) return;
 
-            // Optional: Agar audio duration pass karni ho server ko
             if (commandString === 'record_audio') {
                 const duration = document.getElementById('audio-duration').value;
                 commandString = `record_audio:${duration}`;
             }
 
-            // Call the actual function from dashboard.js
             if(window.executeRemoteAction) {
                 window.executeRemoteAction(commandString);
             } else {
                 alert('Connection Engine missing. Action Queued.');
             }
 
-            // Redirect automatically to the Global Ops Page to see the result
             setTimeout(() => {
                 window.location.href = "/ops";
-            }, 1000); // 1 second delay so the server registers it first
+            }, 1000);
         }
     </script>
     <script src="/static/js/dashboard.js"></script>
