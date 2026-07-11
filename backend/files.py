@@ -7,25 +7,24 @@ import uuid
 
 files_bp = Blueprint('files', __name__)
 
-# 🚀 UPGRADED: Path-based directory traversal (Text-First)
+# GET ROUTE: Fetch specific folder contents
 @files_bp.route('/api/files', methods=['GET'])
 @token_required
 def get_files():
     device_id = request.args.get('device_id')
-    folder_path = request.args.get('path', '/') # Frontend se path aayega
-    limit = request.args.get('limit', 150) 
+    folder_path = request.args.get('path', '/') 
     
     if not device_id or not verify_device_access(request.owner_id, device_id):
         return jsonify({"status": "error", "message": "Access validation check failed"}), 403
 
     try:
-        # Ab Supabase sirf usi folder ka text/metadata dega jo manga gaya hai
-        # Assuming database has a column 'folder_path' or 'parent_path' where Android saves the location
-        res = supabase.table('files').select('*').eq('device_id', device_id).eq('folder_path', folder_path).order('file_name', desc=False).limit(limit).execute()
+        # Strictly fetches only the metadata that belongs to the active directory scope
+        res = supabase.table('files').select('*').eq('device_id', device_id).eq('folder_path', folder_path).order('file_name', desc=False).execute()
         return jsonify({"status": "success", "data": res.data}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+# POST ROUTE: Receive actual file uploaded by the device agent
 @files_bp.route('/api/files/upload', methods=['POST'])
 def upload_file_tracker():
     token = request.headers.get('X-Device-Token')
@@ -46,14 +45,14 @@ def upload_file_tracker():
         if file.filename == '':
             return jsonify({"status": "error", "message": "No file selected"}), 400
 
-        file_type = request.form.get('file_type', 'generic/binary')
+        # 🚀 FIX: Fetch current directory context to avoid cross-folder naming collisions
+        folder_path = request.form.get('folder_path', '/') 
         
-        # Security & UUID injection
         filename = secure_filename(file.filename)
         unique_filename = f"{dev_id}/{uuid.uuid4()}_{filename}"
         file_content = file.read()
 
-        # Upload to Supabase bucket
+        # Stream payload directly to Supabase storage bucket area
         supabase.storage.from_('device_media').upload(
             path=unique_filename, 
             file=file_content,
@@ -62,27 +61,25 @@ def upload_file_tracker():
         
         public_url = supabase.storage.from_('device_media').get_public_url(unique_filename)
 
-        # Update the existing text metadata with the actual file URL
-        # We match by device_id and exact file_name to attach the URL
         payload = {
             "file_url": public_url,
-            "is_uploaded": True # Flag to tell frontend it's ready to download
+            "is_uploaded": True 
         }
         
-        # Updating the record instead of inserting a new one
-        res = supabase.table('files').update(payload).eq('device_id', dev_id).eq('file_name', filename).execute()
+        # 🚀 FIX: Matched via device_id, file_name AND unique folder_path directory scope
+        res = supabase.table('files').update(payload).eq('device_id', dev_id).eq('file_name', filename).eq('folder_path', folder_path).execute()
 
         supabase.table('activity_logs').insert({
             "device_id": dev_id,
             "event_type": "On-Demand Media Extracted",
-            "description": f"Target file '{filename}' successfully pulled to server."
+            "description": f"Target file '{filename}' successfully pulled to secure cloud vault."
         }).execute()
 
         return jsonify({"status": "success", "data": res.data}), 201
     except Exception as e:
-        print(f"File Upload Crash: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
+# DELETE ROUTE: Flush storage indexes safely
 @files_bp.route('/api/files/clear', methods=['POST'])
 @token_required
 def clear_files():
