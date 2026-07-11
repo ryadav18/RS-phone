@@ -37,6 +37,7 @@ from backend.files import files_bp
 from backend.logs import logs_bp
 from backend.ops import ops_bp
 from backend.apps import apps_bp
+from backend.usage import usage_bp
 
 # ================= BLUEPRINTS REGISTRATION =================
 app.register_blueprint(auth_bp)
@@ -50,6 +51,7 @@ app.register_blueprint(files_bp)
 app.register_blueprint(logs_bp)
 app.register_blueprint(ops_bp)
 app.register_blueprint(apps_bp)
+app.register_blueprint(usage_bp)
 
 # ===========================================================
 
@@ -121,6 +123,9 @@ def live_operations_page():
 def installed_apps_page():
     return send_file('frontend/apps.html')
 
+@app.route('/usage')
+def dynamic_wellbeing_page():
+    return send_file('frontend/usage.html')
 
 # 🚀 NAYA: Contacts page ke liye route 
 @app.route('/contacts')
