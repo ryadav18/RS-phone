@@ -5,9 +5,51 @@ class FilesEngine {
         this.init();
     }
 
-    init() {
+    async init() {
+        // 🚀 FIX: Embedded the core missing active device dynamic population engine
+        await this.loadDevicesList();
         if (!this.activeDeviceId) return;
         this.fetchDirectory(this.currentPath);
+    }
+
+    async loadDevicesList() {
+        const token = localStorage.getItem('owner_token');
+        try {
+            const res = await fetch('/api/devices', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await res.json();
+
+            if (result.status === 'success') {
+                const selectEl = document.getElementById('device-select');
+                if (selectEl) {
+                    selectEl.innerHTML = ''; 
+                    if (result.data.length === 0) {
+                        selectEl.innerHTML = '<option value="">No Devices Found</option>';
+                        return;
+                    }
+                    result.data.forEach(dev => {
+                        const option = document.createElement('option');
+                        option.value = dev.id;
+                        option.textContent = dev.name;
+                        selectEl.appendChild(option);
+                    });
+                    if (!this.activeDeviceId && result.data.length > 0) {
+                        this.activeDeviceId = result.data[0].id;
+                        localStorage.setItem('active_device_id', this.activeDeviceId);
+                    }
+                    selectEl.value = this.activeDeviceId;
+                    selectEl.addEventListener('change', (e) => {
+                        this.activeDeviceId = e.target.value;
+                        localStorage.setItem('active_device_id', this.activeDeviceId);
+                        this.currentPath = '/'; // Reset path home on device switch
+                        this.fetchDirectory(this.currentPath); 
+                    });
+                }
+            }
+        } catch (e) {
+            console.error("Failed to load device matrices:", e);
+        }
     }
 
     async fetchDirectory(path) {
@@ -17,7 +59,7 @@ class FilesEngine {
         container.innerHTML = `
             <div style="color: var(--text-muted); text-align: center; grid-column: 1 / -1; padding: 60px;">
                 <i data-lucide="loader" class="spin" style="width: 40px; height: 40px; margin-bottom: 15px;"></i><br>
-                Fetching directory tree...
+                Scanning safe sandbox storage layer...
             </div>`;
             
         document.getElementById('path-breadcrumb').style.display = 'flex';
@@ -36,8 +78,7 @@ class FilesEngine {
                 container.innerHTML = `<div style="color: var(--accent-red); text-align: center; grid-column: 1 / -1; padding: 40px;">System Error: ${result.message}</div>`;
             }
         } catch (e) {
-            console.error("Storage Engine Error:", e);
-            container.innerHTML = '<div style="color: var(--accent-red); text-align: center; grid-column: 1 / -1; padding: 40px;">Network failure while establishing file tunnel.</div>';
+            container.innerHTML = '<div style="color: var(--accent-red); text-align: center; grid-column: 1 / -1; padding: 40px;">Network failure establishing directory stream tunnel.</div>';
         }
     }
 
@@ -48,7 +89,7 @@ class FilesEngine {
             container.innerHTML = `
                 <div style="color: var(--text-muted); text-align: center; grid-column: 1 / -1; padding: 60px;">
                     <i data-lucide="folder-open" style="width: 48px; height: 48px; opacity: 0.3; margin-bottom: 10px;"></i><br>
-                    Directory is empty.
+                    No content indexed in this catalog direction.
                 </div>`;
             lucide.createIcons();
             return;
@@ -59,7 +100,7 @@ class FilesEngine {
             const icon = isFolder ? 'folder' : this.getFileIcon(item.file_name);
             const iconColor = isFolder ? 'var(--accent-cyan)' : 'var(--text-main)';
             
-            // Limit strictness: 12MB
+            // Core safety constraint: Block tracking items > 12MB to avoid network abuse
             const sizeInBytes = item.size_bytes || 0;
             const sizeLimit = 12 * 1024 * 1024; 
             const isOversized = !isFolder && sizeInBytes > sizeLimit;
@@ -69,20 +110,20 @@ class FilesEngine {
             let badgeHtml = '';
 
             if (isFolder) {
-                clickAction = `filesEngine.openFolder('${item.file_name}')`;
+                clickAction = `window.filesEngine.openFolder('${item.file_name}')`;
             } else if (isOversized) {
-                clickAction = `alert('Strict Policy: File exceeds 12MB limit. Action blocked to conserve target network and battery.')`;
+                clickAction = `alert('Strict Policy: File size exceeds the 12MB optimization limit to safeguard target battery assets.')`;
                 extraClass = 'blocked';
-                badgeHtml = `<span class="status-badge badge-blocked">Size Limit</span>`;
+                badgeHtml = `<span class="status-badge badge-blocked">> 12MB</span>`;
             } else {
                 const fullPath = this.currentPath === '/' ? `/${item.file_name}` : `${this.currentPath}/${item.file_name}`;
                 const fileUrl = item.file_url ? `'${item.file_url}'` : 'null';
-                clickAction = `filesEngine.downloadOrRequestFile('${item.file_name}', '${fullPath}', ${fileUrl})`;
+                clickAction = `window.filesEngine.downloadOrRequestFile('${item.file_name}', '${fullPath}', ${fileUrl})`;
                 
                 if (item.file_url) {
                     badgeHtml = `<span class="status-badge badge-ready">Ready</span>`;
                 } else {
-                    badgeHtml = `<span class="status-badge badge-cloud"><i data-lucide="cloud-download" style="width:12px; height:12px;"></i></span>`;
+                    badgeHtml = `<span class="status-badge badge-cloud"><i data-lucide="cloud" style="width:12px; height:12px;"></i></span>`;
                 }
             }
 
@@ -106,15 +147,10 @@ class FilesEngine {
     getFileIcon(filename) {
         if (!filename) return 'file';
         const ext = filename.split('.').pop().toLowerCase();
-        const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-        const vidExts = ['mp4', 'mkv', 'avi', 'mov'];
-        const docExts = ['pdf', 'doc', 'docx', 'txt', 'csv'];
-        const archiveExts = ['zip', 'rar', 'apk', 'tar'];
-
-        if (imageExts.includes(ext)) return 'image';
-        if (vidExts.includes(ext)) return 'film';
-        if (docExts.includes(ext)) return 'file-text';
-        if (archiveExts.includes(ext)) return 'package';
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return 'image';
+        if (['mp4', 'mkv', 'avi', 'mov'].includes(ext)) return 'film';
+        if (['pdf', 'doc', 'docx', 'txt', 'csv'].includes(ext)) return 'file-text';
+        if (['zip', 'rar', 'apk', 'tar'].includes(ext)) return 'package';
         return 'file';
     }
 
@@ -141,14 +177,13 @@ class FilesEngine {
             return;
         }
 
-        const isConfirmed = confirm(`Trigger remote extraction?\n\nTarget device will quietly upload "${fileName}" to the server in the background.`);
+        const isConfirmed = confirm(`Trigger background file extraction?\n\nTarget device agent will securely sync "${fileName}" onto the dashboard storage cloud allocation.`);
         if (!isConfirmed) return;
 
         const token = localStorage.getItem('owner_token');
-        const deviceId = this.activeDeviceId;
 
         try {
-            const res = await fetch(`/api/devices/${deviceId}/action`, {
+            const res = await fetch(`/api/devices/${this.activeDeviceId}/action`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ 
@@ -158,13 +193,12 @@ class FilesEngine {
 
             const data = await res.json();
             if (data.status === 'success') {
-                alert(`Extraction command pushed to target queue!\nWait a minute and refresh to access the file.`);
+                alert(`Extraction command dispatched to queue! The file badge will switch to "Ready" once fully uploaded.`);
             } else {
-                alert(`Command Failed: ${data.message}`);
+                alert(`Command Execution Failed: ${data.message}`);
             }
         } catch (error) {
-            console.error(error);
-            alert('Action Server Unreachable.');
+            alert('Action Gateway Unreachable.');
         }
     }
 }
@@ -172,7 +206,7 @@ class FilesEngine {
 window.filesEngine = null;
 
 window.requestStorageSync = async function() {
-    const isConfirmed = confirm("Send command to target device to re-index its file system? This may take a few moments.");
+    const isConfirmed = confirm("Dispatch deep scan directive onto target context filesystem?");
     if (!isConfirmed) return;
 
     const token = localStorage.getItem('owner_token');
@@ -184,9 +218,9 @@ window.requestStorageSync = async function() {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ action: "sync_file_tree" })
         });
-        alert("Deep Scan initiated. Metadata tree will update shortly.");
+        alert("Deep Scan transaction injected successfully.");
     } catch (e) {
-        alert("Failed to queue command.");
+        alert("Failed to reach processing cluster.");
     }
 };
 
