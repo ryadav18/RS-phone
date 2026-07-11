@@ -12,11 +12,26 @@
             overflow-y: auto;
             padding-right: 10px;
         }
+        .call-card {
+            background: rgba(255,255,255,0.05); 
+            padding: 16px; 
+            border-radius: 8px; 
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border-right: 1px solid #333; border-top: 1px solid #333; border-bottom: 1px solid #333;
+            transition: transform 0.2s ease;
+        }
+        .call-card:hover { transform: translateX(3px); }
+        .badge-call {
+            padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; text-transform: uppercase;
+        }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar -->
+        <!-- 🚀 FIX: Sidebar unified alignment with Global Navigation Template -->
         <div class="sidebar glass-panel">
             <div class="sidebar-brand">
                 <i data-lucide="shield" style="color: var(--accent-cyan);"></i>
@@ -25,40 +40,37 @@
             <ul class="sidebar-menu">
                 <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
                 <li><a href="/permissions"><i data-lucide="shield-check"></i> Permissions</a></li>
-                <li><a href="/notifications"><i data-lucide="bell"></i> Notifications</a></li>
+                <li><a href="/ops"><i data-lucide="activity"></i> Live Operations</a></li>
                 <li class="active"><a href="/calls"><i data-lucide="phone"></i> Call Logs</a></li>
-                <li><a href="/messages"><i data-lucide="message-square"></i> SMS History</a></li>
+                <li><a href="/messages"><i data-lucide="message-square"></i> SMS Audit</a></li>
                 <li><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
-                <li><a href="/logs"><i data-lucide="terminal"></i> System Logs</a></li>
             </ul>
         </div>
 
         <!-- Main Content -->
         <main class="main-content">
             <header class="topbar">
-                <h2 style="font-weight: 700;">Secure Telephony Monitoring</h2>
+                <div>
+                    <h2 style="font-weight: 700;">Secure Telephony Monitoring</h2>
+                    <p style="color: #888; font-size: 0.85rem; margin-top: 4px;">Real-time call routing analysis & interception logs.</p>
+                </div>
                 <div class="device-switcher" style="display: flex; align-items: center; gap: 15px;">
-                    <select id="device-select"></select>
-                    <!-- Storage Cleanup Button for Calls -->
-                    <button onclick="wipeCallsHistory()" style="background: #ff3b30; color: white; border: none; border-radius: 5px; padding: 8px 15px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; transition: 0.3s;">
-                        <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i> Wipe Calls
+                    <select id="device-select" style="padding: 8px; border-radius: 4px; background: #1e1e1e; color: white; border: 1px solid #333;"></select>
+                    <button onclick="wipeCallsHistory()" style="background: #ff3b30; color: white; border: none; border-radius: 5px; padding: 8px 15px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; transition: 0.3s; text-transform: uppercase; font-size: 0.8rem;">
+                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> Wipe Logs
                     </button>
                 </div>
             </header>
 
             <div class="glass-panel" style="padding: 25px;">
                 <div class="data-list-container" id="calls-list">
-                    <!-- JS Engine will inject Call Data here -->
                     <div style="color: #888; text-align: center; padding: 20px;">Fetching encrypted telephony data...</div>
                 </div>
             </div>
         </main>
     </div>
     
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/static/js/auth.js"></script>
-    <script src="/static/js/app.js"></script>
-    <!-- Iska JS engine hum next banayenge -->
     <script src="/static/js/calls_engine.js"></script>
     <script>lucide.createIcons();</script>
 </body>
