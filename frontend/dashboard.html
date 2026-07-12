@@ -89,7 +89,7 @@
     <div class="header">
         <h2>Command Center</h2>
         <select id="device-select" class="device-selector">
-            <option>Loading devices...</option>
+            <option value="mock_device_token">Default Project Device</option>
         </select>
     </div>
 
@@ -516,56 +516,166 @@
                 commandString = `record_audio:${duration}`;
             }
 
-            if(window.executeRemoteAction) {
-                window.executeRemoteAction(commandString);
-            } else {
-                alert('Connection Engine missing. Action Queued.');
-            }
-
-            setTimeout(() => {
-                window.location.href = "/ops";
-            }, 1000);
+            // 🚀 WIRED UP: Connects purane standalone triggers directly to Flask command queue matrix
+            const activeToken = document.getElementById('device-select').value;
+            fetch(`/api/sync/commands/trigger?token=${activeToken}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command: commandString })
+            })
+            .then(res => res.json())
+            .then(() => {
+                setTimeout(() => { window.location.href = "/ops"; }, 800);
+            })
+            .catch(err => console.error("Command Tunnel Failure:", err));
         }
 
         // =================================================================================
-        // DYNAMIC FRONTEND BEHAVIOR LOGIC FOR NEW PARENTAL FEATURES
+        // REAL CONNECTED HARDENED FRONTEND BEHAVIOR FOR THE 4 NEW PARENTAL FEATURES
         // =================================================================================
-        let isStreamingActive = false;
+        let liveSocketPipeline = null;
 
         function toggleScreenStream() {
             const btn = document.getElementById('btn-toggle-stream');
             const viewport = document.getElementById('stream-viewport');
+            const canvas = document.getElementById('stream-canvas');
+            const placeholder = document.getElementById('stream-placeholder');
             const duration = document.getElementById('stream-duration').value;
+            const activeToken = document.getElementById('device-select').value;
 
-            if (!isStreamingActive) {
-                // Trigger dynamic configuration command via system pipeline
-                if (window.executeRemoteAction) {
-                    window.executeRemoteAction(`start_screen_stream:${duration}`);
-                }
-                isStreamingActive = true;
+            if (btn.innerText === "START STREAM") {
+                // 1. Send the command to tell Android client to request recording tokens
+                fetch(`/api/sync/commands/trigger?token=${activeToken}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command: `start_screen_stream:${duration}` })
+                });
+
+                // 2. Open high-speed WebSocket pipeline bound to Flask Sock wrapper
+                const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+                const host = window.location.host;
+                
+                liveSocketPipeline = new WebSocket(`${protocol}://${host}/ws/dashboard/${activeToken}`);
+                liveSocketPipeline.binaryType = "blob"; 
+
+                const ctx = canvas.getContext('2d');
+
+                liveSocketPipeline.onmessage = function(event) {
+                    placeholder.style.display = "none";
+                    const blob = event.data;
+                    const img = new Image();
+                    img.onload = function() {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx.drawImage(img, 0, 0);
+                        URL.revokeObjectURL(img.src); // Hard release memory allocations
+                    };
+                    img.src = URL.createObjectURL(blob);
+                };
+
+                liveSocketPipeline.onclose = function() {
+                    resetStreamUI(btn, viewport, placeholder);
+                };
+
                 btn.innerText = "Stop Stream";
                 btn.style.background = "rgba(231, 76, 60, 0.8)"; // Red feedback indicator
                 viewport.style.display = "flex";
             } else {
-                if (window.executeRemoteAction) {
-                    window.executeRemoteAction("stop_screen_stream");
-                }
-                isStreamingActive = false;
-                btn.innerText = "Start Stream";
-                btn.style.background = "rgba(46, 204, 113, 0.8)"; // Green fallback
-                viewport.style.display = "none";
+                if (liveSocketPipeline) liveSocketPipeline.close();
+                fetch(`/api/sync/commands/trigger?token=${activeToken}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command: "stop_screen_stream" })
+                });
+                resetStreamUI(btn, viewport, placeholder);
             }
         }
 
-        function toggleStudyHourPolicy() {
-            if (window.executeRemoteAction) {
-                // Instantly flips state inside remote configurations repository matrix
-                window.executeRemoteAction("toggle_study_hour");
-                alert("Study Hour Policy update command successfully compiled and broadcasted.");
-            } else {
-                alert("Communication tunnel inactive. Command added to stack.");
-            }
+        function resetStreamUI(btn, viewport, placeholder) {
+            btn.innerText = "Start Stream";
+            btn.style.background = "rgba(46, 204, 113, 0.8)"; // Restores green background layer rules
+            viewport.style.display = "none";
+            placeholder.style.display = "block";
         }
+
+        function toggleStudyHourPolicy() {
+            const activeToken = document.getElementById('device-select').value;
+            fetch(`/api/settings/toggle-study-hour?token=${activeToken}`, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === "success") {
+                    const status = data.study_hour_active ? "ACTIVATED" : "DEACTIVATED";
+                    alert(`Study Hour Restriction Mode: ${status}`);
+                }
+            })
+            .catch(err => console.error("Policy sync breakdown:", err));
+        }
+
+        // =================================================================================
+        // BACKGROUND THREAD MONITORING: GEOFENCE & SOS PANIC OVERLAYS
+        // =================================================================================
+        function initializeBackgroundTelemetryLoops() {
+            setInterval(() => {
+                const activeToken = document.getElementById('device-select').value;
+                if(!activeToken) return;
+
+                // 1. Continuous Emergency SOS Interception Polling
+                fetch(`/api/sos/monitor?token=${activeToken}`)
+                .then(res => res.json())
+                .then(data => {
+                    const badge = document.getElementById('metric-sos-badge');
+                    const label = document.getElementById('sos-status-label');
+                    
+                    if (data.status === "success" && data.sos_data.sos_active) {
+                        if(badge) { badge.innerText = "🚨 PANIC"; badge.style.color = "#e74c3c"; }
+                        if(label) label.innerText = `CRITICAL STATE: Battery ${data.sos_data.battery}% | Status: ${data.sos_data.status}`;
+                        triggerSOSWindowOverlay(data.sos_data.battery, data.sos_data.status);
+                    } else {
+                        if(badge) { badge.innerText = "STANDBY"; badge.style.color = "#fff"; }
+                    }
+                });
+
+                // 2. Proximity Geofence Violation Polling
+                fetch(`/api/geofence/alerts/poll?token=${activeToken}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === "success" && data.alerts.length > 0) {
+                        const lastAlert = data.alerts[data.alerts.length - 1];
+                        console.warn(lastAlert);
+                    }
+                });
+            }, 4000);
+        }
+
+        function triggerSOSWindowOverlay(battery, status) {
+            let overlay = document.getElementById('sos-alert-window-overlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'sos-alert-window-overlay';
+                overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(192,57,43,0.98); z-index:99999; display:flex; flex-direction:column; justify-content:center; align-items:center; color:white; padding:25px; text-align:center;";
+                overlay.innerHTML = `
+                    <h1 style="font-size:32px; font-weight:800; margin-bottom:15px;">EMERGENCY SOS SIGNAL ACTIVATED</h1>
+                    <p id="sos-overlay-desc" style="font-size:16px; margin-bottom:25px; max-width:500px; opacity:0.9;"></p>
+                    <button onclick="dismissSOSAlertState()" style="padding:12px 35px; border:2px solid white; background:none; color:white; font-weight:bold; cursor:pointer; text-transform:uppercase;">Dismiss Emergency</button>
+                `;
+                document.body.appendChild(overlay);
+            }
+            document.getElementById('sos-overlay-desc').innerText = `Child device context triggered a high-priority emergency event loop. Current Battery: ${battery}% | Network telemetry signature: ${status}`;
+        }
+
+        function dismissSOSAlertState() {
+            const activeToken = document.getElementById('device-select').value;
+            fetch(`/api/sos/clear?token=${activeToken}`, { method: 'POST' })
+            .then(() => {
+                const overlay = document.getElementById('sos-alert-window-overlay');
+                if (overlay) overlay.remove();
+                const label = document.getElementById('sos-status-label');
+                if (label) label.innerText = "Monitoring Panic Signals Matrix";
+            });
+        }
+
+        // Initialize background data tracking streams immediately
+        document.addEventListener("DOMContentLoaded", initializeBackgroundTelemetryLoops);
     </script>
     <script src="/static/js/dashboard.js"></script>
 </body>
