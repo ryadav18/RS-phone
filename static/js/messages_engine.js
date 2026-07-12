@@ -1,14 +1,48 @@
 class MessagesEngine {
     constructor() {
         this.activeDeviceId = localStorage.getItem('active_device_id');
+        
+        // 🚀 PAGINATION STATES: High-speed memory registers for client-side slicing
+        this.allData = [];
+        this.currentPage = 1;
+        this.itemsPerPage = 10;
+
         this.init();
     }
 
     async init() {
+        this.setupPaginationListeners();
         await this.loadDevicesList();
         if (!this.activeDeviceId) return; 
+        
         this.fetchMessages();
-        setInterval(() => this.fetchMessages(), 12000); // Optimized 12s interval
+        // 12 seconds high-speed telemetry polling loop
+        setInterval(() => this.fetchMessages(), 12000); 
+    }
+
+    // Bind event listeners strictly to the new layout DOM controllers
+    setupPaginationListeners() {
+        const prevBtn = document.getElementById('sms-prev-btn');
+        const nextBtn = document.getElementById('sms-next-btn');
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                if (this.currentPage > 1) {
+                    this.currentPage--;
+                    this.renderCurrentPage();
+                }
+            });
+        }
+
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                const totalPages = Math.ceil(this.allData.length / this.itemsPerPage) || 1;
+                if (this.currentPage < totalPages) {
+                    this.currentPage++;
+                    this.renderCurrentPage();
+                }
+            });
+        }
     }
 
     async loadDevicesList() {
@@ -38,6 +72,7 @@ class MessagesEngine {
                     selectEl.addEventListener('change', (e) => {
                         this.activeDeviceId = e.target.value;
                         localStorage.setItem('active_device_id', this.activeDeviceId);
+                        this.currentPage = 1; // Reset to page 1 on hardware target switch
                         this.fetchMessages(); 
                     });
                 }
@@ -49,27 +84,34 @@ class MessagesEngine {
         const token = localStorage.getItem('owner_token');
         if (!this.activeDeviceId) return;
         try {
-            // 🚀 FIXED: Scaled up transmission payload array registry up to top 35 logs
-            const res = await fetch(`/api/messages?device_id=${this.activeDeviceId}&limit=35`, {
+            // 🚀 UPGRADED PAYLOAD CAP: Scaled up to pull full 50 buffer items matching Flask route bounds
+            const res = await fetch(`/api/messages?device_id=${this.activeDeviceId}&limit=50`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const result = await res.json();
             if (result.status === 'success') {
-                this.renderMessages(result.data || []);
+                this.allData = result.data || [];
+                this.renderCurrentPage();
             }
         } catch (e) { console.error("Messages Transmission Engine Error:", e); }
     }
 
-    renderMessages(items) {
+    renderCurrentPage() {
         const container = document.getElementById('sms-list');
         if (!container) return;
 
-        if (items.length === 0) {
+        if (this.allData.length === 0) {
             container.innerHTML = '<div style="color: #888; text-align: center; padding: 40px;">No communication logs captured. Awaiting mobile transmitter sync...</div>';
+            this.updatePaginationUI(1);
             return;
         }
 
-        container.innerHTML = items.map(m => {
+        // 🧠 SLICING ENGINE LOGIC: Extract indices based on current state metrics
+        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+        const endIndex = startIndex + this.itemsPerPage;
+        const slicedItems = this.allData.slice(startIndex, endIndex);
+
+        container.innerHTML = slicedItems.map(m => {
             let directionText = 'RECEIVED';
             let directionClass = 'direction-received';
 
@@ -81,10 +123,8 @@ class MessagesEngine {
             const isSaved = m.contact_name && m.contact_name !== 'Unknown' && m.contact_name.trim() !== '';
             const senderIdentity = isSaved ? m.contact_name : 'Unknown Number';
 
-            // 🚀 FIXED: Dynamic Text vs MMS Multimedia Injection Logic
             let messageBodyHtml = `<p class="sms-body-content">${m.message || m.body || '[Empty Message Context]'}</p>`;
             
-            // Check if backend routed a media/image URL layout structure
             if (m.media_url || (m.message && (m.message.includes('.jpg') || m.message.includes('.png') || m.message.includes('image:')))) {
                 messageBodyHtml += `
                 <div class="sms-media-attachment">
@@ -107,9 +147,7 @@ class MessagesEngine {
                     </div>
                     <span class="sms-direction-badge ${directionClass}">${directionText}</span>
                 </div>
-                
                 ${messageBodyHtml}
-                
                 <div class="sms-timestamp-footer">
                     ${dateStr} • ${timeStr}
                 </div>
@@ -117,12 +155,37 @@ class MessagesEngine {
             `;
         }).join('');
         
+        const totalPages = Math.ceil(this.allData.length / this.itemsPerPage) || 1;
+        this.updatePaginationUI(totalPages);
+
         if (window.lucide) window.lucide.createIcons();
+    }
+
+    // 🚀 DYNAMIC CONTROLS ENGINE: Modifies navigation buttons disabled states mapping in real-time
+    updatePaginationUI(totalPages) {
+        const prevBtn = document.getElementById('sms-prev-btn');
+        const nextBtn = document.getElementById('sms-next-btn');
+        const indicator = document.getElementById('sms-page-num');
+
+        // Safety fallback: if user is on a page out of bounds due to log wipes, auto clamp to max page
+        if (this.currentPage > totalPages) {
+            this.currentPage = totalPages;
+        }
+
+        if (indicator) {
+            indicator.textContent = `PAGE ${this.currentPage} OF ${totalPages}`;
+        }
+        if (prevBtn) {
+            prevBtn.disabled = (this.currentPage === 1);
+        }
+        if (nextBtn) {
+            nextBtn.disabled = (this.currentPage === totalPages);
+        }
     }
 }
 
 window.wipeSMSHistory = async function() {
-    if(!confirm("WARNING: Force flush all 35 active text logs?")) return;
+    if(!confirm("WARNING: Force flush all active text logs?")) return;
     const token = localStorage.getItem('owner_token');
     const activeId = localStorage.getItem('active_device_id');
     try {
