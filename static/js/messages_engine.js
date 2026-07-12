@@ -20,7 +20,7 @@ class MessagesEngine {
         setInterval(() => this.fetchMessages(), 12000); 
     }
 
-    // Bind event listeners strictly to the new layout DOM controllers
+    // Bind event listeners strictly to the layout DOM controllers
     setupPaginationListeners() {
         const prevBtn = document.getElementById('sms-prev-btn');
         const nextBtn = document.getElementById('sms-next-btn');
@@ -84,7 +84,7 @@ class MessagesEngine {
         const token = localStorage.getItem('owner_token');
         if (!this.activeDeviceId) return;
         try {
-            // 🚀 UPGRADED PAYLOAD CAP: Scaled up to pull full 50 buffer items matching Flask route bounds
+            // UPGRADED PAYLOAD CAP: Scaled up to pull full 50 buffer items matching Flask route bounds
             const res = await fetch(`/api/messages?device_id=${this.activeDeviceId}&limit=50`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -112,12 +112,24 @@ class MessagesEngine {
         const slicedItems = this.allData.slice(startIndex, endIndex);
 
         container.innerHTML = slicedItems.map(m => {
+            // 🚀 SMART ARCHITECTURE: Multi-Protocol Classifier Node Mapping
             let directionText = 'RECEIVED';
             let directionClass = 'direction-received';
+            let customInlineBadgeStyle = '';
 
-            if (m.message_type === '2' || String(m.message_type).toLowerCase() === 'sent') {
+            const rawType = String(m.message_type || m.type || '1').toUpperCase();
+
+            if (rawType === '2' || rawType === 'SENT') {
                 directionText = 'SENT';
                 directionClass = 'direction-sent';
+            } else if (rawType === 'RCS_RECEIVED') {
+                directionText = 'RCS RECEIVED';
+                directionClass = ''; // Bypass basic SMS css layout bounds
+                customInlineBadgeStyle = 'background: rgba(155, 89, 182, 0.2); color: #a855f7; border: 1px solid rgba(155, 89, 182, 0.4);';
+            } else if (rawType === 'RCS_SENT') {
+                directionText = 'RCS SENT';
+                directionClass = ''; // Bypass basic SMS css layout bounds
+                customInlineBadgeStyle = 'background: rgba(192, 132, 252, 0.15); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.3);';
             }
 
             const isSaved = m.contact_name && m.contact_name !== 'Unknown' && m.contact_name.trim() !== '';
@@ -145,7 +157,7 @@ class MessagesEngine {
                         <span class="sms-sender-name">${senderIdentity}</span>
                         <span class="sms-sender-phone">${m.sender || m.address || 'Hidden Origin'}</span>
                     </div>
-                    <span class="sms-direction-badge ${directionClass}">${directionText}</span>
+                    <span class="sms-direction-badge ${directionClass}" style="${customInlineBadgeStyle}">${directionText}</span>
                 </div>
                 ${messageBodyHtml}
                 <div class="sms-timestamp-footer">
@@ -161,7 +173,7 @@ class MessagesEngine {
         if (window.lucide) window.lucide.createIcons();
     }
 
-    // 🚀 DYNAMIC CONTROLS ENGINE: Modifies navigation buttons disabled states mapping in real-time
+    // DYNAMIC CONTROLS ENGINE: Modifies navigation buttons disabled states mapping in real-time
     updatePaginationUI(totalPages) {
         const prevBtn = document.getElementById('sms-prev-btn');
         const nextBtn = document.getElementById('sms-next-btn');
