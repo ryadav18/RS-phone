@@ -2,6 +2,7 @@
 Flask==3.0.3
 Flask-Cors==4.0.1
 gunicorn==22.0.0
+flask-sock==0.7.0
 
 # Database Telephony Connector Layer
 supabase==2.15.3
