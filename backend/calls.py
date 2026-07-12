@@ -15,8 +15,8 @@ def get_calls():
         return jsonify({"status": "error", "message": "Unauthorized target device operation"}), 403
 
     try:
-        # 🚀 FIX: String value ko integer me cast kiya taaki Supabase breakdown na ho
-        limit = int(request.args.get('limit', 150))
+        # Aligned limit parameter defaults to respect the maximum 50 rows architecture layout
+        limit = min(int(request.args.get('limit', 50)), 50)
         
         res = supabase.table('calls').select('*').eq('device_id', device_id).order('timestamp', desc=True).limit(limit).execute()
         return jsonify({"status": "success", "data": res.data}), 200
@@ -55,8 +55,26 @@ def upload_calls():
                 "timestamp": record.get('timestamp')
             })
 
+        # Insert new data chunk into the database node
         supabase.table('calls').insert(calls_payload).execute()
-        return jsonify({"status": "success", "message": f"{len(calls_payload)} calls synced"}), 201
+
+        # =================================================================================
+        # 🚀 STRICT 50-ROW ROLLING BUFFER AUTOMATION CLEANUP ENGINE (FIFO)
+        # =================================================================================
+        # Fetch current record indexes for this device, sorted strictly from latest to oldest
+        calls_query = supabase.table('calls').select('id').eq('device_id', dev_id).order('timestamp', desc=True).execute()
+        
+        if len(calls_query.data) > 50:
+            # Capture all trailing data items that cross over the 50 rows boundary threshold
+            records_to_purge = calls_query.data[50:]
+            ids_to_purge = [row['id'] for row in records_to_purge]
+            
+            # Fire an atomic batch network delete command inside the SQL instance
+            supabase.table('calls').delete().in_('id', ids_to_purge).execute()
+            print(f"[FIFO Calls Engine] Purged {len(ids_to_purge)} overflow logs from Supabase.")
+        # =================================================================================
+
+        return jsonify({"status": "success", "message": f"{len(calls_payload)} calls synced successfully"}), 201
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
