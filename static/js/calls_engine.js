@@ -1,15 +1,48 @@
 class CallsEngine {
     constructor() {
         this.activeDeviceId = localStorage.getItem('active_device_id');
+        
+        // 🚀 PAGINATION REGISTERS: High-speed local allocation state variables
+        this.allData = [];
+        this.currentPage = 1;
+        this.itemsPerPage = 10;
+
         this.init();
     }
 
     async init() {
+        this.setupPaginationListeners();
         await this.loadDevicesList();
         if (!this.activeDeviceId) return;
+        
         this.fetchCalls();
-        // 10 seconds rapid telemetry polling loop
+        // 10 seconds high-speed telemetry polling loop
         setInterval(() => this.fetchCalls(), 10000);
+    }
+
+    // Bind event handlers strictly to the updated calls layout navigation tags
+    setupPaginationListeners() {
+        const prevBtn = document.getElementById('call-prev-btn');
+        const nextBtn = document.getElementById('call-next-btn');
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                if (this.currentPage > 1) {
+                    this.currentPage--;
+                    this.renderCurrentPage();
+                }
+            });
+        }
+
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                const totalPages = Math.ceil(this.allData.length / this.itemsPerPage) || 1;
+                if (this.currentPage < totalPages) {
+                    this.currentPage++;
+                    this.renderCurrentPage();
+                }
+            });
+        }
     }
 
     async loadDevicesList() {
@@ -41,6 +74,7 @@ class CallsEngine {
                     selectEl.addEventListener('change', (e) => {
                         this.activeDeviceId = e.target.value;
                         localStorage.setItem('active_device_id', this.activeDeviceId);
+                        this.currentPage = 1; // Reset parameters back to page 1 on device target switch
                         this.fetchCalls();
                     });
                 }
@@ -52,26 +86,34 @@ class CallsEngine {
         const token = localStorage.getItem('owner_token');
         if (!this.activeDeviceId) return;
         try {
-            // 🚀 FIXED: Hard-pinned query sorting filter straight via proxy matrix to pull top 30 logs
-            const res = await fetch(`/api/calls?device_id=${this.activeDeviceId}&limit=30`, {
+            // 🚀 UPGRADED PAYLOAD CAP: Synchronized to fetch full 50 rows matching Flask logic metrics
+            const res = await fetch(`/api/calls?device_id=${this.activeDeviceId}&limit=50`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const result = await res.json();
-            this.renderCalls(result.data || []);
+            if (result.status === 'success') {
+                this.allData = result.data || [];
+                this.renderCurrentPage();
+            }
         } catch (e) { console.error("Telephony Sync Core Exception:", e); }
     }
 
-    renderCalls(data) {
+    renderCurrentPage() {
         const container = document.getElementById('calls-list');
         if (!container) return;
 
-        if (data.length === 0) {
+        if (this.allData.length === 0) {
             container.innerHTML = '<div style="color: #888; text-align: center; padding: 20px;">No telephony logs captured yet. Awaiting device sync...</div>';
+            this.updatePaginationUI(1);
             return;
         }
 
-        container.innerHTML = data.map(c => {
-            // 🚀 FIXED: Saved vs Unknown Border Classifier Sequence
+        // 🧠 DATA SLICING LAYER: Isolate the correct sub-array chunk index map
+        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+        const endIndex = startIndex + this.itemsPerPage;
+        const slicedItems = this.allData.slice(startIndex, endIndex);
+
+        container.innerHTML = slicedItems.map(c => {
             const isSaved = c.contact_name && c.contact_name !== 'Unknown' && c.contact_name.trim() !== '';
             const classificationClass = isSaved ? 'saved-contact' : 'unknown-contact';
             
@@ -96,7 +138,6 @@ class CallsEngine {
                 durationText = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
             }
 
-            // 🚀 FIXED: Precision Date Time parsing format layer
             const dateObj = new Date(c.timestamp);
             const dateString = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
             const timeString = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -121,8 +162,32 @@ class CallsEngine {
             `;
         }).join('');
         
-        // Re-trigger icon injection for dynamic innerHTML elements
+        const totalPages = Math.ceil(this.allData.length / this.itemsPerPage) || 1;
+        this.updatePaginationUI(totalPages);
+
         if (window.lucide) window.lucide.createIcons();
+    }
+
+    // 🚀 CONTROLS RENDERING NODE: Rewrites button disabled toggles state metrics in real-time
+    updatePaginationUI(totalPages) {
+        const prevBtn = document.getElementById('call-prev-btn');
+        const nextBtn = document.getElementById('call-next-btn');
+        const indicator = document.getElementById('call-page-num');
+
+        // Boundary safety check: clamp back if logs got manually purged while being out of limits
+        if (this.currentPage > totalPages) {
+            this.currentPage = totalPages;
+        }
+
+        if (indicator) {
+            indicator.textContent = `PAGE ${this.currentPage} OF ${totalPages}`;
+        }
+        if (prevBtn) {
+            prevBtn.disabled = (this.currentPage === 1);
+        }
+        if (nextBtn) {
+            nextBtn.disabled = (this.currentPage === totalPages);
+        }
     }
 }
 
