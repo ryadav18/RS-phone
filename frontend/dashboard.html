@@ -13,20 +13,39 @@
         .header h2 { font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #ffffff; }
         .device-selector { width: 100%; padding: 12px; margin-top: 15px; border-radius: 4px; border: 1px solid #333; background: #1e1e1e; color: white; font-size: 16px; outline: none; margin-bottom: 15px; }
 
-        /* Structural Section Typography */
+        /* 🚀 ENTERPRISE UPGRADE: Clickable Section Master Headers */
         .section-header { 
-            font-size: 14px; 
+            font-size: 15px; 
             font-weight: 700; 
             color: #3498db; 
             text-transform: uppercase; 
             letter-spacing: 1.5px; 
-            margin: 25px 0 12px 2px; 
+            margin: 18px 0 8px 0; 
             display: flex; 
             align-items: center; 
-            gap: 8px;
-            border-left: 3px solid #3498db;
-            padding-left: 8px;
+            justify-content: space-between;
+            background: #1c2833;
+            padding: 14px 12px;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s ease;
         }
+        .section-header:hover { background: #243342; }
+        .section-header-left { display: flex; align-items: center; gap: 10px; }
+        .toggle-icon { font-size: 12px; transition: transform 0.3s ease; color: #3498db; }
+
+        /* 🚀 SMART DISPLAY CONTAINER LAYOUT */
+        .section-content { 
+            display: none; 
+            flex-direction: column; 
+            gap: 12px; 
+            margin-top: 8px;
+            padding-left: 2px;
+        }
+        .section-content.expanded { display: flex; }
+        .section-header.active .toggle-icon { transform: rotate(90deg); }
 
         .card-container { display: flex; flex-direction: column; gap: 12px; }
         
@@ -66,16 +85,13 @@
         .bg-blue { background-color: #2980b9; }
         .bg-teal { background-color: #1abc9c; }
         .bg-purple { background-color: #8e44ad; }
-        .bg-yellow { background-color: #f39c12; }
-        .bg-orange { background-color: #d35400; }
-        .bg-pink { background-color: #c0392b; }
         .bg-indigo { background-color: #3f51b5; }
+        .bg-orange { background-color: #d35400; }
         .bg-emerald { background-color: #27ae60; }
         .bg-cyan { background-color: #00bcd4; }
         .bg-bluegrey { background-color: #607d8b; }
         .bg-grey { background-color: #424242; }
 
-        /* Streaming Element Viewport CSS */
         .live-stream-viewport {
             width: 100%; height: 240px; background: #000; border-radius: 4px;
             margin-top: 12px; display: none; align-items: center; justify-content: center;
@@ -88,13 +104,14 @@
 
     <div class="header">
         <h2>Command Center</h2>
+        <!-- 🚀 FIXED: The primary target selection selector node for DashboardEngine -->
         <select id="device-select" class="device-selector">
-            <option value="mock_device_token">Default Project Device</option>
+            <option value="">Loading active contexts...</option>
         </select>
     </div>
 
     <!-- ================================================================================= -->
-    <!-- DIAGNOSTICS & SYSTEM MATRIX (VITAL STATS)                                         -->
+    <!-- DIAGNOSTICS & SYSTEM MATRIX (VITAL STATS ALWAYS VISIBLE)                          -->
     <!-- ================================================================================= -->
     <div class="card-container">
         <!-- 1. Connection & System Info -->
@@ -103,10 +120,13 @@
             <div class="card-content">
                 <div class="card-left">
                     <i data-lucide="smartphone" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title" id="info-name">Device Name</span>
-                        <span class="card-subtitle" id="online-badge">● ONLINE</span>
+                    <!-- 🚀 FIXED: Dynamic targeting tags perfectly synced with dashboard.js -->
+                    <div class="card-text" id="info-name">
+                        <span class="card-title">Device Name</span>
                     </div>
+                </div>
+                <div class="card-right">
+                    <span class="metric-label" id="online-badge" style="font-weight: bold;">○ OFFLINE</span>
                 </div>
             </div>
         </div>
@@ -136,7 +156,7 @@
                     <i data-lucide="battery" class="card-icon"></i>
                     <div class="card-text">
                         <span class="card-title">Battery</span>
-                        <span class="card-subtitle" id="battery-state">Discharging</span>
+                        <span class="card-subtitle" id="battery-state">Analyzing</span>
                     </div>
                 </div>
                 <div class="card-right">
@@ -163,7 +183,7 @@
             </div>
         </div>
 
-        <!-- 7. Operations Vault -->
+        <!-- 5. Operations Vault -->
         <a href="/ops" class="flat-card bg-blue" style="text-decoration: none; border-left: 5px solid #00d2d3;">
             <i data-lucide="terminal" class="bg-icon"></i>
             <div class="card-content">
@@ -180,14 +200,18 @@
     </div>
 
     <!-- ================================================================================= -->
-    <!-- SECTION 1: COMMUNICATION HUB                                                      -->
+    <!-- SECTION 1: COMMUNICATION HUB (COLLAPSIBLE)                                       -->
     <!-- ================================================================================= -->
-    <div class="section-header">
-        <i data-lucide="message-circle" style="width: 16px; height: 16px;"></i> Communication Hub
+    <div class="section-header" onclick="toggleLayoutSection(this, 'sec-comm-hub')">
+        <div class="section-header-left">
+            <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i>
+            <span>Communication Hub</span>
+        </div>
+        <span class="toggle-icon">▶</span>
     </div>
     
-    <div class="card-container">
-        <!-- 10. Phone Calls Log -->
+    <div class="section-content" id="sec-comm-hub">
+        <!-- Phone Calls Log -->
         <a href="/calls" class="flat-card bg-indigo" style="text-decoration: none;">
             <i data-lucide="phone-call" class="bg-icon"></i>
             <div class="card-content">
@@ -202,7 +226,7 @@
             </div>
         </a>
 
-        <!-- 11. SMS Messages -->
+        <!-- SMS Messages -->
         <a href="/messages" class="flat-card bg-emerald" style="text-decoration: none;">
             <i data-lucide="message-square" class="bg-icon"></i>
             <div class="card-content">
@@ -217,7 +241,7 @@
             </div>
         </a>
 
-        <!-- 9. Address Book / Contacts -->
+        <!-- Address Book / Contacts -->
         <a href="/contacts" class="flat-card bg-orange" style="text-decoration: none;">
             <i data-lucide="users" class="bg-icon"></i>
             <div class="card-content">
@@ -232,7 +256,7 @@
             </div>
         </a>
 
-        <!-- 12. Live Notifications Portal Gate -->
+        <!-- Live Notifications Portal Gate -->
         <a href="/notifications" class="flat-card bg-purple" style="text-decoration: none; border-left: 5px solid #9b59b6;">
             <i data-lucide="bell" class="bg-icon"></i>
             <div class="card-content">
@@ -249,14 +273,18 @@
     </div>
 
     <!-- ================================================================================= -->
-    <!-- SECTION 2: REMOTE OPERATIONS CENTER                                               -->
+    <!-- SECTION 2: REMOTE OPERATIONS CENTER (COLLAPSIBLE)                                 -->
     <!-- ================================================================================= -->
-    <div class="section-header">
-        <i data-lucide="cpu" style="width: 16px; height: 16px;"></i> Remote Operations Center
+    <div class="section-header" onclick="toggleLayoutSection(this, 'sec-remote-ops')">
+        <div class="section-header-left">
+            <i data-lucide="cpu" style="width: 18px; height: 18px;"></i>
+            <span>Remote Operations Center</span>
+        </div>
+        <span class="toggle-icon">▶</span>
     </div>
 
-    <div class="card-container">
-        <!-- 🚀 NAYA INTEGRATION: WebSocket Live Screen Sharing Engine UI Component -->
+    <div class="section-content" id="sec-remote-ops">
+        <!-- WebSocket Live Screen Sharing Engine UI Component -->
         <div class="flat-card bg-blue">
             <i data-lucide="monitor" class="bg-icon"></i>
             <div class="card-content">
@@ -276,14 +304,13 @@
                 </select>
                 <button class="btn btn-success" id="btn-toggle-stream" onclick="toggleScreenStream()">Start Stream</button>
             </div>
-            <!-- Dynamic UI Canvas Output Shell for Incoming WebSocket Binary Streams -->
             <div class="live-stream-viewport" id="stream-viewport">
                 <div id="stream-placeholder" style="position: absolute; color: #888; font-size: 13px;">Awaiting WebSocket Binary Frame Chunks...</div>
                 <canvas id="stream-canvas" class="live-stream-canvas"></canvas>
             </div>
         </div>
 
-        <!-- 6. Live Ops (Media Capture Triggers) -->
+        <!-- Live Ops (Media Capture Triggers) -->
         <div class="flat-card bg-teal">
             <i data-lucide="cast" class="bg-icon"></i>
             <div class="card-content">
@@ -307,7 +334,7 @@
             </div>
         </div>
 
-        <!-- 5. Security & Tactical Ops -->
+        <!-- Security & Tactical Ops -->
         <div class="flat-card bg-pink">
             <i data-lucide="shield-alert" class="bg-icon"></i>
             <div class="card-content">
@@ -326,7 +353,7 @@
             </div>
         </div>
 
-        <!-- 14. File Manager -->
+        <!-- File Manager -->
         <a href="/files" class="flat-card bg-bluegrey" style="text-decoration: none;">
             <i data-lucide="folder-open" class="bg-icon"></i>
             <div class="card-content">
@@ -341,7 +368,7 @@
             </div>
         </a>
 
-        <!-- 15. Live Media Gallery -->
+        <!-- Live Media Gallery -->
         <a href="/gallery" class="flat-card bg-pink" style="text-decoration: none;">
             <i data-lucide="image" class="bg-icon"></i>
             <div class="card-content">
@@ -358,14 +385,18 @@
     </div>
 
     <!-- ================================================================================= -->
-    <!-- SECTION 3: DEVICE SAFETY & GEOLOCATION                                            -->
+    <!-- SECTION 3: DEVICE SAFETY & GEOLOCATION (COLLAPSIBLE)                              -->
     <!-- ================================================================================= -->
-    <div class="section-header">
-        <i data-lucide="map-pin" style="width: 16px; height: 16px;"></i> Safety & Geolocation
+    <div class="section-header" onclick="toggleLayoutSection(this, 'sec-safety-geo')">
+        <div class="section-header-left">
+            <i data-lucide="map-pin" style="width: 18px; height: 18px;"></i>
+            <span>Safety & Geolocation</span>
+        </div>
+        <span class="toggle-icon">▶</span>
     </div>
 
-    <div class="card-container">
-        <!-- 13. GPS Location -->
+    <div class="section-content" id="sec-safety-geo">
+        <!-- GPS Location -->
         <a href="/locations" class="flat-card bg-cyan" style="text-decoration: none;">
             <i data-lucide="map" class="bg-icon"></i>
             <div class="card-content">
@@ -380,7 +411,7 @@
             </div>
         </a>
 
-        <!-- 🚀 NAYA INTEGRATION: Smart Geofencing Control Panel Interface -->
+        <!-- Smart Geofencing Control Panel Interface -->
         <div class="flat-card bg-emerald">
             <i data-lucide="navigation" class="bg-icon"></i>
             <div class="card-content">
@@ -397,7 +428,7 @@
             </div>
         </div>
 
-        <!-- 🚀 NAYA INTEGRATION: Emergency SOS Interceptor Status Stream -->
+        <!-- Emergency SOS Interceptor Status Stream -->
         <div class="flat-card bg-red" style="border-left: 5px solid #fff;">
             <i data-lucide="alert-triangle" class="bg-icon"></i>
             <div class="card-content">
@@ -416,14 +447,18 @@
     </div>
 
     <!-- ================================================================================= -->
-    <!-- SECTION 4: APPLICATION POLICY MANAGER                                             -->
+    <!-- SECTION 4: APPLICATION POLICY MANAGER (COLLAPSIBLE)                              -->
     <!-- ================================================================================= -->
-    <div class="section-header">
-        <i data-lucide="lock" style="width: 16px; height: 16px;"></i> Application Policy Manager
+    <div class="section-header" onclick="toggleLayoutSection(this, 'sec-policy-mgr')">
+        <div class="section-header-left">
+            <i data-lucide="lock" style="width: 18px; height: 18px;"></i>
+            <span>Application Policy Manager</span>
+        </div>
+        <span class="toggle-icon">▶</span>
     </div>
 
-    <div class="card-container">
-        <!-- 🚀 NAYA INTEGRATION: Study Hour App Blocker Toggle Console -->
+    <div class="section-content" id="sec-policy-mgr">
+        <!-- Study Hour App Blocker Toggle Console -->
         <div class="flat-card bg-yellow" style="border-left: 5px solid #d35400;">
             <i data-lucide="clock" class="bg-icon"></i>
             <div class="card-content">
@@ -440,7 +475,7 @@
             </div>
         </div>
 
-        <!-- 8. App Usage -->
+        <!-- App Usage -->
         <a href="/usage" class="flat-card bg-yellow" style="text-decoration: none;">
             <i data-lucide="activity" class="bg-icon"></i>
             <div class="card-content">
@@ -455,7 +490,7 @@
             </div>
         </a>
 
-        <!-- 16. Installed Apps -->
+        <!-- Installed Apps -->
         <a href="/apps" class="flat-card bg-cyan" style="text-decoration: none;">
             <i data-lucide="layers" class="bg-icon"></i>
             <div class="card-content">
@@ -470,7 +505,7 @@
             </div>
         </a>
 
-        <!-- 17. Feature Selection -->
+        <!-- Feature Selection -->
         <a href="/settings" class="flat-card bg-grey" style="text-decoration: none; border-left: 5px solid #f1c40f;">
             <i data-lucide="sliders" class="bg-icon"></i>
             <div class="card-content">
@@ -486,7 +521,6 @@
         </a>
     </div>
 
-
     <!-- Diagnostics Modal -->
     <div id="diagnostics-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; justify-content: center; align-items: center; padding: 20px;">
         <div style="background: #1e1e1e; width: 100%; max-width: 500px; border-radius: 8px; padding: 20px; max-height: 80vh; overflow-y: auto;">
@@ -500,182 +534,21 @@
         </div>
     </div>
 
-    <!-- Script Block -->
+    <!-- 🚀 FIXED: Isolated clean UI control script. All data binding hooks are now managed strictly by dashboard.js -->
     <script> 
         lucide.createIcons(); 
         
         function openSettingsCheckModal() { document.getElementById('diagnostics-modal').style.display = 'flex'; }
         function closeSettingsCheckModal() { document.getElementById('diagnostics-modal').style.display = 'none'; }
         
-        function triggerCommand(commandString, commandName) {
-            const isConfirmed = confirm(`Are you sure you want to trigger: ${commandName}?`);
-            if (!isConfirmed) return;
-
-            if (commandString === 'record_audio') {
-                const duration = document.getElementById('audio-duration').value;
-                commandString = `record_audio:${duration}`;
-            }
-
-            // 🚀 WIRED UP: Connects purane standalone triggers directly to Flask command queue matrix
-            const activeToken = document.getElementById('device-select').value;
-            fetch(`/api/sync/commands/trigger?token=${activeToken}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ command: commandString })
-            })
-            .then(res => res.json())
-            .then(() => {
-                setTimeout(() => { window.location.href = "/ops"; }, 800);
-            })
-            .catch(err => console.error("Command Tunnel Failure:", err));
-        }
-
-        // =================================================================================
-        // REAL CONNECTED HARDENED FRONTEND BEHAVIOR FOR THE 4 NEW PARENTAL FEATURES
-        // =================================================================================
-        let liveSocketPipeline = null;
-
-        function toggleScreenStream() {
-            const btn = document.getElementById('btn-toggle-stream');
-            const viewport = document.getElementById('stream-viewport');
-            const canvas = document.getElementById('stream-canvas');
-            const placeholder = document.getElementById('stream-placeholder');
-            const duration = document.getElementById('stream-duration').value;
-            const activeToken = document.getElementById('device-select').value;
-
-            if (btn.innerText === "START STREAM") {
-                // 1. Send the command to tell Android client to request recording tokens
-                fetch(`/api/sync/commands/trigger?token=${activeToken}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ command: `start_screen_stream:${duration}` })
-                });
-
-                // 2. Open high-speed WebSocket pipeline bound to Flask Sock wrapper
-                const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-                const host = window.location.host;
-                
-                liveSocketPipeline = new WebSocket(`${protocol}://${host}/ws/dashboard/${activeToken}`);
-                liveSocketPipeline.binaryType = "blob"; 
-
-                const ctx = canvas.getContext('2d');
-
-                liveSocketPipeline.onmessage = function(event) {
-                    placeholder.style.display = "none";
-                    const blob = event.data;
-                    const img = new Image();
-                    img.onload = function() {
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        ctx.drawImage(img, 0, 0);
-                        URL.revokeObjectURL(img.src); // Hard release memory allocations
-                    };
-                    img.src = URL.createObjectURL(blob);
-                };
-
-                liveSocketPipeline.onclose = function() {
-                    resetStreamUI(btn, viewport, placeholder);
-                };
-
-                btn.innerText = "Stop Stream";
-                btn.style.background = "rgba(231, 76, 60, 0.8)"; // Red feedback indicator
-                viewport.style.display = "flex";
-            } else {
-                if (liveSocketPipeline) liveSocketPipeline.close();
-                fetch(`/api/sync/commands/trigger?token=${activeToken}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ command: "stop_screen_stream" })
-                });
-                resetStreamUI(btn, viewport, placeholder);
+        // 🚀 DYNAMIC INTERACTIVE ANIMATION ACCORDION LOGIC
+        function toggleLayoutSection(headerEl, sectionId) {
+            headerEl.classList.toggle('active');
+            const content = document.getElementById(sectionId);
+            if (content) {
+                content.classList.toggle('expanded');
             }
         }
-
-        function resetStreamUI(btn, viewport, placeholder) {
-            btn.innerText = "Start Stream";
-            btn.style.background = "rgba(46, 204, 113, 0.8)"; // Restores green background layer rules
-            viewport.style.display = "none";
-            placeholder.style.display = "block";
-        }
-
-        function toggleStudyHourPolicy() {
-            const activeToken = document.getElementById('device-select').value;
-            fetch(`/api/settings/toggle-study-hour?token=${activeToken}`, { method: 'POST' })
-            .then(res => res.json())
-            .then(data => {
-                if(data.status === "success") {
-                    const status = data.study_hour_active ? "ACTIVATED" : "DEACTIVATED";
-                    alert(`Study Hour Restriction Mode: ${status}`);
-                }
-            })
-            .catch(err => console.error("Policy sync breakdown:", err));
-        }
-
-        // =================================================================================
-        // BACKGROUND THREAD MONITORING: GEOFENCE & SOS PANIC OVERLAYS
-        // =================================================================================
-        function initializeBackgroundTelemetryLoops() {
-            setInterval(() => {
-                const activeToken = document.getElementById('device-select').value;
-                if(!activeToken) return;
-
-                // 1. Continuous Emergency SOS Interception Polling
-                fetch(`/api/sos/monitor?token=${activeToken}`)
-                .then(res => res.json())
-                .then(data => {
-                    const badge = document.getElementById('metric-sos-badge');
-                    const label = document.getElementById('sos-status-label');
-                    
-                    if (data.status === "success" && data.sos_data.sos_active) {
-                        if(badge) { badge.innerText = "🚨 PANIC"; badge.style.color = "#e74c3c"; }
-                        if(label) label.innerText = `CRITICAL STATE: Battery ${data.sos_data.battery}% | Status: ${data.sos_data.status}`;
-                        triggerSOSWindowOverlay(data.sos_data.battery, data.sos_data.status);
-                    } else {
-                        if(badge) { badge.innerText = "STANDBY"; badge.style.color = "#fff"; }
-                    }
-                });
-
-                // 2. Proximity Geofence Violation Polling
-                fetch(`/api/geofence/alerts/poll?token=${activeToken}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status === "success" && data.alerts.length > 0) {
-                        const lastAlert = data.alerts[data.alerts.length - 1];
-                        console.warn(lastAlert);
-                    }
-                });
-            }, 4000);
-        }
-
-        function triggerSOSWindowOverlay(battery, status) {
-            let overlay = document.getElementById('sos-alert-window-overlay');
-            if (!overlay) {
-                overlay = document.createElement('div');
-                overlay.id = 'sos-alert-window-overlay';
-                overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(192,57,43,0.98); z-index:99999; display:flex; flex-direction:column; justify-content:center; align-items:center; color:white; padding:25px; text-align:center;";
-                overlay.innerHTML = `
-                    <h1 style="font-size:32px; font-weight:800; margin-bottom:15px;">EMERGENCY SOS SIGNAL ACTIVATED</h1>
-                    <p id="sos-overlay-desc" style="font-size:16px; margin-bottom:25px; max-width:500px; opacity:0.9;"></p>
-                    <button onclick="dismissSOSAlertState()" style="padding:12px 35px; border:2px solid white; background:none; color:white; font-weight:bold; cursor:pointer; text-transform:uppercase;">Dismiss Emergency</button>
-                `;
-                document.body.appendChild(overlay);
-            }
-            document.getElementById('sos-overlay-desc').innerText = `Child device context triggered a high-priority emergency event loop. Current Battery: ${battery}% | Network telemetry signature: ${status}`;
-        }
-
-        function dismissSOSAlertState() {
-            const activeToken = document.getElementById('device-select').value;
-            fetch(`/api/sos/clear?token=${activeToken}`, { method: 'POST' })
-            .then(() => {
-                const overlay = document.getElementById('sos-alert-window-overlay');
-                if (overlay) overlay.remove();
-                const label = document.getElementById('sos-status-label');
-                if (label) label.innerText = "Monitoring Panic Signals Matrix";
-            });
-        }
-
-        // Initialize background data tracking streams immediately
-        document.addEventListener("DOMContentLoaded", initializeBackgroundTelemetryLoops);
     </script>
     <script src="/static/js/dashboard.js"></script>
 </body>
