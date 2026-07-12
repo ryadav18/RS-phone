@@ -1,6 +1,7 @@
 class DashboardEngine {
     constructor() {
         this.activeDeviceId = localStorage.getItem('active_device_id');
+        this.activeDeviceToken = null; // 🚀 FIXED: Dynamic state registry to hold secondary UUID token signatures
         this.init();
     }
 
@@ -12,7 +13,7 @@ class DashboardEngine {
         // Existing metric refresher
         setInterval(() => this.loadDeviceMetrics(), 10000);
         
-        // 🚀 NEW INTEGRATION: Automated high-priority telemetry loop for Geofence & SOS alerts
+        // Automated high-priority telemetry loop for Geofence & SOS alerts
         this.initializeBackgroundTelemetryLoops();
     }
 
@@ -28,24 +29,41 @@ class DashboardEngine {
                 const selectEl = document.getElementById('device-select');
                 if (selectEl) {
                     selectEl.innerHTML = ''; 
-                    if (result.data.length === 0) {
+                    if (!result.data || result.data.length === 0) {
                         selectEl.innerHTML = '<option value="">No Devices Found</option>';
                         return;
                     }
+
+                    // 🚀 FIXED: Dynamic Sanitization Block to neutralize stale 'mock_device_token' strings
+                    const validDevice = result.data.find(d => d.id == this.activeDeviceId || d.device_token == this.activeDeviceId);
+                    
+                    if (!validDevice) {
+                        // Force reset to the actual newly registered hardware context (e.g., moto g31)
+                        this.activeDeviceId = result.data[0].id;
+                        this.activeDeviceToken = result.data[0].device_token;
+                        localStorage.setItem('active_device_id', this.activeDeviceId);
+                    } else {
+                        this.activeDeviceId = validDevice.id;
+                        this.activeDeviceToken = validDevice.device_token;
+                    }
+
                     result.data.forEach(dev => {
                         const option = document.createElement('option');
                         option.value = dev.id;
-                        option.textContent = dev.name;
+                        option.textContent = `${dev.name} (${dev.model || 'Active Only'})`;
                         selectEl.appendChild(option);
                     });
-                    if (!this.activeDeviceId && result.data.length > 0) {
-                        this.activeDeviceId = result.data[0].id;
-                        localStorage.setItem('active_device_id', this.activeDeviceId);
-                    }
+
                     selectEl.value = this.activeDeviceId;
+                    
+                    // Re-bind change listener with defensive checks
                     selectEl.addEventListener('change', (e) => {
                         this.activeDeviceId = e.target.value;
                         localStorage.setItem('active_device_id', this.activeDeviceId);
+                        
+                        const selected = result.data.find(d => d.id == this.activeDeviceId);
+                        if (selected) this.activeDeviceToken = selected.device_token;
+                        
                         this.loadDeviceMetrics(); 
                     });
                 }
@@ -57,14 +75,20 @@ class DashboardEngine {
 
     async loadDeviceMetrics() {
         const token = localStorage.getItem('owner_token');
+        if (!this.activeDeviceId) return;
+
         try {
             const res = await fetch('/api/devices', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const result = await res.json();
             if (result.status === 'success') {
-                const dev = result.data.find(d => d.id === this.activeDeviceId);
-                if (dev) this.populateMetadata(dev);
+                // 🚀 FIXED: Flexible type verification matrix to prevent DB Int vs String UUID selection crashes
+                const dev = result.data.find(d => d.id == this.activeDeviceId || d.device_token == this.activeDeviceId);
+                if (dev) {
+                    this.activeDeviceToken = dev.device_token;
+                    this.populateMetadata(dev);
+                }
             }
         } catch (e) { console.error("Telemetry Fetch Error:", e); }
     }
@@ -95,8 +119,9 @@ class DashboardEngine {
 
         const nameEl = document.getElementById('info-name');
         if (nameEl) {
+            // 🚀 FIXED: Completely overrides the fallback template with real metadata from the child context
             nameEl.innerHTML = `
-                <div style="font-size: 1.1rem; color: white;">
+                <div style="font-size: 1.1rem; color: white; font-weight: bold;">
                     ${dev.name || 'Unknown'} <span style="font-size: 0.8rem; opacity: 0.8;">(${dev.model || ''})</span>
                 </div>
                 <button onclick="deleteDevice('${dev.id}')" style="margin-top: 8px; background: rgba(231, 76, 60, 0.2); color: #e74c3c; border: 1px solid #e74c3c; border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 0.7rem; font-weight: bold; text-transform: uppercase;">
@@ -106,15 +131,17 @@ class DashboardEngine {
         }
     }
 
-    // 🚀 NEW INTEGRATION: Continuous Background Telemetry Interception
     initializeBackgroundTelemetryLoops() {
         setInterval(async () => {
             if (!this.activeDeviceId) return;
             const token = localStorage.getItem('owner_token');
+            
+            // 🚀 FIXED: Explicitly routes the secure device token to protect secondary tracking microservices
+            const targetToken = this.activeDeviceToken || this.activeDeviceId;
 
             try {
                 // 1. Emergency SOS Interception Channel
-                const sosRes = await fetch(`/api/sos/monitor?token=${this.activeDeviceId}`, {
+                const sosRes = await fetch(`/api/sos/monitor?token=${targetToken}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const sosData = await sosRes.json();
@@ -125,15 +152,13 @@ class DashboardEngine {
                 if (sosData.status === "success" && sosData.sos_data.sos_active) {
                     if (badge) { badge.innerText = "🚨 PANIC"; badge.style.color = "#e74c3c"; }
                     if (label) label.innerText = `CRITICAL STATE: Battery ${sosData.sos_data.battery}% | Status: ${sosData.sos_data.status}`;
-                    
-                    // Trigger dynamic screen overlay popup window
                     window.triggerSOSWindowOverlay(sosData.sos_data.battery, sosData.sos_data.status);
                 } else {
                     if (badge) { badge.innerText = "STANDBY"; badge.style.color = "#fff"; }
                 }
 
                 // 2. Proximity Geofence Violation Polling Channel
-                const geoRes = await fetch(`/api/geofence/alerts/poll?token=${this.activeDeviceId}`, {
+                const geoRes = await fetch(`/api/geofence/alerts/poll?token=${targetToken}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const geoData = await geoRes.json();
@@ -145,7 +170,7 @@ class DashboardEngine {
             } catch (e) {
                 console.error("Telemetry Loop Execution Failure:", e);
             }
-        }, 4000); // Optimized 4 seconds polling constraint
+        }, 4000);
     }
 }
 
@@ -214,9 +239,8 @@ window.deleteDevice = async function(deviceId) {
 };
 
 // =================================================================================
-// 🚀 DYNAMIC CONNECTIONS FOR THE 4 ADVANCED NEW FEATURES
+// DYNAMIC CONNECTIONS FOR THE 4 ADVANCED NEW FEATURES
 // =================================================================================
-
 let liveSocketPipeline = null;
 
 window.toggleScreenStream = async function() {
@@ -232,7 +256,6 @@ window.toggleScreenStream = async function() {
     if (!deviceId) return alert("Select an active hardware context first.");
 
     if (btn.innerText.toUpperCase() === "START STREAM") {
-        // 1. Pipeline dynamic command execution straight into Flask command queue
         try {
             await fetch(`/api/devices/${deviceId}/action`, {
                 method: 'POST',
@@ -241,7 +264,6 @@ window.toggleScreenStream = async function() {
             });
         } catch (err) { console.error("Stream initialization request skipped:", err); }
 
-        // 2. Instantiate high-speed multi-threaded WebSocket context mapping via Flask Sock
         const protocol = window.location.protocol === "https:" ? "wss" : "ws";
         const host = window.location.host;
         
@@ -258,7 +280,7 @@ window.toggleScreenStream = async function() {
                 canvas.width = img.width;
                 canvas.height = img.height;
                 ctx.drawImage(img, 0, 0);
-                URL.revokeObjectURL(img.src); // Flush memory layers to prevent OOM errors on browser
+                URL.revokeObjectURL(img.src); 
             };
             img.src = URL.createObjectURL(blob);
         };
@@ -268,7 +290,7 @@ window.toggleScreenStream = async function() {
         };
 
         btn.innerText = "Stop Stream";
-        btn.style.background = "rgba(231, 76, 60, 0.8)"; // Red warning state indicator
+        btn.style.background = "rgba(231, 76, 60, 0.8)"; 
         if (viewport) viewport.style.display = "flex";
 
     } else {
@@ -287,7 +309,7 @@ window.toggleScreenStream = async function() {
 window.resetStreamUI = function(btn, viewport, placeholder) {
     if (btn) {
         btn.innerText = "Start Stream";
-        btn.style.background = "rgba(46, 204, 113, 0.8)"; // Green fallback operational state
+        btn.style.background = "rgba(46, 204, 113, 0.8)"; 
     }
     if (viewport) viewport.style.display = "none";
     if (placeholder) placeholder.style.display = "block";
