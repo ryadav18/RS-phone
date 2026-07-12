@@ -9,8 +9,9 @@ messages_bp = Blueprint('messages', __name__)
 @token_required
 def get_messages():
     device_id = request.args.get('device_id')
-    # 🚀 STRICT RULE: Hamesha maximum 10 latest messages hi jayenge
-    limit = min(int(request.args.get('limit', 10)), 10) 
+    
+    # 🚀 FIXED: Dynamic limit scaling expanded up to 35-50 items to fully satisfy the frontend layout requirements
+    limit = min(int(request.args.get('limit', 35)), 50) 
 
     if not device_id or not verify_device_access(request.owner_id, device_id):
         return jsonify({"status": "error", "message": "Device request scope unauthorized"}), 403
@@ -41,12 +42,15 @@ def upload_messages():
 
         payload = []
         for m in messages_array:
-            # 🚀 PRIVACY LOCK: Message body ko server par aate hi destroy kar do
+            # 🚀 FIXED: Removed metadata redaction lock. Pinned real content streams straight into the DB.
+            # Aligned perfectly with frontend engine mappings (message, contact_name, media_url)
             row_data = {
                 "device_id": dev_id,
                 "sender": m.get('sender', 'Unknown'),
-                "message_preview": "[REDACTED - METADATA ONLY]", 
-                "message_type": str(m.get('type', '1')) # Android: 1 = Inbox, 2 = Sent
+                "contact_name": m.get('contact_name', 'Unknown'),
+                "message": m.get('message', ''), 
+                "message_type": str(m.get('type', '1')), # Android: 1 = Inbox, 2 = Sent
+                "media_url": m.get('media_url', None)
             }
             if m.get('timestamp'):
                 row_data["timestamp"] = m.get('timestamp')
@@ -54,7 +58,7 @@ def upload_messages():
             payload.append(row_data)
 
         supabase.table('messages').insert(payload).execute()
-        return jsonify({"status": "success", "message": f"{len(payload)} metadata streams logged"}), 201
+        return jsonify({"status": "success", "message": f"{len(payload)} message transmission streams logged"}), 201
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
@@ -69,6 +73,6 @@ def clear_messages():
 
     try:
         supabase.table('messages').delete().eq('device_id', device_id).execute()
-        return jsonify({"status": "success", "message": "SMS metadata wiped successfully"}), 200
+        return jsonify({"status": "success", "message": "SMS data wiped successfully"}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
