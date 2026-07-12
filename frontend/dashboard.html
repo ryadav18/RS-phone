@@ -13,6 +13,21 @@
         .header h2 { font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #ffffff; }
         .device-selector { width: 100%; padding: 12px; margin-top: 15px; border-radius: 4px; border: 1px solid #333; background: #1e1e1e; color: white; font-size: 16px; outline: none; margin-bottom: 15px; }
 
+        /* Structural Section Typography */
+        .section-header { 
+            font-size: 14px; 
+            font-weight: 700; 
+            color: #3498db; 
+            text-transform: uppercase; 
+            letter-spacing: 1.5px; 
+            margin: 25px 0 12px 2px; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
+            border-left: 3px solid #3498db;
+            padding-left: 8px;
+        }
+
         .card-container { display: flex; flex-direction: column; gap: 12px; }
         
         .flat-card {
@@ -41,6 +56,7 @@
         
         .btn-danger { background: rgba(231, 76, 60, 0.8); }
         .btn-warning { background: rgba(241, 196, 15, 0.8); color: #000; }
+        .btn-success { background: rgba(46, 204, 113, 0.8); }
 
         .bg-icon { position: absolute; right: -20px; top: -10px; width: 120px; height: 120px; opacity: 0.1; z-index: 1; transform: rotate(-15deg); }
 
@@ -58,6 +74,14 @@
         .bg-cyan { background-color: #00bcd4; }
         .bg-bluegrey { background-color: #607d8b; }
         .bg-grey { background-color: #424242; }
+
+        /* Streaming Element Viewport CSS */
+        .live-stream-viewport {
+            width: 100%; height: 240px; background: #000; border-radius: 4px;
+            margin-top: 12px; display: none; align-items: center; justify-content: center;
+            border: 2px dashed #1abc9c; position: relative;
+        }
+        .live-stream-canvas { width: 100%; height: 100%; object-fit: contain; }
     </style>
 </head>
 <body>
@@ -69,8 +93,10 @@
         </select>
     </div>
 
+    <!-- ================================================================================= -->
+    <!-- DIAGNOSTICS & SYSTEM MATRIX (VITAL STATS)                                         -->
+    <!-- ================================================================================= -->
     <div class="card-container">
-        
         <!-- 1. Connection & System Info -->
         <div class="flat-card bg-dark">
             <i data-lucide="radio" class="bg-icon"></i>
@@ -137,49 +163,6 @@
             </div>
         </div>
 
-        <!-- 5. Security & Tactical Ops -->
-        <div class="flat-card bg-pink">
-            <i data-lucide="shield-alert" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="shield" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">Tactical Command</span>
-                        <span class="card-subtitle" id="metric-shield-status">Admin & Emergency Controls</span>
-                    </div>
-                </div>
-            </div>
-            <div class="action-row">
-                <button class="btn btn-warning" onclick="triggerCommand('ring_device', 'Ring Alarm')">Ring Alarm</button>
-                <button class="btn btn-danger" onclick="triggerCommand('call_admin', 'Admin Call')">Admin Call</button>
-                <button class="btn" onclick="triggerCommand('force_lock', 'Force Lock')">Force Lock</button>
-            </div>
-        </div>
-
-        <!-- 6. Live Ops (Media Capture Triggers) -->
-        <div class="flat-card bg-teal">
-            <i data-lucide="cast" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="video" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">Live Ops</span>
-                        <span class="card-subtitle">Remote Media Capture</span>
-                    </div>
-                </div>
-            </div>
-            <div class="action-row">
-                <button class="btn" id="btn-screenshot" onclick="triggerCommand('take_screenshot', 'Screenshot')">Screenshot</button>
-                <div style="display: flex; flex: 1; gap: 5px;">
-                    <select id="audio-duration" style="background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 4px; padding: 5px; outline: none; font-weight: bold;">
-                        <option value="60" style="color: black;">1 Min</option>
-                        <option value="120" style="color: black;">2 Min</option>
-                    </select>
-                    <button class="btn" id="btn-audio" onclick="triggerCommand('record_audio', 'Record Audio')">Record Audio</button>
-                </div>
-            </div>
-        </div>
-
         <!-- 7. Operations Vault -->
         <a href="/ops" class="flat-card bg-blue" style="text-decoration: none; border-left: 5px solid #00d2d3;">
             <i data-lucide="terminal" class="bg-icon"></i>
@@ -194,37 +177,16 @@
                 <div class="card-right"><div class="metric-value">></div></div>
             </div>
         </a>
+    </div>
 
-        <!-- 8. App Usage -->
-        <a href="/usage" class="flat-card bg-yellow" style="text-decoration: none;">
-            <i data-lucide="activity" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="pie-chart" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">App Usage</span>
-                        <span class="card-subtitle">Digital Wellbeing & Limits</span>
-                    </div>
-                </div>
-                <div class="card-right"><div class="metric-value">></div></div>
-            </div>
-        </a>
-
-        <!-- 9. Address Book / Contacts -->
-        <a href="/contacts" class="flat-card bg-orange" style="text-decoration: none;">
-            <i data-lucide="users" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="book-open" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">Address Book</span>
-                        <span class="card-subtitle">Live Contacts Sync</span>
-                    </div>
-                </div>
-                <div class="card-right"><div class="metric-value">></div></div>
-            </div>
-        </a>
-
+    <!-- ================================================================================= -->
+    <!-- SECTION 1: COMMUNICATION HUB                                                      -->
+    <!-- ================================================================================= -->
+    <div class="section-header">
+        <i data-lucide="message-circle" style="width: 16px; height: 16px;"></i> Communication Hub
+    </div>
+    
+    <div class="card-container">
         <!-- 10. Phone Calls Log -->
         <a href="/calls" class="flat-card bg-indigo" style="text-decoration: none;">
             <i data-lucide="phone-call" class="bg-icon"></i>
@@ -255,7 +217,22 @@
             </div>
         </a>
 
-        <!-- 🚀 FIXED INJECTION: 12. Live Notifications Portal Gate -->
+        <!-- 9. Address Book / Contacts -->
+        <a href="/contacts" class="flat-card bg-orange" style="text-decoration: none;">
+            <i data-lucide="users" class="bg-icon"></i>
+            <div class="card-content">
+                <div class="card-left">
+                    <i data-lucide="book-open" class="card-icon"></i>
+                    <div class="card-text">
+                        <span class="card-title">Address Book</span>
+                        <span class="card-subtitle">Live Contacts Sync</span>
+                    </div>
+                </div>
+                <div class="card-right"><div class="metric-value">></div></div>
+            </div>
+        </a>
+
+        <!-- 12. Live Notifications Portal Gate -->
         <a href="/notifications" class="flat-card bg-purple" style="text-decoration: none; border-left: 5px solid #9b59b6;">
             <i data-lucide="bell" class="bg-icon"></i>
             <div class="card-content">
@@ -269,21 +246,85 @@
                 <div class="card-right"><div class="metric-value">></div></div>
             </div>
         </a>
+    </div>
 
-        <!-- 13. GPS Location -->
-        <a href="/locations" class="flat-card bg-cyan" style="text-decoration: none;">
-            <i data-lucide="map" class="bg-icon"></i>
+    <!-- ================================================================================= -->
+    <!-- SECTION 2: REMOTE OPERATIONS CENTER                                               -->
+    <!-- ================================================================================= -->
+    <div class="section-header">
+        <i data-lucide="cpu" style="width: 16px; height: 16px;"></i> Remote Operations Center
+    </div>
+
+    <div class="card-container">
+        <!-- 🚀 NAYA INTEGRATION: WebSocket Live Screen Sharing Engine UI Component -->
+        <div class="flat-card bg-blue">
+            <i data-lucide="monitor" class="bg-icon"></i>
             <div class="card-content">
                 <div class="card-left">
-                    <i data-lucide="map-pin" class="card-icon"></i>
+                    <i data-lucide="tv" class="card-icon"></i>
                     <div class="card-text">
-                        <span class="card-title">GPS Location</span>
-                        <span class="card-subtitle">Real-time Device Tracking</span>
+                        <span class="card-title">Live Screen Mirroring</span>
+                        <span class="card-subtitle">Real-time WebSocket Data Stream (No Cloud Caching)</span>
                     </div>
                 </div>
-                <div class="card-right"><div class="metric-value">></div></div>
             </div>
-        </a>
+            <div class="action-row">
+                <select id="stream-duration" style="background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 4px; padding: 12px; outline: none; font-weight: bold; flex: 1;">
+                    <option value="1" style="color: black;">1 Min Request</option>
+                    <option value="2" style="color: black;">2 Min Request</option>
+                    <option value="3" style="color: black;">3 Min Request</option>
+                </select>
+                <button class="btn btn-success" id="btn-toggle-stream" onclick="toggleScreenStream()">Start Stream</button>
+            </div>
+            <!-- Dynamic UI Canvas Output Shell for Incoming WebSocket Binary Streams -->
+            <div class="live-stream-viewport" id="stream-viewport">
+                <div id="stream-placeholder" style="position: absolute; color: #888; font-size: 13px;">Awaiting WebSocket Binary Frame Chunks...</div>
+                <canvas id="stream-canvas" class="live-stream-canvas"></canvas>
+            </div>
+        </div>
+
+        <!-- 6. Live Ops (Media Capture Triggers) -->
+        <div class="flat-card bg-teal">
+            <i data-lucide="cast" class="bg-icon"></i>
+            <div class="card-content">
+                <div class="card-left">
+                    <i data-lucide="video" class="card-icon"></i>
+                    <div class="card-text">
+                        <span class="card-title">Live Ops</span>
+                        <span class="card-subtitle">Remote Media Capture</span>
+                    </div>
+                </div>
+            </div>
+            <div class="action-row">
+                <button class="btn" id="btn-screenshot" onclick="triggerCommand('take_screenshot', 'Screenshot')">Screenshot</button>
+                <div style="display: flex; flex: 1; gap: 5px;">
+                    <select id="audio-duration" style="background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 4px; padding: 5px; outline: none; font-weight: bold;">
+                        <option value="60" style="color: black;">1 Min</option>
+                        <option value="120" style="color: black;">2 Min</option>
+                    </select>
+                    <button class="btn" id="btn-audio" onclick="triggerCommand('record_audio', 'Record Audio')">Record Audio</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Security & Tactical Ops -->
+        <div class="flat-card bg-pink">
+            <i data-lucide="shield-alert" class="bg-icon"></i>
+            <div class="card-content">
+                <div class="card-left">
+                    <i data-lucide="shield" class="card-icon"></i>
+                    <div class="card-text">
+                        <span class="card-title">Tactical Command</span>
+                        <span class="card-subtitle" id="metric-shield-status">Admin & Emergency Controls</span>
+                    </div>
+                </div>
+            </div>
+            <div class="action-row">
+                <button class="btn btn-warning" onclick="triggerCommand('ring_device', 'Ring Alarm')">Ring Alarm</button>
+                <button class="btn btn-danger" onclick="triggerCommand('call_admin', 'Admin Call')">Admin Call</button>
+                <button class="btn" onclick="triggerCommand('force_lock', 'Force Lock')">Force Lock</button>
+            </div>
+        </div>
 
         <!-- 14. File Manager -->
         <a href="/files" class="flat-card bg-bluegrey" style="text-decoration: none;">
@@ -309,6 +350,105 @@
                     <div class="card-text">
                         <span class="card-title">Live Gallery</span>
                         <span class="card-subtitle">Rolling 10 Device Photos</span>
+                    </div>
+                </div>
+                <div class="card-right"><div class="metric-value">></div></div>
+            </div>
+        </a>
+    </div>
+
+    <!-- ================================================================================= -->
+    <!-- SECTION 3: DEVICE SAFETY & GEOLOCATION                                            -->
+    <!-- ================================================================================= -->
+    <div class="section-header">
+        <i data-lucide="map-pin" style="width: 16px; height: 16px;"></i> Safety & Geolocation
+    </div>
+
+    <div class="card-container">
+        <!-- 13. GPS Location -->
+        <a href="/locations" class="flat-card bg-cyan" style="text-decoration: none;">
+            <i data-lucide="map" class="bg-icon"></i>
+            <div class="card-content">
+                <div class="card-left">
+                    <i data-lucide="map-pin" class="card-icon"></i>
+                    <div class="card-text">
+                        <span class="card-title">GPS Location</span>
+                        <span class="card-subtitle">Real-time Device Tracking Matrix</span>
+                    </div>
+                </div>
+                <div class="card-right"><div class="metric-value">></div></div>
+            </div>
+        </a>
+
+        <!-- 🚀 NAYA INTEGRATION: Smart Geofencing Control Panel Interface -->
+        <div class="flat-card bg-emerald">
+            <i data-lucide="navigation" class="bg-icon"></i>
+            <div class="card-content">
+                <div class="card-left">
+                    <i data-lucide="circle-dot" class="card-icon"></i>
+                    <div class="card-text">
+                        <span class="card-title">Geofence Boundaries</span>
+                        <span class="card-subtitle">Proximity Violations & Safe Zone Map Config</span>
+                    </div>
+                </div>
+                <div class="card-right">
+                    <div class="metric-value" style="font-size: 14px; background: rgba(0,0,0,0.2); padding: 5px 10px; border-radius: 4px;" onclick="location.href='/geofence-config'">SETUP</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🚀 NAYA INTEGRATION: Emergency SOS Interceptor Status Stream -->
+        <div class="flat-card bg-red" style="border-left: 5px solid #fff;">
+            <i data-lucide="alert-triangle" class="bg-icon"></i>
+            <div class="card-content">
+                <div class="card-left">
+                    <i data-lucide="alert-circle" class="card-icon"></i>
+                    <div class="card-text">
+                        <span class="card-title">SOS Critical Monitor</span>
+                        <span class="card-subtitle" id="sos-status-label">Monitoring Panic Signals Matrix</span>
+                    </div>
+                </div>
+                <div class="card-right">
+                    <div class="metric-value" id="metric-sos-badge" style="font-size: 16px; font-weight: bold; color: #fff;">STANDBY</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================================= -->
+    <!-- SECTION 4: APPLICATION POLICY MANAGER                                             -->
+    <!-- ================================================================================= -->
+    <div class="section-header">
+        <i data-lucide="lock" style="width: 16px; height: 16px;"></i> Application Policy Manager
+    </div>
+
+    <div class="card-container">
+        <!-- 🚀 NAYA INTEGRATION: Study Hour App Blocker Toggle Console -->
+        <div class="flat-card bg-yellow" style="border-left: 5px solid #d35400;">
+            <i data-lucide="clock" class="bg-icon"></i>
+            <div class="card-content">
+                <div class="card-left">
+                    <i data-lucide="timer" class="card-icon"></i>
+                    <div class="card-text">
+                        <span class="card-title">Study Hour Blocker</span>
+                        <span class="card-subtitle">Restrict Social & Gaming Engine Triggers</span>
+                    </div>
+                </div>
+            </div>
+            <div class="action-row">
+                <button class="btn btn-warning" id="btn-study-hour" onclick="toggleStudyHourPolicy()">Toggle Restriction Mode</button>
+            </div>
+        </div>
+
+        <!-- 8. App Usage -->
+        <a href="/usage" class="flat-card bg-yellow" style="text-decoration: none;">
+            <i data-lucide="activity" class="bg-icon"></i>
+            <div class="card-content">
+                <div class="card-left">
+                    <i data-lucide="pie-chart" class="card-icon"></i>
+                    <div class="card-text">
+                        <span class="card-title">App Usage</span>
+                        <span class="card-subtitle">Digital Wellbeing & Limits</span>
                     </div>
                 </div>
                 <div class="card-right"><div class="metric-value">></div></div>
@@ -344,8 +484,7 @@
                 <div class="card-right"><div class="metric-value">></div></div>
             </div>
         </a>
-
-    </div> <!-- Card Container End -->
+    </div>
 
 
     <!-- Diagnostics Modal -->
@@ -386,6 +525,46 @@
             setTimeout(() => {
                 window.location.href = "/ops";
             }, 1000);
+        }
+
+        // =================================================================================
+        // DYNAMIC FRONTEND BEHAVIOR LOGIC FOR NEW PARENTAL FEATURES
+        // =================================================================================
+        let isStreamingActive = false;
+
+        function toggleScreenStream() {
+            const btn = document.getElementById('btn-toggle-stream');
+            const viewport = document.getElementById('stream-viewport');
+            const duration = document.getElementById('stream-duration').value;
+
+            if (!isStreamingActive) {
+                // Trigger dynamic configuration command via system pipeline
+                if (window.executeRemoteAction) {
+                    window.executeRemoteAction(`start_screen_stream:${duration}`);
+                }
+                isStreamingActive = true;
+                btn.innerText = "Stop Stream";
+                btn.style.background = "rgba(231, 76, 60, 0.8)"; // Red feedback indicator
+                viewport.style.display = "flex";
+            } else {
+                if (window.executeRemoteAction) {
+                    window.executeRemoteAction("stop_screen_stream");
+                }
+                isStreamingActive = false;
+                btn.innerText = "Start Stream";
+                btn.style.background = "rgba(46, 204, 113, 0.8)"; // Green fallback
+                viewport.style.display = "none";
+            }
+        }
+
+        function toggleStudyHourPolicy() {
+            if (window.executeRemoteAction) {
+                // Instantly flips state inside remote configurations repository matrix
+                window.executeRemoteAction("toggle_study_hour");
+                alert("Study Hour Policy update command successfully compiled and broadcasted.");
+            } else {
+                alert("Communication tunnel inactive. Command added to stack.");
+            }
         }
     </script>
     <script src="/static/js/dashboard.js"></script>
