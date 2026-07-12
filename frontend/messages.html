@@ -12,11 +12,52 @@
             overflow-y: auto;
             padding-right: 10px;
         }
+
+        /* 🚀 ENTERPRISE UPGRADE: Advanced Interactive Text Bubble Threading Layout */
+        .sms-card {
+            background: #1c1c1e;
+            border: 1px solid #2c2c2e;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: relative;
+        }
+        
+        .sms-meta-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2c2c2e; padding-bottom: 8px; }
+        .sms-sender-info { display: flex; align-items: center; gap: 10px; }
+        .sms-sender-name { font-weight: 600; color: #fff; font-size: 15px; }
+        .sms-sender-phone { color: #888; font-size: 12px; font-family: monospace; }
+        
+        .sms-direction-badge { padding: 3px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        .direction-received { background: rgba(46, 204, 113, 0.15); color: #2ecc71; }
+        .direction-sent { background: rgba(52, 152, 219, 0.15); color: #3498db; }
+
+        .sms-body-content { font-size: 14px; color: #e5e5ea; line-height: 1.4; word-break: break-word; }
+        
+        /* 🚀 FIXED: Dynamic Media Extraction Container Shell */
+        .sms-media-attachment {
+            margin-top: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px dashed #444;
+            border-radius: 4px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #ff9500;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .sms-timestamp-footer { font-size: 11px; color: #666; text-align: right; font-weight: 500; }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar -->
+        <!-- Sidebar Navigation -->
         <div class="sidebar glass-panel">
             <div class="sidebar-brand">
                 <i data-lucide="shield" style="color: var(--accent-cyan);"></i>
@@ -37,18 +78,18 @@
             <header class="topbar">
                 <div>
                     <h2 style="font-weight: 700;">Comm Metadata Log</h2>
-                    <p style="color: #888; font-size: 0.85rem; margin-top: 4px;">Displaying Top 10 Latest Connections (Content Redacted)</p>
+                    <p style="color: #888; font-size: 0.85rem; margin-top: 4px;">Displaying Top 35 Latest Transmission Threads</p>
                 </div>
                 <div class="device-switcher" style="display: flex; align-items: center; gap: 15px;">
-                    <select id="device-select"></select>
-                    <!-- Storage Cleanup Button -->
-                    <button onclick="wipeSMSHistory()" style="background: #ff3b30; color: white; border: none; border-radius: 5px; padding: 8px 15px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; transition: 0.3s;">
-                        <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i> Wipe Logs
+                    <select id="device-select" style="padding: 8px; border-radius: 4px; background: #1e1e1e; color: white; border: 1px solid #333; outline: none; font-weight: bold;"></select>
+                    <button onclick="wipeSMSHistory()" style="background: #ff3b30; color: white; border: none; border-radius: 5px; padding: 8px 15px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; transition: 0.3s; text-transform: uppercase; font-size: 0.8rem;">
+                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> Wipe Logs
                     </button>
                 </div>
             </header>
 
             <div class="glass-panel" style="padding: 25px;">
+                <!-- Target container for the 30-35 sorted SMS items -->
                 <div class="data-list-container" id="sms-list">
                     <div style="color: #888; text-align: center; padding: 20px;">Establishing secure stream...</div>
                 </div>
