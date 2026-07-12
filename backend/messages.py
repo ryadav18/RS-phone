@@ -10,8 +10,8 @@ messages_bp = Blueprint('messages', __name__)
 def get_messages():
     device_id = request.args.get('device_id')
     
-    # 🚀 FIXED: Dynamic limit scaling expanded up to 35-50 items to fully satisfy the frontend layout requirements
-    limit = min(int(request.args.get('limit', 35)), 50) 
+    # Aligned limit architecture parameters strictly up to 50 logs max
+    limit = min(int(request.args.get('limit', 50)), 50) 
 
     if not device_id or not verify_device_access(request.owner_id, device_id):
         return jsonify({"status": "error", "message": "Device request scope unauthorized"}), 403
@@ -42,8 +42,6 @@ def upload_messages():
 
         payload = []
         for m in messages_array:
-            # 🚀 FIXED: Removed metadata redaction lock. Pinned real content streams straight into the DB.
-            # Aligned perfectly with frontend engine mappings (message, contact_name, media_url)
             row_data = {
                 "device_id": dev_id,
                 "sender": m.get('sender', 'Unknown'),
@@ -57,7 +55,25 @@ def upload_messages():
                 
             payload.append(row_data)
 
+        # Execute insertion block for the newly arrived realtime SMS stream
         supabase.table('messages').insert(payload).execute()
+
+        # =================================================================================
+        # 🚀 STRICT 50-ROW SMS ROLLING BUFFER AUTOMATION CLEANUP ENGINE (FIFO)
+        # =================================================================================
+        # Query existing messages for this device sorted from newest to oldest based on database timestamps
+        messages_query = supabase.table('messages').select('id').eq('device_id', dev_id).order('timestamp', desc=True).execute()
+        
+        if len(messages_query.data) > 50:
+            # Capture overflow items crossing the 50 boundary threshold mark
+            records_to_purge = messages_query.data[50:]
+            ids_to_purge = [row['id'] for row in records_to_purge]
+            
+            # Flush out older transactional messages rows in a single batch call
+            supabase.table('messages').delete().in_('id', ids_to_purge).execute()
+            print(f"[FIFO Messages Engine] Purged {len(ids_to_purge)} overflow SMS items from Supabase mapping.")
+        # =================================================================================
+
         return jsonify({"status": "success", "message": f"{len(payload)} message transmission streams logged"}), 201
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
