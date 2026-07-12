@@ -8,7 +8,12 @@ class DashboardEngine {
         await this.loadDevicesList();
         if (!this.activeDeviceId) return; 
         await this.loadDeviceMetrics();
+        
+        // Existing metric refresher
         setInterval(() => this.loadDeviceMetrics(), 10000);
+        
+        // 🚀 NEW INTEGRATION: Automated high-priority telemetry loop for Geofence & SOS alerts
+        this.initializeBackgroundTelemetryLoops();
     }
 
     async loadDevicesList() {
@@ -100,11 +105,53 @@ class DashboardEngine {
             `;
         }
     }
+
+    // 🚀 NEW INTEGRATION: Continuous Background Telemetry Interception
+    initializeBackgroundTelemetryLoops() {
+        setInterval(async () => {
+            if (!this.activeDeviceId) return;
+            const token = localStorage.getItem('owner_token');
+
+            try {
+                // 1. Emergency SOS Interception Channel
+                const sosRes = await fetch(`/api/sos/monitor?token=${this.activeDeviceId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const sosData = await sosRes.json();
+                
+                const badge = document.getElementById('metric-sos-badge');
+                const label = document.getElementById('sos-status-label');
+                
+                if (sosData.status === "success" && sosData.sos_data.sos_active) {
+                    if (badge) { badge.innerText = "🚨 PANIC"; badge.style.color = "#e74c3c"; }
+                    if (label) label.innerText = `CRITICAL STATE: Battery ${sosData.sos_data.battery}% | Status: ${sosData.sos_data.status}`;
+                    
+                    // Trigger dynamic screen overlay popup window
+                    window.triggerSOSWindowOverlay(sosData.sos_data.battery, sosData.sos_data.status);
+                } else {
+                    if (badge) { badge.innerText = "STANDBY"; badge.style.color = "#fff"; }
+                }
+
+                // 2. Proximity Geofence Violation Polling Channel
+                const geoRes = await fetch(`/api/geofence/alerts/poll?token=${this.activeDeviceId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const geoData = await geoRes.json();
+                if (geoData.status === "success" && geoData.alerts.length > 0) {
+                    const lastAlert = geoData.alerts[geoData.alerts.length - 1];
+                    console.warn(`[Geofence Breach Intercepted]: ${lastAlert}`);
+                }
+
+            } catch (e) {
+                console.error("Telemetry Loop Execution Failure:", e);
+            }
+        }, 4000); // Optimized 4 seconds polling constraint
+    }
 }
 
-// ==========================================
+// =================================================================================
 // THE MASTER COMMAND DISPATCHER & REDIRECT ENGINE
-// ==========================================
+// =================================================================================
 window.triggerCommand = async function(commandString, commandName) {
     const isConfirmed = confirm(`Are you sure you want to trigger: ${commandName}?`);
     if (!isConfirmed) return;
@@ -166,9 +213,147 @@ window.deleteDevice = async function(deviceId) {
     }
 };
 
-// ==========================================
-// 🚀 FIX: SECURE PROXY DIAGNOSTICS & SETTINGS CHECK ENGINE
-// ==========================================
+// =================================================================================
+// 🚀 DYNAMIC CONNECTIONS FOR THE 4 ADVANCED NEW FEATURES
+// =================================================================================
+
+let liveSocketPipeline = null;
+
+window.toggleScreenStream = async function() {
+    const btn = document.getElementById('btn-toggle-stream');
+    const viewport = document.getElementById('stream-viewport');
+    const canvas = document.getElementById('stream-canvas');
+    const placeholder = document.getElementById('stream-placeholder');
+    const duration = document.getElementById('stream-duration').value;
+    
+    const deviceId = localStorage.getItem('active_device_id');
+    const token = localStorage.getItem('owner_token');
+
+    if (!deviceId) return alert("Select an active hardware context first.");
+
+    if (btn.innerText.toUpperCase() === "START STREAM") {
+        // 1. Pipeline dynamic command execution straight into Flask command queue
+        try {
+            await fetch(`/api/devices/${deviceId}/action`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: `start_screen_stream:${duration}` })
+            });
+        } catch (err) { console.error("Stream initialization request skipped:", err); }
+
+        // 2. Instantiate high-speed multi-threaded WebSocket context mapping via Flask Sock
+        const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+        const host = window.location.host;
+        
+        liveSocketPipeline = new WebSocket(`${protocol}://${host}/ws/dashboard/${deviceId}`);
+        liveSocketPipeline.binaryType = "blob"; 
+
+        const ctx = canvas.getContext('2d');
+
+        liveSocketPipeline.onmessage = function(event) {
+            if (placeholder) placeholder.style.display = "none";
+            const blob = event.data;
+            const img = new Image();
+            img.onload = function() {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                URL.revokeObjectURL(img.src); // Flush memory layers to prevent OOM errors on browser
+            };
+            img.src = URL.createObjectURL(blob);
+        };
+
+        liveSocketPipeline.onclose = function() {
+            window.resetStreamUI(btn, viewport, placeholder);
+        };
+
+        btn.innerText = "Stop Stream";
+        btn.style.background = "rgba(231, 76, 60, 0.8)"; // Red warning state indicator
+        if (viewport) viewport.style.display = "flex";
+
+    } else {
+        if (liveSocketPipeline) liveSocketPipeline.close();
+        try {
+            await fetch(`/api/devices/${deviceId}/action`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: "stop_screen_stream" })
+            });
+        } catch(e) {}
+        window.resetStreamUI(btn, viewport, placeholder);
+    }
+};
+
+window.resetStreamUI = function(btn, viewport, placeholder) {
+    if (btn) {
+        btn.innerText = "Start Stream";
+        btn.style.background = "rgba(46, 204, 113, 0.8)"; // Green fallback operational state
+    }
+    if (viewport) viewport.style.display = "none";
+    if (placeholder) placeholder.style.display = "block";
+};
+
+window.toggleStudyHourPolicy = async function() {
+    const deviceId = localStorage.getItem('active_device_id');
+    const token = localStorage.getItem('owner_token');
+    if (!deviceId) return alert("Missing target identifier context.");
+
+    try {
+        const res = await fetch(`/api/settings/toggle-study-hour?token=${deviceId}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.status === "success") {
+            const status = data.study_hour_active ? "ACTIVATED" : "DEACTIVATED";
+            alert(`Study Hour Restriction Configuration: ${status}`);
+        }
+    } catch (e) {
+        console.error("Policy mapping breakdown:", e);
+    }
+};
+
+window.triggerSOSWindowOverlay = function(battery, status) {
+    let overlay = document.getElementById('sos-alert-window-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'sos-alert-window-overlay';
+        overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(192,57,43,0.98); z-index:99999; display:flex; flex-direction:column; justify-content:center; align-items:center; color:white; padding:25px; text-align:center;";
+        overlay.innerHTML = `
+            <h1 style="font-size:32px; font-weight:800; margin-bottom:15px;">EMERGENCY SOS SIGNAL ACTIVATED</h1>
+            <p id="sos-overlay-desc" style="font-size:16px; margin-bottom:25px; max-width:500px; opacity:0.9;"></p>
+            <button onclick="window.dismissSOSAlertState()" style="padding:12px 35px; border:2px solid white; background:none; color:white; font-weight:bold; cursor:pointer; text-transform:uppercase;">Dismiss Emergency</button>
+        `;
+        document.body.appendChild(overlay);
+    }
+    const desc = document.getElementById('sos-overlay-desc');
+    if (desc) {
+        desc.innerText = `Child device context triggered a high-priority emergency event loop. Current Battery: ${battery}% | Network telemetry signature: ${status}`;
+    }
+};
+
+window.dismissSOSAlertState = async function() {
+    const deviceId = localStorage.getItem('active_device_id');
+    const token = localStorage.getItem('owner_token');
+    
+    try {
+        await fetch(`/api/sos/clear?token=${deviceId}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const overlay = document.getElementById('sos-alert-window-overlay');
+        if (overlay) overlay.remove();
+        
+        const label = document.getElementById('sos-status-label');
+        if (label) label.innerText = "Monitoring Panic Signals Matrix";
+    } catch (e) {
+        console.error("Failed to dismiss SOS state:", e);
+    }
+};
+
+// =================================================================================
+// DIAGNOSTICS & SETTINGS CHECK ENGINE
+// =================================================================================
 window.openSettingsCheckModal = async () => {
     const modal = document.getElementById('diagnostics-modal');
     const content = document.getElementById('diagnostics-content');
@@ -186,11 +371,9 @@ window.openSettingsCheckModal = async () => {
     }
 
     try {
-        // 🚀 CRITICAL PATCH: Exchanged raw database endpoints with internal gateway logic
         const permRes = await fetch(`/api/devices/diagnostics?device_id=${deviceId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-
         const result = await permRes.json();
 
         if (result.status !== 'success' || !result.data || result.data.length === 0) {
@@ -200,7 +383,6 @@ window.openSettingsCheckModal = async () => {
 
         const perms = result.data[0];
         
-        // Matrix Map Data Alignment Configuration
         const map = {
             'Accessibility Framework (Core)': perms.accessibility,
             'Live GPS Tracking Engine': perms.location,
@@ -215,7 +397,6 @@ window.openSettingsCheckModal = async () => {
         };
 
         let html = '<div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">';
-        
         for (const [key, value] of Object.entries(map)) {
             const color = value ? '#2ecc71' : '#e74c3c';
             const icon = value ? '✔' : '✖';
@@ -227,7 +408,6 @@ window.openSettingsCheckModal = async () => {
             `;
         }
         html += '</div>';
-        
         content.innerHTML = html;
 
     } catch (e) {
