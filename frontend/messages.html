@@ -161,10 +161,7 @@
                     <p style="color: #666; font-size: 0.85rem; margin-top: 4px;">Displaying Active Thread Matrices Grouped by Identity</p>
                 </div>
                 <div class="device-switcher" style="display: flex; align-items: center; gap: 15px;">
-                    <!-- Hardware Nodes Select Controller -->
                     <select id="device-select" style="padding: 8px 12px; border-radius: 6px; background: #1c1c1e; color: white; border: 1px solid #2c2c2e; outline: none; font-weight: 600; font-size: 0.85rem; cursor: pointer;"></select>
-                    
-                    <!-- Secure Database Purge -->
                     <button class="btn-wipe" onclick="wipeSMSHistory()">
                         <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> Wipe Logs
                     </button>
@@ -172,14 +169,12 @@
             </header>
 
             <div class="workspace-glass-wrapper">
-                <!-- 📥 TARGET INJECTION ANCHOR -->
                 <div class="workspace-fluid-container" id="sms-list">
                     <div style="color: #666; text-align: center; padding: 60px; font-weight: 500; font-size: 0.95rem; letter-spacing: 0.5px;">
                         Establishing secure handshake protocol to database stream...
                     </div>
                 </div>
 
-                <!-- 🚀 UNIFIED COMPLIANT PAGINATION CONTROLLER -->
                 <div class="pagination-wrapper">
                     <button class="pagination-btn" id="sms-prev-btn" disabled>
                         <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i> Previous
@@ -193,7 +188,7 @@
         </main>
     </div>
     
-    <!-- EMBEDDED JAVASCRIPT LOGIC -->
+    <!-- EMBEDDED JAVASCRIPT LOGIC WITH DYNAMIC TOKEN HANDSHAKE -->
     <script>
         class MessagesEngine {
             constructor() {
@@ -206,6 +201,11 @@
                 this.init();
             }
 
+            // 🚀 DYNAMIC ENGINE TOKEN PARSER
+            getValidToken() {
+                return localStorage.getItem('owner_token') || localStorage.getItem('session_token') || "";
+            }
+
             async init() {
                 window.messagesEngineInstance = this; 
                 this.setupPaginationListeners();
@@ -213,7 +213,7 @@
                 if (!this.activeDeviceId) return; 
                 
                 this.fetchMessages();
-                setInterval(() => this.fetchMessages(), 12000); 
+                setInterval(() => this.fetchMessages(), 10000); 
             }
 
             setupPaginationListeners() {
@@ -242,7 +242,7 @@
             }
 
             async loadDevicesList() {
-                const token = localStorage.getItem('owner_token');
+                const token = this.getValidToken();
                 try {
                     const res = await fetch('/api/devices', { headers: { 'Authorization': `Bearer ${token}` } });
                     const result = await res.json();
@@ -279,7 +279,7 @@
             }
 
             async fetchMessages() {
-                const token = localStorage.getItem('owner_token');
+                const token = this.getValidToken();
                 if (!this.activeDeviceId) return;
                 try {
                     const res = await fetch(`/api/messages?device_id=${this.activeDeviceId}&limit=100`, {
@@ -485,7 +485,8 @@
 
         window.wipeSMSHistory = async function() {
             if(!confirm("CRITICAL PROTOCOL: Force flush all active text logs from database mapping?")) return;
-            const token = localStorage.getItem('owner_token');
+            const engine = window.messagesEngineInstance;
+            const token = engine ? engine.getValidToken() : "";
             const activeId = localStorage.getItem('active_device_id');
             try {
                 const res = await fetch('/api/messages/clear', {
