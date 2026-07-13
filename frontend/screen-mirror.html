@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Screen Mirroring - RS OWNER</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* =========================================================
+           RS PHONE - ZERO-LAG FLAT ARCHITECTURE (INJECTED STYLE)
+           ========================================================= */
+        :root {
+            --bg-main: #121212;
+            --bg-card: #1e1e1e;
+            --text-main: #ffffff;
+            --accent-cyan: #00f0ff;
+            --color-green: #2ecc71;
+            --color-red: #e74c3c;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main); min-height: 100vh; padding: 15px; }
+
+        /* Sidebar & Layout */
+        .app-container { display: flex; min-height: 100vh; gap: 20px; }
+        .sidebar { width: 260px; background: var(--bg-card); padding: 20px; border-radius: 16px; border: 1px solid #2c2c2e; display: flex; flex-direction: column; gap: 25px; }
+        .sidebar-brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; letter-spacing: 1px; }
+        .sidebar-menu { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+        .sidebar-menu li a { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: #aaa; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; transition: all 0.2s; }
+        .sidebar-menu li.active a { background: rgba(0, 240, 255, 0.08); color: var(--accent-cyan); }
+        
+        .main-content { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+        .glass-panel { background: var(--bg-card); border: 1px solid #2c2c2e; border-radius: 16px; padding: 25px; }
+
+        /* =========================================================
+           SCREEN MIRRORING SPECIFIC STYLES
+           ========================================================= */
+        .viewport-shell { background: #000; border-radius: 12px; padding: 10px; border: 2px dashed #333; display: flex; justify-content: center; align-items: center; min-height: 50vh; position: relative; }
+        .live-stream-canvas { width: 100%; max-height: 70vh; object-fit: contain; }
+        
+        .control-shell { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px; margin-top: 20px; display: flex; gap: 15px; align-items: center; border: 1px solid #333; }
+        .btn-stream { padding: 12px 25px; border: none; border-radius: 6px; font-weight: 800; text-transform: uppercase; cursor: pointer; color: white; transition: 0.2s; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-brand"><i data-lucide="shield" style="color: var(--accent-cyan);"></i> <span>RS OWNER</span></div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
+                <li class="active"><a href="/remote_center.html"><i data-lucide="cpu"></i> Remote Ops</a></li>
+                <li><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
+            </ul>
+        </div>
+        
+        <main class="main-content">
+            <header class="topbar" style="display:flex; justify-content:space-between; align-items:center;">
+                <h2>Live Screen Stream</h2>
+                <select id="device-select" style="padding: 10px; background:#1e1e1e; color:white; border:1px solid #333; border-radius:4px;"></select>
+            </header>
+
+            <div class="glass-panel">
+                <div class="viewport-shell" id="stream-viewport">
+                    <div id="stream-placeholder" style="color: #555; text-align:center;">
+                        <i data-lucide="monitor" style="width:50px; height:50px; margin-bottom:10px; opacity:0.3;"></i><br>
+                        Stream Awaiting WebSocket Binary Frame Chunks...
+                    </div>
+                    <canvas id="stream-canvas" class="live-stream-canvas"></canvas>
+                </div>
+
+                <div class="control-shell">
+                    <select id="stream-duration" style="padding: 12px; background:#111; color:white; border:1px solid #444; border-radius:4px;">
+                        <option value="1">1 Min</option>
+                        <option value="5">5 Min</option>
+                    </select>
+                    <button class="btn-stream" id="btn-toggle-stream" style="background: var(--color-green);" onclick="toggleScreenStream()">START STREAM</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Device Dropdown Logic
+        async function loadDevices() {
+            const token = localStorage.getItem('owner_token');
+            const res = await fetch('/api/devices', { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            const select = document.getElementById('device-select');
+            data.data.forEach(d => {
+                let opt = document.createElement('option');
+                opt.value = d.device_token;
+                opt.textContent = d.name;
+                select.appendChild(opt);
+            });
+        }
+        loadDevices();
+
+        // 🚀 WEBSOCKET PIPELINE ENGINE
+        let liveSocketPipeline = null;
+
+        function toggleScreenStream() {
+            const btn = document.getElementById('btn-toggle-stream');
+            const viewport = document.getElementById('stream-viewport');
+            const canvas = document.getElementById('stream-canvas');
+            const placeholder = document.getElementById('stream-placeholder');
+            const duration = document.getElementById('stream-duration').value;
+            const activeDeviceToken = document.getElementById('device-select').value;
+
+            if (btn.innerText === "START STREAM") {
+                fetch(`/api/sync/commands/trigger?token=${activeDeviceToken}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command: `take_screenshot_stream:${duration}` })
+                });
+
+                const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+                liveSocketPipeline = new WebSocket(`${protocol}://${window.location.host}/ws/dashboard/${activeDeviceToken}`);
+                liveSocketPipeline.binaryType = "blob"; 
+
+                const ctx = canvas.getContext('2d');
+                liveSocketPipeline.onmessage = function(event) {
+                    placeholder.style.display = "none";
+                    const img = new Image();
+                    img.onload = function() {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx.drawImage(img, 0, 0);
+                        URL.revokeObjectURL(img.src);
+                    };
+                    img.src = URL.createObjectURL(event.data);
+                };
+
+                liveSocketPipeline.onclose = () => resetStreamUIState(btn, viewport, placeholder);
+                btn.innerText = "STOP STREAM";
+                btn.style.backgroundColor = "var(--color-red)";
+                viewport.style.display = "flex";
+            } else {
+                if (liveSocketPipeline) liveSocketPipeline.close();
+                fetch(`/api/sync/commands/trigger?token=${activeDeviceToken}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command: "stop_screen_stream" })
+                });
+                resetStreamUIState(btn, viewport, placeholder);
+            }
+        }
+
+        function resetStreamUIState(btn, viewport, placeholder) {
+            btn.innerText = "START STREAM";
+            btn.style.backgroundColor = "var(--color-green)";
+            viewport.style.display = "flex";
+            placeholder.style.display = "block";
+            const ctx = document.getElementById('stream-canvas').getContext('2d');
+            ctx.clearRect(0, 0, 2000, 2000);
+        }
+    </script>
+</body>
+</html>
