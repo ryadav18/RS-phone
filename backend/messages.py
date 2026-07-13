@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from backend.auth import token_required
 from backend.devices import verify_device_access
 from database import supabase
-from datetime import datetime, timezone # 🚀 INJECTED: Absolute timestamp conversion engine
+from datetime import datetime, timezone
 
 messages_bp = Blueprint('messages', __name__)
 
@@ -18,6 +18,7 @@ def get_messages():
         return jsonify({"status": "error", "message": "Device request scope unauthorized"}), 403
 
     try:
+        # Fetch communications log records formatted matching the chronological thread parser
         res = supabase.table('messages').select('*').eq('device_id', device_id).order('timestamp', desc=True).limit(limit).execute()
         return jsonify({"status": "success", "data": res.data}), 200
     except Exception as e:
@@ -30,6 +31,7 @@ def upload_messages():
         return jsonify({"status": "error", "message": "Device security token is absent"}), 401
 
     try:
+        # Cross-verify if the calling node hardware token matches production registers
         dev_check = supabase.table('devices').select('id').eq('device_token', token).execute()
         if not dev_check.data:
             return jsonify({"status": "error", "message": "Device verification check failed"}), 403
@@ -45,11 +47,11 @@ def upload_messages():
         for m in messages_array:
             raw_type = str(m.get('type', '1')).strip().upper()
             
-            # 🚀 SAFETY MATRIX A: Typecast to absolute primitive integer to satisfy strict INT columns
+            # 🚀 SAFETY MATRIX A: Strict directional standardization protocol
             if raw_type in ['2', 'SENT', 'RCS_SENT']:
-                final_message_type = 2  # Integer 2 = Sent Target Indicator
+                final_message_type = 2  # Integer 2 = Outbound / Sent
             else:
-                final_message_type = 1  # Integer 1 = Received/Inbox Target Indicator
+                final_message_type = 1  # Integer 1 = Inbound / Received
 
             row_data = {
                 "device_id": dev_id,
@@ -64,26 +66,25 @@ def upload_messages():
             raw_ts = m.get('timestamp')
             if raw_ts:
                 try:
-                    # Convert to float/int if it's arriving as a numeric epoch timestamp
                     if isinstance(raw_ts, (int, float)) or (isinstance(raw_ts, str) and raw_ts.isdigit()):
                         ts_float = float(raw_ts)
-                        # If the epoch is in milliseconds (13 digits), scale down to seconds (10 digits)
+                        # Scale milliseconds down to standard seconds if required
                         if ts_float > 10000000000:
                             ts_float /= 1000.0
                         
                         dt = datetime.fromtimestamp(ts_float, tz=timezone.utc)
                         row_data["timestamp"] = dt.isoformat()
                     else:
-                        # Fallback parsing for pre-formatted strings
                         row_data["timestamp"] = str(raw_ts)
                 except Exception as ts_error:
                     print(f"[Timestamp Exception Handled]: {ts_error}")
-                    # Strict Fallback Guard: Prevents PostgreSQL 500 query aborts completely
                     row_data["timestamp"] = datetime.now(timezone.utc).isoformat()
+            else:
+                row_data["timestamp"] = datetime.now(timezone.utc).isoformat()
                 
             payload.append(row_data)
 
-        # Execute insertion block for the newly arrived realtime SMS/RCS stream
+        # Batch insert block for logging newly intercepted communication streams
         supabase.table('messages').insert(payload).execute()
 
         # =================================================================================
