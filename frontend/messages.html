@@ -4,37 +4,149 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SMS Audit Log - RS OWNER</title>
-    <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* 🚀 MASTER INTEGRATION BUFFER: Ensures the split canvas renders perfectly across device families */
+        /* =========================================================
+           RS PHONE - ZERO-LAG FLAT ARCHITECTURE (INJECTED STYLE)
+           ========================================================= */
+        :root {
+            --bg-main: #121212;
+            --bg-card: #1e1e1e;
+            --text-main: #ffffff;
+            --text-muted: #aaaaaa;
+            --accent-cyan: #00f0ff;
+            --color-red: #ff3b30;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 15px;
+            padding-bottom: 40px;
+            overflow-x: hidden;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-main); }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-cyan); }
+
+        /* Sidebar & Layout Fixes */
+        .app-container { display: flex; min-height: 100vh; gap: 20px; }
+        .sidebar { width: 260px; background: var(--bg-card); padding: 20px; border-radius: 16px; border: 1px solid #2c2c2e; display: flex; flex-direction: column; gap: 25px; }
+        .sidebar-brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; letter-spacing: 1px; color: var(--text-main); }
+        .sidebar-menu { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+        .sidebar-menu li a { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: var(--text-muted); text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; transition: all 0.2s; }
+        .sidebar-menu li.active a, .sidebar-menu li a:hover { background: rgba(0, 240, 255, 0.08); color: var(--accent-cyan); }
+        
+        .main-content { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid #2c2c2e; }
+        
         .workspace-glass-wrapper {
             padding: 20px; 
             border-radius: 16px; 
             background: rgba(255, 255, 255, 0.01);
             border: 1px solid rgba(255, 255, 255, 0.05);
             box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
-        .workspace-fluid-container {
-            width: 100%;
-            height: auto;
-            position: relative;
+        .workspace-fluid-container { width: 100%; height: auto; position: relative; }
+
+        /* =================================================================================
+           🚀 PREMIUM ADVANCED MASTER-DETAIL SPLIT SCREEN WORKSPACE LAYOUT STYLES
+           ================================================================================= */
+        .chat-split-workspace {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 0;
+            background: #1c1c1e;
+            border: 1px solid #2c2c2e;
+            border-radius: 16px;
+            height: 65vh;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
+
+        /* LEFT COLUMN SIDEBAR: Threads List */
+        .threads-sidebar-panel { background: #141416; border-right: 1px solid #2c2c2e; display: flex; flex-direction: column; height: 100%; }
+        .sidebar-threads-header { padding: 16px; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); background: rgba(0, 0, 0, 0.1); }
+        .threads-scroll-viewport { flex: 1; overflow-y: auto; padding: 8px; }
+
+        .thread-profile-card { display: flex; flex-direction: column; padding: 14px 16px; border-radius: 12px; cursor: pointer; margin-bottom: 6px; background: transparent; border: 1px solid transparent; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .thread-profile-card:hover { background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.05); }
+        .thread-profile-card.active-thread { background: rgba(0, 240, 255, 0.08) !important; border-color: rgba(0, 240, 255, 0.2) !important; }
+
+        .thread-meta-top { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .thread-identity-title { font-weight: 600; color: #ffffff; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; padding-right: 8px; }
+        .thread-time-badge { font-size: 10px; color: #555558; font-weight: 500; white-space: nowrap; }
+        .thread-profile-card.active-thread .thread-time-badge { color: rgba(0, 240, 255, 0.6); }
+        
+        .thread-phone-subtitle { font-size: 11px; color: #666; margin-top: 3px; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .thread-excerpt-preview { font-size: 12px; color: #8e8e93; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
+
+        /* RIGHT COLUMN PANEL: Chat Canvas */
+        .chat-window-canvas { display: flex; flex-direction: column; background: #171719; height: 100%; position: relative; }
+        .active-canvas-header { background: #1c1c1e; padding: 14px 20px; border-bottom: 1px solid #2c2c2e; display: flex; justify-content: space-between; align-items: center; z-index: 5; }
+        .active-user-meta { display: flex; flex-direction: column; }
+        .active-user-name { font-weight: 700; color: #ffffff; font-size: 15px; letter-spacing: 0.3px; }
+        .active-user-phone { font-size: 11px; color: var(--accent-cyan); margin-top: 2px; font-family: monospace; letter-spacing: 0.5px; }
+        .active-logs-badge { font-size: 11px; background: rgba(255, 255, 255, 0.05); color: #ffffff; padding: 4px 10px; border-radius: 20px; font-weight: 600; border: 1px solid rgba(255, 255, 255, 0.08); }
+
+        .chat-messages-stream { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+        
+        .msg-bubble-row { display: flex; width: 100%; }
+        .row-incoming { justify-content: flex-start; padding-right: 20%; }
+        .row-outgoing { justify-content: flex-end; padding-left: 20%; }
+
+        .msg-speech-bubble { min-width: 80px; max-width: 100%; padding: 10px 14px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); position: relative; }
+        .bubble-incoming { background: rgba(255, 255, 255, 0.04); color: #f0f0f0; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px 14px 14px 2px; }
+        .bubble-outgoing { background: rgba(0, 240, 255, 0.12); color: #e0faff; border: 1px solid rgba(0, 240, 255, 0.25); border-radius: 14px 14px 2px 14px; }
+        
+        .bubble-text-content { margin: 0; font-size: 13.5px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; text-align: left; }
+        .bubble-media-indicator { display: flex; align-items: center; gap: 4px; margin-top: 6px; color: var(--accent-cyan); font-size: 11px; font-weight: 600; }
+        .bubble-time-footer { font-size: 9px; color: rgba(255, 255, 255, 0.3); text-align: right; margin-top: 5px; font-weight: 500; }
+        .bubble-outgoing .bubble-time-footer { color: rgba(0, 240, 255, 0.45); }
+
+        .canvas-empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #444446; gap: 12px; padding: 40px; text-align: center; }
+        .canvas-empty-state i { width: 48px; height: 48px; color: #2c2c2e; }
+        .canvas-empty-state p { font-size: 14px; font-weight: 500; max-width: 280px; line-height: 1.4; }
+
+        /* Pagination Controls */
+        .pagination-wrapper { display: flex; align-items: center; justify-content: center; gap: 20px; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.05); }
+        .pagination-btn { background: rgba(255, 255, 255, 0.03); color: #ffffff; border: 1px solid #2c2c2e; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.8rem; display: flex; align-items: center; gap: 8px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); text-transform: uppercase; letter-spacing: 0.8px; }
+        .pagination-btn:hover:not(:disabled) { background: rgba(0, 240, 255, 0.08); border-color: rgba(0, 240, 255, 0.3); color: #00f0ff; }
+        .pagination-btn:disabled { opacity: 0.2; cursor: not-allowed; background: rgba(0, 0, 0, 0.4); border-color: #1a1a1c; color: #555; }
+        .pagination-indicator { font-size: 0.85rem; color: #8e8e93; font-weight: 700; letter-spacing: 1px; font-family: monospace; }
+        
+        .btn-wipe { background: rgba(255, 59, 48, 0.15); color: var(--color-red); border: 1px solid rgba(255, 59, 48, 0.3); border-radius: 6px; padding: 8px 16px; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease; text-transform: uppercase; font-size: 0.8rem; }
+        .btn-wipe:hover { background: var(--color-red); color: white; }
     </style>
 </head>
 <body>
     <div class="app-container">
         <!-- Sidebar Navigation -->
-        <div class="sidebar glass-panel">
+        <div class="sidebar">
             <div class="sidebar-brand">
                 <i data-lucide="shield" style="color: var(--accent-cyan);"></i>
                 <span>RS OWNER</span>
             </div>
             <ul class="sidebar-menu">
                 <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
-                <li><a href="/permissions"><i data-lucide="shield-check"></i> Permissions</a></li>
-                <li><a href="/ops"><i data-lucide="activity"></i> Live Operations</a></li>
+                <li><a href="/communication.html"><i data-lucide="message-circle"></i> Comm Hub</a></li>
+                <li><a href="/remote_center.html"><i data-lucide="cpu"></i> Remote Ops</a></li>
                 <li><a href="/calls"><i data-lucide="phone"></i> Call Logs</a></li>
                 <li class="active"><a href="/messages"><i data-lucide="message-square"></i> SMS Audit</a></li>
                 <li><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
@@ -49,25 +161,25 @@
                     <p style="color: #666; font-size: 0.85rem; margin-top: 4px;">Displaying Active Thread Matrices Grouped by Identity</p>
                 </div>
                 <div class="device-switcher" style="display: flex; align-items: center; gap: 15px;">
-                    <!-- Hardware Nodes Select Controller Routing Anchor -->
+                    <!-- Hardware Nodes Select Controller -->
                     <select id="device-select" style="padding: 8px 12px; border-radius: 6px; background: #1c1c1e; color: white; border: 1px solid #2c2c2e; outline: none; font-weight: 600; font-size: 0.85rem; cursor: pointer;"></select>
                     
-                    <!-- Secure Database Purge Shield Trigger -->
-                    <button onclick="wipeSMSHistory()" style="background: rgba(255, 59, 48, 0.15); color: #ff3b30; border: 1px solid rgba(255, 59, 48, 0.3); border-radius: 6px; padding: 8px 16px; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease; text-transform: uppercase; font-size: 0.8rem;">
+                    <!-- Secure Database Purge -->
+                    <button class="btn-wipe" onclick="wipeSMSHistory()">
                         <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> Wipe Logs
                     </button>
                 </div>
             </header>
 
             <div class="workspace-glass-wrapper">
-                <!-- 📥 TARGET INJECTION ANCHOR: The MessagesEngine instantly mounts the Split Workspace here -->
+                <!-- 📥 TARGET INJECTION ANCHOR -->
                 <div class="workspace-fluid-container" id="sms-list">
                     <div style="color: #666; text-align: center; padding: 60px; font-weight: 500; font-size: 0.95rem; letter-spacing: 0.5px;">
                         Establishing secure handshake protocol to database stream...
                     </div>
                 </div>
 
-                <!-- 🚀 UNIFIED COMPLIANT PAGINATION CONTROLLER GRID SHELL -->
+                <!-- 🚀 UNIFIED COMPLIANT PAGINATION CONTROLLER -->
                 <div class="pagination-wrapper">
                     <button class="pagination-btn" id="sms-prev-btn" disabled>
                         <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i> Previous
@@ -81,15 +193,319 @@
         </main>
     </div>
     
-    <!-- Core Application Processing Scripts Hierarchy Pipeline -->
-    <script src="/static/js/auth.js"></script>
-    <script src="/static/js/messages_engine.js"></script>
+    <!-- EMBEDDED JAVASCRIPT LOGIC -->
     <script>
-        // Global Vector Graphic Handlers Hook
-        document.addEventListener('DOMContentLoaded', () => {
-            if (window.lucide) {
-                window.lucide.createIcons();
+        class MessagesEngine {
+            constructor() {
+                this.activeDeviceId = localStorage.getItem('active_device_id');
+                this.allData = [];
+                this.currentPage = 1;
+                this.itemsPerPage = 15; 
+                this.selectedThreadKey = null; 
+                this.lastDataHash = "";  
+                this.init();
             }
+
+            async init() {
+                window.messagesEngineInstance = this; 
+                this.setupPaginationListeners();
+                await this.loadDevicesList();
+                if (!this.activeDeviceId) return; 
+                
+                this.fetchMessages();
+                setInterval(() => this.fetchMessages(), 12000); 
+            }
+
+            setupPaginationListeners() {
+                const prevBtn = document.getElementById('sms-prev-btn');
+                const nextBtn = document.getElementById('sms-next-btn');
+
+                if (prevBtn) {
+                    prevBtn.addEventListener('click', () => {
+                        if (this.currentPage > 1) {
+                            this.currentPage--;
+                            this.renderCurrentPage();
+                        }
+                    });
+                }
+
+                if (nextBtn) {
+                    nextBtn.addEventListener('click', () => {
+                        const sortedThreads = this.groupDataIntoThreads();
+                        const totalPages = Math.ceil(sortedThreads.length / this.itemsPerPage) || 1;
+                        if (this.currentPage < totalPages) {
+                            this.currentPage++;
+                            this.renderCurrentPage();
+                        }
+                    });
+                }
+            }
+
+            async loadDevicesList() {
+                const token = localStorage.getItem('owner_token');
+                try {
+                    const res = await fetch('/api/devices', { headers: { 'Authorization': `Bearer ${token}` } });
+                    const result = await res.json();
+                    if (result.status === 'success') {
+                        const selectEl = document.getElementById('device-select');
+                        if (selectEl) {
+                            selectEl.innerHTML = ''; 
+                            if (!result.data || result.data.length === 0) {
+                                selectEl.innerHTML = '<option value="">No Devices Found</option>';
+                                return;
+                            }
+                            result.data.forEach(dev => {
+                                const option = document.createElement('option');
+                                option.value = dev.id;
+                                option.textContent = dev.name;
+                                selectEl.appendChild(option);
+                            });
+                            if (!this.activeDeviceId && result.data.length > 0) {
+                                this.activeDeviceId = result.data[0].id;
+                                localStorage.setItem('active_device_id', this.activeDeviceId);
+                            }
+                            selectEl.value = this.activeDeviceId;
+                            selectEl.addEventListener('change', (e) => {
+                                this.activeDeviceId = e.target.value;
+                                localStorage.setItem('active_device_id', this.activeDeviceId);
+                                this.currentPage = 1; 
+                                this.lastDataHash = ""; 
+                                this.selectedThreadKey = null; 
+                                this.fetchMessages(); 
+                            });
+                        }
+                    }
+                } catch (e) { console.error("Failed to load devices:", e); }
+            }
+
+            async fetchMessages() {
+                const token = localStorage.getItem('owner_token');
+                if (!this.activeDeviceId) return;
+                try {
+                    const res = await fetch(`/api/messages?device_id=${this.activeDeviceId}&limit=100`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const result = await res.json();
+                    if (result.status === 'success') {
+                        const incomingData = result.data || [];
+                        const currentDataHash = incomingData.map(m => m.id + "_" + (m.message_type || m.type || '')).join("|");
+                        
+                        if (this.lastDataHash !== currentDataHash) {
+                            this.lastDataHash = currentDataHash;
+                            this.allData = incomingData;
+                            this.renderCurrentPage();
+                        }
+                    }
+                } catch (e) { console.error("Messages Transmission Engine Error:", e); }
+            }
+
+            groupDataIntoThreads() {
+                const threadsMap = {};
+
+                this.allData.forEach(m => {
+                    let nameTag = m.contact_name ? String(m.contact_name).trim() : "";
+                    let phoneTag = m.sender ? String(m.sender).trim() : "";
+
+                    if (nameTag === "Me" && phoneTag !== "") {
+                        nameTag = "Unknown Identity";
+                    }
+
+                    let threadIdentity = (nameTag && nameTag !== "Unknown" && nameTag !== "Unknown Number") ? nameTag : phoneTag;
+                    if (!threadIdentity || threadIdentity.toLowerCase() === "me") {
+                        threadIdentity = "Unknown Target Platform";
+                    }
+
+                    let associatedPhone = (phoneTag && phoneTag !== "Me") ? phoneTag : "RCS Network Protocol";
+
+                    if (!threadsMap[threadIdentity]) {
+                        threadsMap[threadIdentity] = {
+                            name: threadIdentity,
+                            phone: associatedPhone,
+                            messagesList: []
+                        };
+                    }
+                    threadsMap[threadIdentity].messagesList.push(m);
+                });
+
+                return Object.values(threadsMap).sort((a, b) => {
+                    const latestA = Math.max(...a.messagesList.map(m => new Date(m.timestamp).getTime()));
+                    const latestB = Math.max(...b.messagesList.map(m => new Date(m.timestamp).getTime()));
+                    return latestB - latestA;
+                });
+            }
+
+            switchActiveChatThread(encodedThreadName) {
+                this.selectedThreadKey = decodeURIComponent(encodedThreadName);
+                this.renderCurrentPage();
+            }
+
+            renderCurrentPage() {
+                const container = document.getElementById('sms-list');
+                if (!container) return;
+
+                const sortedThreads = this.groupDataIntoThreads();
+
+                if (sortedThreads.length === 0) {
+                    container.innerHTML = '<div class="canvas-empty-state"><i data-lucide="message-square-off"></i><p>No communication threads captured. Awaiting transmitter node synchronization stream...</p></div>';
+                    this.updatePaginationUI(1);
+                    if (window.lucide) window.lucide.createIcons();
+                    return;
+                }
+
+                if (!this.selectedThreadKey || !sortedThreads.some(t => t.name === this.selectedThreadKey)) {
+                    this.selectedThreadKey = sortedThreads[0].name;
+                }
+
+                const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+                const endIndex = startIndex + this.itemsPerPage;
+                const slicedThreads = sortedThreads.slice(startIndex, endIndex);
+
+                const sidebarRowsHtml = slicedThreads.map(thread => {
+                    const isActive = thread.name === this.selectedThreadKey ? 'active-thread' : '';
+                    
+                    const sortedChats = thread.messagesList.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+                    const latestMessageText = sortedChats[0]?.message || '[Multimedia Content]';
+                    
+                    const lastDateObj = new Date(sortedChats[0]?.timestamp);
+                    const timeString = lastDateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+                    const safeEncName = encodeURIComponent(thread.name);
+
+                    return `
+                    <div class="thread-profile-card ${isActive}" onclick="window.messagesEngineInstance.switchActiveChatThread('${safeEncName}')">
+                        <div class="thread-meta-top">
+                            <span class="thread-identity-title">${thread.name}</span>
+                            <span class="thread-time-badge">${timeString}</span>
+                        </div>
+                        <span class="thread-phone-subtitle">${thread.phone}</span>
+                        <span class="thread-excerpt-preview">${latestMessageText}</span>
+                    </div>
+                    `;
+                }).join('');
+
+                const activeThreadData = sortedThreads.find(t => t.name === this.selectedThreadKey);
+                let chatCanvasHtml = '';
+
+                if (activeThreadData) {
+                    const activeChronologicalChats = activeThreadData.messagesList.sort((a, b) => 
+                        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+                    );
+
+                    const bubbleBubblesHtml = activeChronologicalChats.map(m => {
+                        const rawType = String(m.message_type || m.type || '1').toUpperCase().trim();
+                        const isOutbound = (rawType === '2' || rawType === 'SENT' || rawType === 'RCS_SENT' || m.sender === 'Me');
+                        
+                        const rowAlignmentClass = isOutbound ? 'row-outgoing' : 'row-incoming';
+                        const bubbleColorClass = isOutbound ? 'bubble-outgoing' : 'bubble-incoming';
+
+                        const dateObj = new Date(m.timestamp);
+                        const chatTimeStr = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+                        let mediaElementHtml = '';
+                        if (m.media_url || (m.message && (m.message.includes('.jpg') || m.message.includes('.png')))) {
+                            mediaElementHtml = `
+                            <div class="bubble-media-indicator">
+                                <i data-lucide="image" style="width: 12px; height: 12px;"></i>
+                                <span>Attachment Transmitted</span>
+                            </div>`;
+                        }
+
+                        return `
+                        <div class="msg-bubble-row ${rowAlignmentClass}">
+                            <div class="msg-speech-bubble ${bubbleColorClass}">
+                                <p class="bubble-text-content">${m.message || '[Blank Log Context]'}</p>
+                                ${mediaElementHtml}
+                                <div class="bubble-time-footer">${chatTimeStr}</div>
+                            </div>
+                        </div>
+                        `;
+                    }).join('');
+
+                    chatCanvasHtml = `
+                    <div class="chat-window-canvas">
+                        <div class="active-canvas-header">
+                            <div class="active-user-meta">
+                                <span class="active-user-name">${activeThreadData.name}</span>
+                                <span class="active-user-phone">${activeThreadData.phone}</span>
+                            </div>
+                            <span class="active-logs-badge">${activeThreadData.messagesList.length} Capture Nodes</span>
+                        </div>
+                        <div class="chat-messages-stream" id="chat-messages-stream-container">
+                            ${bubbleBubblesHtml}
+                        </div>
+                    </div>
+                    `;
+                } else {
+                    chatCanvasHtml = '<div class="canvas-empty-state"><i data-lucide="messages-square"></i><p>Select a thread terminal from the list to view active operations logs</p></div>';
+                }
+
+                container.innerHTML = `
+                <div class="chat-split-workspace">
+                    <div class="threads-sidebar-panel">
+                        <div class="sidebar-threads-header">Transmission Threads</div>
+                        <div class="threads-scroll-viewport">
+                            ${sidebarRowsHtml}
+                        </div>
+                    </div>
+                    ${chatCanvasHtml}
+                </div>
+                `;
+
+                const streamViewport = document.getElementById('chat-messages-stream-container');
+                if (streamViewport) {
+                    streamViewport.scrollTop = streamViewport.scrollHeight;
+                }
+
+                const totalPages = Math.ceil(sortedThreads.length / this.itemsPerPage) || 1;
+                this.updatePaginationUI(totalPages);
+
+                if (window.lucide) window.lucide.createIcons();
+            }
+
+            updatePaginationUI(totalPages) {
+                const prevBtn = document.getElementById('sms-prev-btn');
+                const nextBtn = document.getElementById('sms-next-btn');
+                const indicator = document.getElementById('sms-page-num');
+
+                if (this.currentPage > totalPages) {
+                    this.currentPage = totalPages;
+                }
+
+                if (indicator) {
+                    indicator.textContent = `PAGE ${this.currentPage} OF ${totalPages}`;
+                }
+                if (prevBtn) {
+                    prevBtn.disabled = (this.currentPage === 1);
+                }
+                if (nextBtn) {
+                    nextBtn.disabled = (this.currentPage === totalPages);
+                }
+            }
+        }
+
+        window.wipeSMSHistory = async function() {
+            if(!confirm("CRITICAL PROTOCOL: Force flush all active text logs from database mapping?")) return;
+            const token = localStorage.getItem('owner_token');
+            const activeId = localStorage.getItem('active_device_id');
+            try {
+                const res = await fetch('/api/messages/clear', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ device_id: activeId })
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    alert("SMS logs wiped cleanly.");
+                    window.location.reload();
+                } else {
+                    alert("Wipe Failed: " + result.message);
+                }
+            } catch (e) { console.error(e); }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) window.lucide.createIcons();
+            new MessagesEngine();
         });
     </script>
 </body>
