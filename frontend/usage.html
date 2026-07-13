@@ -3,94 +3,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Wellbeing & App Control - RS Phone</title>
+    <title>Digital Wellbeing - RS OWNER</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { 
-            background-color: #121212; 
-            color: #ffffff; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            padding-bottom: 30px;
+        /* =========================================================
+           RS PHONE - ZERO-LAG FLAT ARCHITECTURE (INJECTED STYLE)
+           ========================================================= */
+        :root {
+            --bg-main: #121212;
+            --bg-card: #1e1e1e;
+            --text-main: #ffffff;
+            --text-muted: #aaaaaa;
+            --accent-orange: #ff9800;
+            --color-green: #2ecc71;
+            --color-red: #d32f2f;
         }
-        .container { padding: 20px; max-width: 800px; margin: auto; }
-        .header { 
-            border-bottom: 1px solid #333; 
-            padding-bottom: 15px; 
-            margin-bottom: 20px; 
-        }
-        .header h2 { margin: 0 0 5px 0; color: #ff9800; text-transform: uppercase; letter-spacing: 0.5px;}
-        .header p { margin: 0 0 15px 0; color: #aaa; font-size: 0.9em; }
-        .back-link { color: #4caf50; text-decoration: none; font-weight: bold; }
-        .back-link:hover { text-decoration: underline; }
-        
-        /* 🚀 NAYA: 7-Day Timeline Tabs */
-        .timeline-tabs {
-            display: flex; gap: 8px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 8px;
-        }
-        .tab-btn {
-            background: #1e1e1e; border: 1px solid #333; color: #aaa; padding: 10px 16px;
-            border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; min-width: 100px;
-            text-align: center; transition: all 0.2s ease;
-        }
-        .tab-btn.active {
-            background: #ff9800; color: #000; border-color: #ff9800;
-        }
-        
-        /* Dynamic Insights Counter */
-        .total-screen-card {
-            background: rgba(255, 152, 0, 0.05); border: 1px dashed #ff9800;
-            padding: 20px; border-radius: 6px; margin-bottom: 20px; text-align: center;
-        }
-        .total-screen-card h3 { font-size: 1.8rem; color: #ff9800; margin-top: 5px; }
 
-        .app-list { display: flex; flex-direction: column; gap: 10px; }
-        .app-card { 
-            background: #1e1e1e; 
-            padding: 15px; 
-            border-radius: 8px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-left: 4px solid #ff9800;
-            border-right: 1px solid #333; border-top: 1px solid #333; border-bottom: 1px solid #333;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main); min-height: 100vh; padding: 15px; }
+
+        /* Sidebar & Layout */
+        .app-container { display: flex; min-height: 100vh; gap: 20px; }
+        .sidebar { width: 260px; background: var(--bg-card); padding: 20px; border-radius: 16px; border: 1px solid #2c2c2e; display: flex; flex-direction: column; gap: 25px; }
+        .sidebar-brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; letter-spacing: 1px; }
+        .sidebar-menu { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+        .sidebar-menu li a { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: var(--text-muted); text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; transition: all 0.2s; }
+        .sidebar-menu li.active a { background: rgba(255, 152, 0, 0.08); color: var(--accent-orange); }
+        
+        .main-content { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+        .glass-panel { background: var(--bg-card); border: 1px solid #2c2c2e; border-radius: 16px; padding: 25px; }
+
+        /* Usage Dashboard Styles */
+        .timeline-tabs { display: flex; gap: 8px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 8px; }
+        .tab-btn { background: #1e1e1e; border: 1px solid #333; color: #aaa; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; min-width: 100px; transition: all 0.2s; }
+        .tab-btn.active { background: var(--accent-orange); color: #000; border-color: var(--accent-orange); }
+        
+        .total-screen-card { background: rgba(255, 152, 0, 0.05); border: 1px dashed var(--accent-orange); padding: 20px; border-radius: 6px; margin-bottom: 20px; text-align: center; }
+        .total-screen-card h3 { font-size: 1.8rem; color: var(--accent-orange); margin-top: 5px; }
+        
+        .app-list { display: flex; flex-direction: column; gap: 10px; max-height: 40vh; overflow-y: auto; padding-right: 5px; }
+        .app-card { background: #1e1e1e; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--accent-orange); border: 1px solid #333; }
         .app-info { display: flex; flex-direction: column; }
-        .app-name { font-size: 1.1em; font-weight: bold; letter-spacing: 0.5px; }
-        .app-pkg { color: #888; font-size: 0.8em; margin-top: 2px; font-family: monospace; }
-        .app-time { color: #4caf50; font-size: 0.9em; margin-top: 6px; font-weight: bold; }
+        .app-name { font-size: 1.1em; font-weight: bold; }
+        .app-pkg { color: #888; font-size: 0.8em; font-family: monospace; margin-top: 2px; }
+        .app-time { color: var(--color-green); font-size: 0.9em; margin-top: 6px; font-weight: bold; }
         
-        .block-btn { 
-            background: #d32f2f; color: white; border: none; padding: 10px 15px; 
-            border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s;
-            text-transform: uppercase; font-size: 0.8rem;
-        }
-        .block-btn:hover { background: #b71c1c; }
-        
-        #loading-text { color: #888; font-style: italic; text-align: center; padding: 30px; }
+        .block-btn { background: var(--color-red); color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 0.75rem; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h2>Digital Wellbeing Dashboard</h2>
-            <p>7-Day Rolling Telemetry: Track total screen engagement and deploy application restrictions.</p>
-            <a href="/dashboard" class="back-link">&larr; Return to Command Center</a>
+    <div class="app-container">
+        <div class="sidebar">
+            <div class="sidebar-brand"><i data-lucide="shield" style="color: var(--accent-orange);"></i> <span>RS OWNER</span></div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
+                <li class="active"><a href="/usages"><i data-lucide="bar-chart-2"></i> Digital Wellbeing</a></li>
+                <li><a href="/messages"><i data-lucide="message-square"></i> SMS Audit</a></li>
+                <li><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
+            </ul>
         </div>
+        
+        <main class="main-content">
+            <header class="topbar" style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <h2 style="font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">Digital Wellbeing</h2>
+                    <p style="color: #888; font-size: 0.85rem; margin-top: 4px;">7-Day rolling telemetry and app restriction management.</p>
+                </div>
+                <select id="device-select" style="padding: 10px 14px; background:#1e1e1e; color:white; border:1px solid #333; cursor:pointer; border-radius:4px;"></select>
+            </header>
 
-        <!-- 🚀 NAYA: 7-Day Buttons Hook -->
-        <div class="timeline-tabs" id="day-tabs-container"></div>
+            <div class="glass-panel">
+                <div class="timeline-tabs" id="day-tabs-container"></div>
+                
+                <div class="total-screen-card">
+                    <span style="color: #aaa; font-size: 0.85rem; text-transform: uppercase; font-weight: bold;">Total Active Screen Time</span>
+                    <h3 id="day-total-screentime">0 Hours 0 Minutes</h3>
+                </div>
 
-        <!-- 🚀 NAYA: Day Total Card -->
-        <div class="total-screen-card">
-            <span style="color: #aaa; font-size: 0.85rem; text-transform: uppercase; font-weight: bold;">Total Device Active Screen Time</span>
-            <h3 id="day-total-screentime">0 Hours 0 Minutes</h3>
-        </div>
-
-        <div class="app-list" id="usage-container">
-            <p id="loading-text">Parsing data analytics structure...</p>
-        </div>
+                <div class="app-list" id="usage-container">
+                    <p id="loading-text" style="color: #888; text-align: center; padding: 30px;">Parsing data analytics structure...</p>
+                </div>
+            </div>
+        </main>
     </div>
 
-    <script src="/static/js/usage_engine.js"></script>
+    <script>
+        lucide.createIcons();
+
+        class UsageEngine {
+            constructor() {
+                this.activeDeviceId = localStorage.getItem('active_device_id');
+                this.rawUsageData = [];
+                this.groupedData = {};
+                this.selectedDate = null;
+                this.init();
+            }
+
+            async init() {
+                await this.loadDevices();
+                if (!this.activeDeviceId) return;
+                await this.fetchAnalyticsData();
+            }
+
+            async loadDevices() {
+                const token = localStorage.getItem('owner_token');
+                const res = await fetch('/api/devices', { headers: { 'Authorization': `Bearer ${token}` } });
+                const result = await res.json();
+                const select = document.getElementById('device-select');
+                result.data.forEach(d => {
+                    let opt = document.createElement('option');
+                    opt.value = d.id; opt.textContent = d.name;
+                    select.appendChild(opt);
+                });
+                select.value = this.activeDeviceId;
+                select.onchange = (e) => {
+                    this.activeDeviceId = e.target.value;
+                    localStorage.setItem('active_device_id', this.activeDeviceId);
+                    this.fetchAnalyticsData();
+                };
+            }
+
+            async fetchAnalyticsData() {
+                const token = localStorage.getItem('owner_token');
+                const res = await fetch(`/api/usage/analytics?device_id=${this.activeDeviceId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    this.rawUsageData = result.data;
+                    this.groupDataByDate();
+                    this.renderDayTabs();
+                    const dates = Object.keys(this.groupedData);
+                    if (dates.length > 0) this.switchActiveDay(dates[0]);
+                }
+            }
+
+            groupDataByDate() {
+                this.groupedData = {};
+                this.rawUsageData.forEach(item => {
+                    if (!this.groupedData[item.usage_date]) this.groupedData[item.usage_date] = [];
+                    this.groupedData[item.usage_date].push(item);
+                });
+            }
+
+            renderDayTabs() {
+                const container = document.getElementById('day-tabs-container');
+                container.innerHTML = Object.keys(this.groupedData).map((date, i) => `
+                    <button class="tab-btn ${i === 0 ? 'active' : ''}" id="tab-${date}" onclick="window.usageEngine.switchActiveDay('${date}')">
+                        ${new Date(date).toLocaleDateString('en-IN', {day:'2-digit', month:'short'})}
+                    </button>
+                `).join('');
+            }
+
+            switchActiveDay(dateStr) {
+                this.selectedDate = dateStr;
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById(`tab-${dateStr}`).classList.add('active');
+                this.renderDayRecords();
+            }
+
+            renderDayRecords() {
+                const container = document.getElementById('usage-container');
+                const records = this.groupedData[this.selectedDate] || [];
+                let totalSeconds = records.reduce((s, i) => s + i.time_spent, 0);
+                
+                document.getElementById('day-total-screentime').innerText = `${Math.floor(totalSeconds/3600)} Hours ${Math.floor((totalSeconds%3600)/60)} Minutes`;
+
+                container.innerHTML = records.map(app => `
+                    <div class="app-card">
+                        <div class="app-info">
+                            <span class="app-name">${app.app_name}</span>
+                            <span class="app-pkg">${app.package_name}</span>
+                            <span class="app-time">Runtime: ${Math.floor(app.time_spent/60)} min</span>
+                        </div>
+                        <button class="block-btn" onclick="window.usageEngine.triggerAppBlock('${app.package_name}', '${app.app_name}')">Block</button>
+                    </div>
+                `).join('');
+            }
+
+            async triggerAppBlock(pkg, name) {
+                if(!confirm(`Enforce restriction on ${name}?`)) return;
+                const token = localStorage.getItem('owner_token');
+                const res = await fetch(`/api/devices/${this.activeDeviceId}/action`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ action: 'block_app', target_package: pkg })
+                });
+                if((await res.json()).status === 'success') alert("Policy Pushed!");
+            }
+        }
+        window.usageEngine = new UsageEngine();
+    </script>
 </body>
 </html>
