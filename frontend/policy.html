@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RS Phone - Policy Manager</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* ==================== CORE STYLES ==================== */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { background-color: #121212; color: #ffffff; padding: 15px; padding-bottom: 40px; }
+        
+        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #333; }
+        .back-btn { background: rgba(255,255,255,0.1); border: none; border-radius: 8px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; transition: background 0.2s; text-decoration: none; }
+        .back-btn:hover { background: rgba(255,255,255,0.2); }
+        .header h2 { font-size: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #f1c40f; }
+        .header-desc { font-size: 12px; color: #888; margin-top: 4px; }
+
+        /* ==================== CARD GRID STYLES ==================== */
+        .card-container { display: flex; flex-direction: column; gap: 16px; }
+        
+        .flat-card {
+            background-color: #1e1e1e; padding: 22px 20px; border-radius: 6px;
+            position: relative; overflow: hidden; border-left: 4px solid #555;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); text-decoration: none; color: white;
+            display: flex; flex-direction: column; justify-content: center;
+            transition: transform 0.2s, background 0.2s;
+        }
+        
+        a.flat-card:hover { transform: translateY(-2px); background-color: #242424; }
+        a.flat-card:active { transform: translateY(0); }
+        
+        /* Thematic Color Borders */
+        .border-orange { border-left-color: #d35400; }
+        .border-yellow { border-left-color: #f1c40f; }
+        .border-cyan { border-left-color: #00bcd4; }
+        .border-grey { border-left-color: #7f8c8d; }
+        
+        .card-content { display: flex; align-items: center; justify-content: space-between; width: 100%; z-index: 2; position: relative; }
+        .card-left { display: flex; align-items: center; gap: 15px; }
+        .card-icon { color: #fff; opacity: 0.9; width: 28px; height: 28px; }
+        .card-title { font-size: 18px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .card-subtitle { font-size: 12px; opacity: 0.7; margin-top: 3px; display: block; }
+        
+        .card-right { text-align: right; z-index: 2; position: relative; }
+        .metric-value { font-size: 22px; font-weight: bold; opacity: 0.8; }
+        
+        /* ==================== ACTION ROW STYLES ==================== */
+        .action-row { display: flex; margin-top: 15px; width: 100%; z-index: 2; position: relative; }
+        .btn-warning { flex: 1; padding: 12px; border: none; border-radius: 4px; font-weight: bold; font-size: 13px; text-transform: uppercase; cursor: pointer; background: rgba(241, 196, 15, 0.85); color: #000; transition: all 0.2s; text-align: center; border: 1px solid #f39c12; }
+        .btn-warning:active { transform: scale(0.98); }
+        
+        .bg-icon { position: absolute; right: -20px; top: -10px; width: 140px; height: 140px; opacity: 0.05; z-index: 1; transform: rotate(-15deg); }
+    </style>
+</head>
+<body>
+
+    <!-- ================================================================================= -->
+    <!-- MASTER NAVIGATION HEADER                                                          -->
+    <!-- ================================================================================= -->
+    <div class="header">
+        <a href="/dashboard" class="back-btn"><i data-lucide="chevron-left"></i></a>
+        <div>
+            <h2>Policy Manager</h2>
+            <div class="header-desc" id="active-device-label">Validating Target Context...</div>
+        </div>
+    </div>
+
+    <!-- ================================================================================= -->
+    <!-- POLICIES & APPLICATION METRICS GRID                                               -->
+    <!-- ================================================================================= -->
+    <div class="card-container">
+
+        <!-- 1. STUDY HOUR BLOCKER -->
+        <div class="flat-card border-orange">
+            <i data-lucide="clock" class="bg-icon"></i>
+            <div class="card-content">
+                <div class="card-left">
+                    <i data-lucide="timer" class="card-icon"></i>
+                    <div>
+                        <span class="card-title">Study Hour Blocker</span>
+                        <span class="card-subtitle">Restrict Social & Gaming Engine Triggers</span>
+                    </div>
+                </div>
+            </div>
+            <div class="action-row">
+                <button class="btn-warning" id="btn-study-hour" onclick="toggleStudyHourPolicy()">Toggle Restriction Mode</button>
+            </div>
+        </div>
+
+        <!-- 2. APP USAGE -->
+        <a href="/usage" class="flat-card border-yellow">
+            <i data-lucide="activity" class="bg-icon"></i>
+            <div class="card-content">
+                <div class="card-left">
+                    <i data-lucide="pie-chart" class="card-icon"></i>
+                    <div>
+                        <span class="card-title">App Usage</span>
+                        <span class="card-subtitle">Digital Wellbeing & Execution Limits</span>
+                    </div>
+                </div>
+                <div class="card-right"><div class="metric-value">></div></div>
+            </div>
+        </a>
+
+        <!-- 3. INSTALLED APPS -->
+        <a href="/apps" class="flat-card border-cyan">
+            <i data-lucide="layers" class="bg-icon"></i>
+            <div class="card-content">
+                <div class="card-left">
+                    <i data-lucide="grid" class="card-icon"></i>
+                    <div>
+                        <span class="card-title">Installed Apps</span>
+                        <span class="card-subtitle">Device App Directory & Packages</span>
+                    </div>
+                </div>
+                <div class="card-right"><div class="metric-value">></div></div>
+            </div>
+        </a>
+
+        <!-- 4. FEATURE SELECTION -->
+        <a href="/settings" class="flat-card border-grey">
+            <i data-lucide="sliders" class="bg-icon"></i>
+            <div class="card-content">
+                <div class="card-left">
+                    <i data-lucide="toggle-right" class="card-icon"></i>
+                    <div>
+                        <span class="card-title">Feature Selection</span>
+                        <span class="card-subtitle">Remote ON/OFF Toggles & Configurations</span>
+                    </div>
+                </div>
+                <div class="card-right"><div class="metric-value">></div></div>
+            </div>
+        </a>
+
+    </div>
+
+    <!-- ================================================================================= -->
+    <!-- JAVASCRIPT ENGINE (Isolated Context Initialization)                               -->
+    <!-- ================================================================================= -->
+    <script>
+        // Init Vector Icons
+        lucide.createIcons();
+
+        const deviceId = localStorage.getItem('active_device_id');
+        const token = localStorage.getItem('owner_token');
+
+        // Environment Matrix Validation
+        document.addEventListener('DOMContentLoaded', () => {
+            const labelEl = document.getElementById('active-device-label');
+            
+            if (!deviceId) {
+                labelEl.innerText = "ERROR: Target Disconnected / Unassigned";
+                labelEl.style.color = "#e74c3c";
+            } else {
+                labelEl.innerText = `Target Context Authorized [ID: ${deviceId.substring(0,6)}...]`;
+            }
+        });
+
+        // 🚀 ISOLATED POLICY ENGINE TOGGLE
+        window.toggleStudyHourPolicy = async function() {
+            if (!deviceId) return alert("Missing target identifier context. Select a device first.");
+
+            try {
+                const res = await fetch(`/api/settings/toggle-study-hour?token=${deviceId}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                
+                if (data.status === "success") {
+                    const status = data.study_hour_active ? "ACTIVATED" : "DEACTIVATED";
+                    alert(`Study Hour Restriction Configuration: ${status}`);
+                } else {
+                    alert(`Action failed: ${data.message || "Server error"}`);
+                }
+            } catch (e) {
+                console.error("Policy mapping breakdown:", e);
+                alert("Network communication error.");
+            }
+        };
+    </script>
+</body>
+</html>
