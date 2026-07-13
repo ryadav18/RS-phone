@@ -51,7 +51,7 @@ from backend.calls import calls_bp
 from backend.messages import messages_bp
 from backend.locations import locations_bp
 from backend.files import files_bp
-from backend.gallery import gallery_bp  # 🚀 NEW INJECTION: Google Drive Proxy Blueprint Engine
+from backend.gallery import gallery_bp  # 🚀 Google Drive Proxy Blueprint Engine
 from backend.logs import logs_bp
 from backend.ops import ops_bp
 from backend.apps import apps_bp
@@ -67,8 +67,8 @@ app.register_blueprint(notifications_bp)
 app.register_blueprint(calls_bp)
 app.register_blueprint(messages_bp)
 app.register_blueprint(locations_bp)
-app.register_blueprint(files_bp)     # Preserved isolated file manager access routing
-app.register_blueprint(gallery_bp)   # 🚀 NEW INJECTION: Activating the Infinite Storage Route Link
+app.register_blueprint(files_bp)     
+app.register_blueprint(gallery_bp)   
 app.register_blueprint(logs_bp)
 app.register_blueprint(ops_bp)
 app.register_blueprint(apps_bp)
@@ -118,7 +118,7 @@ def logs_view():
 
 @app.route('/locations')
 def locations_view():
-    return send_from_directory(template_path, 'locations.html')
+    return send_from_directory(template_path, 'location.html')
 
 @app.route('/gallery')
 def gallery_view():
@@ -138,16 +138,32 @@ def apps_view():
 
 @app.route('/usage')
 def usage_view():
-    return send_from_directory(template_path, 'usage.html')
+    # 🧠 High-Level Fix: Map exact unified naming matching usages.html
+    return send_from_directory(template_path, 'usages.html')
 
 @app.route('/ops')
 def live_operations_page():
     return send_from_directory(template_path, 'ops.html') 
 
-# Serves map spatial editor out of your /frontend directory folder
 @app.route('/geofence-config')
 def geofence_config_view():
-    return send_from_directory(template_path, 'geofence_config.html')
+    # 🧠 High-Level Fix: Map exact unified naming matching geofence-config.html
+    return send_from_directory(template_path, 'geofence-config.html')
+
+@app.route('/screen-mirror')
+def screen_mirror_view():
+    # 🚀 NEW ROUTE: Live screen streaming interface pipeline redirection link
+    return send_from_directory(template_path, 'screen-mirror.html')
+
+@app.route('/study-blocker')
+def study_blocker_view():
+    # 🚀 NEW ROUTE: Study restriction system deployment panel
+    return send_from_directory(template_path, 'studyblocker.html')
+
+@app.route('/sos')
+def sos_view():
+    # 🚀 NEW ROUTE: High-Priority disaster panic receiver board
+    return send_from_directory(template_path, 'sos.html')
 # ===========================================================
 
 # ===========================================================
