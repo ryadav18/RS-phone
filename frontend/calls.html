@@ -6,316 +6,55 @@
     <title>Call Logs - RS OWNER</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* =========================================================
-           RS PHONE - ZERO-LAG FLAT ARCHITECTURE (INJECTED STYLE)
-           ========================================================= */
-        :root {
-            --bg-main: #121212;
-            --bg-card: #1e1e1e;
-            --text-main: #ffffff;
-            --text-muted: #aaaaaa;
-            --accent-cyan: #00f0ff;
-            
-            /* Flat Status Colors */
-            --color-dark: #2c3e50;
-            --color-red: #e74c3c;
-            --color-green: #2ecc71;
-            --color-blue: #2980b9;
-            --color-teal: #1abc9c;
-            --color-purple: #8e44ad;
-            --color-yellow: #f39c12;
-            --color-orange: #d35400;
-            --color-pink: #c0392b;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            min-height: 100vh;
-            padding: 15px;
-            padding-bottom: 40px;
-            overflow-x: hidden;
-        }
-
-        /* Custom Scrollbar for Pro Feel */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg-main); }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--color-blue); }
-
-        /* Sidebar & Layout Fixes for Standalone Structure */
+        :root { --bg-main: #121212; --bg-card: #1e1e1e; --text-main: #ffffff; --text-muted: #aaaaaa; --accent-cyan: #00f0ff; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main); min-height: 100vh; padding: 15px; }
         .app-container { display: flex; min-height: 100vh; gap: 20px; }
-        .sidebar { width: 260px; background: var(--bg-card); padding: 20px; border-radius: 16px; border: 1px solid #2c2c2e; display: flex; flex-direction: column; gap: 25px; }
-        .sidebar-brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; letter-spacing: 1px; color: var(--text-main); }
+        .sidebar { width: 260px; background: var(--bg-card); padding: 20px; border-radius: 16px; border: 1px solid #2c2c2e; }
         .sidebar-menu { list-style: none; display: flex; flex-direction: column; gap: 8px; }
-        .sidebar-menu li a { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: var(--text-muted); text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; transition: all 0.2s; }
-        .sidebar-menu li.active a, .sidebar-menu li a:hover { background: rgba(0, 240, 255, 0.08); color: var(--accent-cyan); }
+        .sidebar-menu li a { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: var(--text-muted); text-decoration: none; border-radius: 8px; }
+        .sidebar-menu li.active a { background: rgba(0, 240, 255, 0.08); color: var(--accent-cyan); }
         .main-content { flex: 1; display: flex; flex-direction: column; gap: 20px; }
-        .topbar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid #2c2c2e; }
         .glass-panel { background: var(--bg-card); border: 1px solid #2c2c2e; border-radius: 16px; padding: 25px; }
-
-        /* =========================================================
-           🚀 MASTER VIEWPORT ENGINE & TELEPHONY COMPONENT CARDS
-           ========================================================= */
-        .data-list-container {
-            max-height: 72vh;
-            overflow-y: auto;
-            padding-right: 8px;
-            scroll-behavior: smooth;
-        }
-        
-        .call-card {
-            background: #1c1c1e; 
-            padding: 16px 20px; 
-            border-radius: 12px !important; 
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border: 1px solid #2c2c2e;
-            transition: border-color 0.25s ease, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease;
-        }
-        .call-card:hover { 
-            transform: translateX(4px); 
-            border-color: rgba(255, 255, 255, 0.15);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-        }
-        
-        .call-card.saved-contact { border-left: 5px solid #2ecc71 !important; }
-        .call-card.unknown-contact { border-left: 5px solid #ff3b30 !important; }
-
-        .call-meta-left { display: flex; align-items: center; gap: 16px; }
-        
-        .call-icon-frame { 
-            width: 42px; 
-            height: 42px; 
-            border-radius: 50%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            background: rgba(255, 255, 255, 0.04); 
-            border: 1px solid rgba(255, 255, 255, 0.06);
-        }
-        
-        .call-details { display: flex; flex-direction: column; gap: 4px; }
-        .contact-identity { font-size: 15px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; letter-spacing: 0.3px; }
-        .phone-raw-number { font-size: 12px; color: #666; font-family: monospace; letter-spacing: 0.5px; }
-        
-        .badge-identity { padding: 3px 8px; border-radius: 20px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-        .badge-saved { background: rgba(46, 204, 113, 0.12); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.2); }
-        .badge-unknown { background: rgba(255, 59, 48, 0.12); color: #ff3b30; border: 1px solid rgba(255, 59, 48, 0.2); }
-
-        .call-meta-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
-        .badge-call-type { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; }
-        
-        .type-incoming { background: rgba(52, 152, 219, 0.12); color: #3498db; border: 1px solid rgba(52, 152, 219, 0.2); }
-        .type-outgoing { background: rgba(155, 89, 182, 0.12); color: #9b59b6; border: 1px solid rgba(155, 89, 182, 0.2); }
-        .type-missed { background: rgba(255, 59, 48, 0.15); color: #ff3b30; border: 1px solid rgba(255, 59, 48, 0.25); font-weight: 800; }
-
-        .call-time-string { font-size: 11px; color: #555558; font-weight: 600; font-family: monospace; }
-
-        /* =========================================================
-           HIGH-LEVEL RESPONSIVE PAGINATION CONTROLS
-           ========================================================= */
-        .pagination-wrapper {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 25px;
-            padding-top: 15px;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .pagination-btn {
-            background: rgba(255, 255, 255, 0.03);
-            color: #ffffff;
-            border: 1px solid #2c2c2e;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-        }
-        .pagination-btn:hover:not(:disabled) {
-            background: rgba(0, 240, 255, 0.08);
-            border-color: rgba(0, 240, 255, 0.3);
-            color: #00f0ff;
-        }
-        .pagination-btn:disabled {
-            opacity: 0.2;
-            cursor: not-allowed;
-            background: rgba(0, 0, 0, 0.4);
-            border-color: #1a1a1c;
-            color: #555;
-        }
-        .pagination-indicator {
-            font-size: 0.85rem;
-            color: #8e8e93;
-            font-weight: 700;
-            letter-spacing: 1px;
-            font-family: monospace;
-        }
+        .call-card { background: #1c1c1e; padding: 16px 20px; border-radius: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; border: 1px solid #2c2c2e; }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar Unified Navigation -->
         <div class="sidebar">
-            <div class="sidebar-brand">
-                <i data-lucide="shield" style="color: var(--accent-cyan);"></i>
-                <span>RS OWNER</span>
-            </div>
+            <div class="sidebar-brand"><span>RS OWNER</span></div>
             <ul class="sidebar-menu">
-                <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
-                <li><a href="/communication.html"><i data-lucide="message-circle"></i> Comm Hub</a></li>
-                <li><a href="/remote_center.html"><i data-lucide="cpu"></i> Remote Ops</a></li>
-                <li class="active"><a href="/calls"><i data-lucide="phone"></i> Call Logs</a></li>
-                <li><a href="/messages"><i data-lucide="message-square"></i> SMS Audit</a></li>
-                <li><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
+                <li class="active"><a href="/calls">Call Logs</a></li>
+                <li><a href="/messages">SMS Audit</a></li>
             </ul>
         </div>
-
-        <!-- Main Content Core Viewspace -->
         <main class="main-content">
-            <header class="topbar">
-                <div>
-                    <h2 style="font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">Secure Telephony Monitoring</h2>
-                    <p style="color: #666; font-size: 0.85rem; margin-top: 4px;">Real-time call routing analysis & interception logs.</p>
-                </div>
-                <div class="device-switcher" style="display: flex; align-items: center; gap: 15px;">
-                    <select id="device-select" style="padding: 8px 12px; border-radius: 6px; background: #1c1c1e; color: white; border: 1px solid #2c2c2e; outline: none; font-weight: 600; font-size: 0.85rem; cursor: pointer;"></select>
-                    <button onclick="wipeCallsHistory()" style="background: rgba(255, 59, 48, 0.15); color: #ff3b30; border: 1px solid rgba(255, 59, 48, 0.3); border-radius: 6px; padding: 8px 16px; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease; text-transform: uppercase; font-size: 0.8rem;">
-                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> Wipe Logs
-                    </button>
-                </div>
-            </header>
-
             <div class="glass-panel">
-                <div class="data-list-container" id="calls-list">
-                    <div style="color: #666; text-align: center; padding: 40px; font-weight: 500; font-size: 0.95rem; letter-spacing: 0.5px;">
-                        Establishing secure handshake connection to telephony grid...
-                    </div>
-                </div>
-
-                <!-- Smart Pagination Controller Shell Block -->
-                <div class="pagination-wrapper">
-                    <button class="pagination-btn" id="call-prev-btn" disabled>
-                        <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i> Previous
-                    </button>
-                    <span class="pagination-indicator" id="call-page-num">LOADING BUFFER...</span>
-                    <button class="pagination-btn" id="call-next-btn" disabled>
-                        Next <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
-                    </button>
-                </div>
+                <div id="calls-list">Loading telemetry logs...</div>
             </div>
         </main>
     </div>
     
-    <!-- EMBEDDED JAVASCRIPT LOGIC DIRECTLY INJECTED -->
     <script>
         class CallsEngine {
             constructor() {
                 this.activeDeviceId = localStorage.getItem('active_device_id');
-                this.allData = [];
-                this.currentPage = 1;
-                this.itemsPerPage = 10;
-                this.lastDataHash = "";
                 this.init();
             }
 
-            // 🚀 DYNAMIC ENGINE TOKEN PARSER
+            // 🚀 PATCHED HANDSHAKE: Dynamic Token Resolver
             getValidToken() {
                 return localStorage.getItem('owner_token') || localStorage.getItem('session_token') || "";
             }
 
             async init() {
-                window.callsEngineInstance = this;
-                this.setupPaginationListeners();
-                await this.loadDevicesList();
                 if (!this.activeDeviceId) return;
-                
                 this.fetchCalls();
                 setInterval(() => this.fetchCalls(), 10000);
             }
 
-            setupPaginationListeners() {
-                const prevBtn = document.getElementById('call-prev-btn');
-                const nextBtn = document.getElementById('call-next-btn');
-
-                if (prevBtn) {
-                    prevBtn.addEventListener('click', () => {
-                        if (this.currentPage > 1) {
-                            this.currentPage--;
-                            this.renderCurrentPage();
-                        }
-                    });
-                }
-
-                if (nextBtn) {
-                    nextBtn.addEventListener('click', () => {
-                        const totalPages = Math.ceil(this.allData.length / this.itemsPerPage) || 1;
-                        if (this.currentPage < totalPages) {
-                            this.currentPage++;
-                            this.renderCurrentPage();
-                        }
-                    });
-                }
-            }
-
-            async loadDevicesList() {
-                const token = this.getValidToken();
-                try {
-                    const res = await fetch('/api/devices', { headers: { 'Authorization': `Bearer ${token}` } });
-                    const result = await res.json();
-                    if (result.status === 'success') {
-                        const selectEl = document.getElementById('device-select');
-                        if (selectEl) {
-                            selectEl.innerHTML = '';
-                            if (!result.data || result.data.length === 0) {
-                                selectEl.innerHTML = '<option value="">No Devices Found</option>';
-                                return;
-                            }
-                            result.data.forEach(dev => {
-                                const option = document.createElement('option');
-                                option.value = dev.id;
-                                option.textContent = dev.name;
-                                selectEl.appendChild(option);
-                            });
-
-                            if (!this.activeDeviceId && result.data.length > 0) {
-                                this.activeDeviceId = result.data[0].id;
-                                localStorage.setItem('active_device_id', this.activeDeviceId);
-                            }
-                            selectEl.value = this.activeDeviceId;
-
-                            selectEl.addEventListener('change', (e) => {
-                                this.activeDeviceId = e.target.value;
-                                localStorage.setItem('active_device_id', this.activeDeviceId);
-                                this.currentPage = 1; 
-                                this.lastDataHash = ""; 
-                                this.fetchCalls();
-                            });
-                        }
-                    }
-                } catch (e) { console.error("Device list compilation failure:", e); }
-            }
-
             async fetchCalls() {
-                const token = this.getValidToken();
+                const token = this.getValidToken(); // Uphold the handshake
                 if (!this.activeDeviceId) return;
                 try {
                     const res = await fetch(`/api/calls?device_id=${this.activeDeviceId}&limit=50`, {
@@ -323,123 +62,22 @@
                     });
                     const result = await res.json();
                     if (result.status === 'success') {
-                        const incomingData = result.data || [];
-                        const currentDataHash = incomingData.map(c => c.id + "_" + (c.type || '') + "_" + c.timestamp).join("|");
-                        
-                        if (this.lastDataHash !== currentDataHash) {
-                            this.lastDataHash = currentDataHash;
-                            this.allData = incomingData.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-                            this.renderCurrentPage();
-                        }
+                        this.render(result.data || []);
                     }
-                } catch (e) { console.error("Telephony Sync Core Exception:", e); }
+                } catch (e) { console.error("Sync Exception:", e); }
             }
 
-            renderCurrentPage() {
+            render(data) {
                 const container = document.getElementById('calls-list');
-                if (!container) return;
-
-                if (this.allData.length === 0) {
-                    container.innerHTML = '<div style="color: #888; text-align: center; padding: 40px; font-weight: 500;">No telephony logs captured yet. Awaiting hardware agent transmitter sync...</div>';
-                    this.updatePaginationUI(1);
-                    return;
-                }
-
-                const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-                const endIndex = startIndex + this.itemsPerPage;
-                const slicedItems = this.allData.slice(startIndex, endIndex);
-
-                container.innerHTML = slicedItems.map(c => {
-                    const rawName = c.contact_name ? String(c.contact_name).trim() : "";
-                    const isSaved = rawName !== '' && rawName.toLowerCase() !== 'unknown' && rawName.toLowerCase() !== 'unknown number';
-                    const classificationClass = isSaved ? 'saved-contact' : 'unknown-contact';
-                    
-                    let callType = String(c.type).toLowerCase().trim();
-                    let typeLabel = 'INCOMING';
-                    let typeClass = 'type-incoming';
-
-                    if (callType === '2' || callType.includes('outgoing')) {
-                        typeLabel = 'OUTGOING'; 
-                        typeClass = 'type-outgoing';
-                    } else if (callType === '3' || callType.includes('missed') || callType.includes('rejected')) {
-                        typeLabel = 'MISSED'; 
-                        typeClass = 'type-missed';
-                    }
-
-                    let nameMarkup = isSaved 
-                        ? `${c.contact_name} <span class="badge-identity badge-saved">Saved</span>`
-                        : `Unknown Number <span class="badge-identity badge-unknown">${(typeLabel === 'MISSED') ? 'SUSPICIOUS ALERT' : 'UNKNOWN'}</span>`;
-
-                    let durationText = '0s';
-                    if (c.duration > 0) {
-                        const mins = Math.floor(c.duration / 60);
-                        const secs = c.duration % 60;
-                        durationText = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
-                    } else if (typeLabel == 'MISSED') {
-                        durationText = 'Unanswered Connection';
-                    }
-
-                    const dateObj = new Date(c.timestamp);
-                    const dateString = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-                    const timeString = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-
-                    return `
-                    <div class="call-card ${classificationClass}">
-                        <div class="call-meta-left">
-                            <div class="call-icon-frame"><i data-lucide="phone" style="width:16px; height:16px; color:#888;"></i></div>
-                            <div class="call-details">
-                                <span class="contact-identity">${nameMarkup}</span>
-                                <span class="phone-raw-number">${c.phone_number || 'Hidden Identity Protocol'}</span>
-                                <span style="color:#aaa; font-size:12px; margin-top:2px;">Duration: <strong style="color:#fff;">${durationText}</strong></span>
-                            </div>
-                        </div>
-                        <div class="call-meta-right">
-                            <span class="badge-call-type ${typeClass}">${typeLabel}</span>
-                            <span class="call-time-string">${dateString} • ${timeString}</span>
-                        </div>
-                    </div>`;
-                }).join('');
-                
-                const totalPages = Math.ceil(this.allData.length / this.itemsPerPage) || 1;
-                this.updatePaginationUI(totalPages);
-                if (window.lucide) window.lucide.createIcons();
-            }
-
-            updatePaginationUI(totalPages) {
-                const prevBtn = document.getElementById('call-prev-btn');
-                const nextBtn = document.getElementById('call-next-btn');
-                const indicator = document.getElementById('call-page-num');
-
-                if (this.currentPage > totalPages) this.currentPage = totalPages;
-                if (indicator) indicator.textContent = `PAGE ${this.currentPage} OF ${totalPages}`;
-                if (prevBtn) prevBtn.disabled = (this.currentPage === 1);
-                if (nextBtn) nextBtn.disabled = (this.currentPage === totalPages);
+                if (data.length === 0) { container.innerHTML = "No logs yet."; return; }
+                container.innerHTML = data.map(c => `
+                    <div class="call-card">
+                        <div><strong>${c.contact_name}</strong><br><small>${c.phone_number}</small></div>
+                        <div>${c.type}</div>
+                    </div>`).join('');
             }
         }
-
-        window.wipeCallsHistory = async function() {
-            if(!confirm("CRITICAL PROTOCOL: Permanently wipe all telephony logs?")) return;
-            const engine = window.callsEngineInstance;
-            const token = engine ? engine.getValidToken() : "";
-            const deviceId = localStorage.getItem('active_device_id');
-            try {
-                const res = await fetch('/api/calls/clear', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ device_id: deviceId })
-                });
-                const result = await res.json();
-                if(result.status === 'success') {
-                    alert("Database call logs wiped cleanly.");
-                    window.location.reload();
-                }
-            } catch(e) { console.error("Wipe command network failure:", e); }
-        };
-
-        document.addEventListener('DOMContentLoaded', () => {
-            new CallsEngine();
-            if (window.lucide) window.lucide.createIcons();
-        });
+        document.addEventListener('DOMContentLoaded', () => new CallsEngine());
     </script>
 </body>
 </html>
