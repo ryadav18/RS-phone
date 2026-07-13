@@ -34,7 +34,6 @@ logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
 # ================= MEMORY ARCHITECTURE REGISTRY =================
-# Temporary high-speed local data cache to keep things execution-safe
 device_commands_queue = {}
 device_settings_cache = {}
 geofence_config_db = {}
@@ -51,7 +50,7 @@ from backend.calls import calls_bp
 from backend.messages import messages_bp
 from backend.locations import locations_bp
 from backend.files import files_bp
-from backend.gallery import gallery_bp  # 🚀 Google Drive Proxy Blueprint Engine
+from backend.gallery import gallery_bp  
 from backend.logs import logs_bp
 from backend.ops import ops_bp
 from backend.apps import apps_bp
@@ -138,7 +137,6 @@ def apps_view():
 
 @app.route('/usage')
 def usage_view():
-    # 🧠 High-Level Fix: Map exact unified naming matching usages.html
     return send_from_directory(template_path, 'usages.html')
 
 @app.route('/ops')
@@ -147,23 +145,42 @@ def live_operations_page():
 
 @app.route('/geofence-config')
 def geofence_config_view():
-    # 🧠 High-Level Fix: Map exact unified naming matching geofence-config.html
     return send_from_directory(template_path, 'geofence-config.html')
 
 @app.route('/screen-mirror')
 def screen_mirror_view():
-    # 🚀 NEW ROUTE: Live screen streaming interface pipeline redirection link
     return send_from_directory(template_path, 'screen-mirror.html')
 
 @app.route('/study-blocker')
 def study_blocker_view():
-    # 🚀 NEW ROUTE: Study restriction system deployment panel
     return send_from_directory(template_path, 'studyblocker.html')
 
 @app.route('/sos')
 def sos_view():
-    # 🚀 NEW ROUTE: High-Priority disaster panic receiver board
     return send_from_directory(template_path, 'sos.html')
+
+# ===========================================================
+# 🚀 INJECTED CORES: 4 MASTER HUB INTERFACE ROUTING ANCHORS
+# ===========================================================
+@app.route('/remote-center')
+def remote_operations_center_view():
+    """Serves the master remote controls and hardware operations deck."""
+    return send_from_directory(template_path, 'remote_center.html')
+
+@app.route('/safety')
+def safety_and_gps_hub_view():
+    """Serves the security, tracking logs, and dynamic fencing interface."""
+    return send_from_directory(template_path, 'safety.html')
+
+@app.route('/communication')
+def communication_hub_view():
+    """Serves the integrated text log overlays and telemetry aggregation dashboard."""
+    return send_from_directory(template_path, 'communication.html')
+
+@app.route('/policy')
+def system_policy_manager_view():
+    """Serves the rule deployment dashboard for target optimization parameters."""
+    return send_from_directory(template_path, 'policy.html')
 # ===========================================================
 
 # ===========================================================
@@ -171,11 +188,9 @@ def sos_view():
 # ===========================================================
 @sock.route('/ws/stream/<device_token>')
 def android_stream_endpoint(ws, device_token):
-    """Intercepts raw byte arrays from Android client and reflects them to web panel."""
-    print(f"[Core Socket] Android streaming pipe opened: {device_token}")
     try:
         while True:
-            binary_frame = ws.receive()  # Non-blocking byte collection out of OS kernel buffers
+            binary_frame = ws.receive()
             if device_token in dashboard_sockets:
                 for dash_ws in list(dashboard_sockets[device_token]):
                     try:
@@ -187,23 +202,19 @@ def android_stream_endpoint(ws, device_token):
 
 @sock.route('/ws/dashboard/<device_token>')
 def web_dashboard_endpoint(ws, device_token):
-    """Maintains an ongoing session path inside browser to output image canvas blocks."""
     if device_token not in dashboard_sockets:
         dashboard_sockets[device_token] = set()
     dashboard_sockets[device_token].add(ws)
-    print(f"[Dashboard Socket] Web portal active for device token payload tracking.")
     try:
         while True:
-            ws.receive()  # Keeps tunnel alive
+            ws.receive()
     except Exception:
         if device_token in dashboard_sockets:
             dashboard_sockets[device_token].discard(ws)
-        print("[Dashboard Socket] Web session gracefully cleared.")
 
 # ===========================================================
 # 🚀 ADVANCED FEATURE 2, 3 & 4: POLICY & MONITOR REST API ROUTES
 # ===========================================================
-
 @app.route('/api/settings/toggle-study-hour', methods=['POST'])
 def toggle_study_hour_policy():
     token = request.args.get('token')
@@ -254,7 +265,6 @@ def poll_geofence_alerts():
 
 @app.route('/api/devices/status', methods=['POST'])
 def sync_telemetry():
-    """Intercepts Android hardware monitoring metrics to catch Emergency Panic alerts instantly."""
     token = request.headers.get('X-Device-Token')
     data = request.get_json() or {}
     
@@ -308,7 +318,7 @@ def inject_remote_command():
 def get_pending_commands():
     token = request.headers.get('X-Device-Token')
     cmds = device_commands_queue.get(token, [])
-    device_commands_queue[token] = []  # Clear immediately after transmission
+    device_commands_queue[token] = []  
     return jsonify({"status": "success", "commands": cmds})
 # ===========================================================
 
