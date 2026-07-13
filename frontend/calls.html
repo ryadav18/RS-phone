@@ -4,10 +4,67 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Call Logs - RS OWNER</title>
-    <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* 🚀 MASTER VIEWPORT ENGINE: Managed scroll limits strictly inside the command tower */
+        /* =========================================================
+           RS PHONE - ZERO-LAG FLAT ARCHITECTURE (INJECTED STYLE)
+           ========================================================= */
+        :root {
+            --bg-main: #121212;
+            --bg-card: #1e1e1e;
+            --text-main: #ffffff;
+            --text-muted: #aaaaaa;
+            --accent-cyan: #00f0ff;
+            
+            /* Flat Status Colors */
+            --color-dark: #2c3e50;
+            --color-red: #e74c3c;
+            --color-green: #2ecc71;
+            --color-blue: #2980b9;
+            --color-teal: #1abc9c;
+            --color-purple: #8e44ad;
+            --color-yellow: #f39c12;
+            --color-orange: #d35400;
+            --color-pink: #c0392b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 15px;
+            padding-bottom: 40px;
+            overflow-x: hidden;
+        }
+
+        /* Custom Scrollbar for Pro Feel */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-main); }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--color-blue); }
+
+        /* Sidebar & Layout Fixes for Standalone Structure */
+        .app-container { display: flex; min-height: 100vh; gap: 20px; }
+        .sidebar { width: 260px; background: var(--bg-card); padding: 20px; border-radius: 16px; border: 1px solid #2c2c2e; display: flex; flex-direction: column; gap: 25px; }
+        .sidebar-brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; letter-spacing: 1px; color: var(--text-main); }
+        .sidebar-menu { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+        .sidebar-menu li a { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: var(--text-muted); text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; transition: all 0.2s; }
+        .sidebar-menu li.active a, .sidebar-menu li a:hover { background: rgba(0, 240, 255, 0.08); color: var(--accent-cyan); }
+        .main-content { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid #2c2c2e; }
+        .glass-panel { background: var(--bg-card); border: 1px solid #2c2c2e; border-radius: 16px; padding: 25px; }
+
+        /* =========================================================
+           🚀 MASTER VIEWPORT ENGINE & TELEPHONY COMPONENT CARDS
+           ========================================================= */
         .data-list-container {
             max-height: 72vh;
             overflow-y: auto;
@@ -15,23 +72,6 @@
             scroll-behavior: smooth;
         }
         
-        /* 💻 CUSTOM ENTERPRISE SCROLLBARS: Matches premium system specifications */
-        .data-list-container::-webkit-scrollbar {
-            width: 6px;
-        }
-        .data-list-container::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.15);
-            border-radius: 10px;
-        }
-        .data-list-container::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-        }
-        .data-list-container::-webkit-scrollbar-thumb:hover {
-            background: rgba(0, 240, 255, 0.3);
-        }
-        
-        /* 🚀 TELEPHONY ANALYSIS PANELS: Responsive card rendering modules */
         .call-card {
             background: #1c1c1e; 
             padding: 16px 20px; 
@@ -49,7 +89,6 @@
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
         }
         
-        /* Absolute Classification Tracking Guards */
         .call-card.saved-contact { border-left: 5px solid #2ecc71 !important; }
         .call-card.unknown-contact { border-left: 5px solid #ff3b30 !important; }
 
@@ -83,9 +122,9 @@
 
         .call-time-string { font-size: 11px; color: #555558; font-weight: 600; font-family: monospace; }
 
-        /* =================================================================================
-        /* HIGH-LEVEL RESPONSIVE PAGINATION CONTROLS
-        /* ================================================================================= */
+        /* =========================================================
+           HIGH-LEVEL RESPONSIVE PAGINATION CONTROLS
+           ========================================================= */
         .pagination-wrapper {
             display: flex;
             align-items: center;
@@ -135,15 +174,15 @@
 <body>
     <div class="app-container">
         <!-- Sidebar Unified Navigation -->
-        <div class="sidebar glass-panel">
+        <div class="sidebar">
             <div class="sidebar-brand">
                 <i data-lucide="shield" style="color: var(--accent-cyan);"></i>
                 <span>RS OWNER</span>
             </div>
             <ul class="sidebar-menu">
                 <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
-                <li><a href="/permissions"><i data-lucide="shield-check"></i> Permissions</a></li>
-                <li><a href="/ops"><i data-lucide="activity"></i> Live Operations</a></li>
+                <li><a href="/communication.html"><i data-lucide="message-circle"></i> Comm Hub</a></li>
+                <li><a href="/remote_center.html"><i data-lucide="cpu"></i> Remote Ops</a></li>
                 <li class="active"><a href="/calls"><i data-lucide="phone"></i> Call Logs</a></li>
                 <li><a href="/messages"><i data-lucide="message-square"></i> SMS Audit</a></li>
                 <li><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
@@ -158,18 +197,14 @@
                     <p style="color: #666; font-size: 0.85rem; margin-top: 4px;">Real-time call routing analysis & interception logs.</p>
                 </div>
                 <div class="device-switcher" style="display: flex; align-items: center; gap: 15px;">
-                    <!-- Hardware Switching Matrix Interface Link -->
                     <select id="device-select" style="padding: 8px 12px; border-radius: 6px; background: #1c1c1e; color: white; border: 1px solid #2c2c2e; outline: none; font-weight: 600; font-size: 0.85rem; cursor: pointer;"></select>
-                    
-                    <!-- Secure Clear Logs Execution Target Anchor -->
                     <button onclick="wipeCallsHistory()" style="background: rgba(255, 59, 48, 0.15); color: #ff3b30; border: 1px solid rgba(255, 59, 48, 0.3); border-radius: 6px; padding: 8px 16px; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease; text-transform: uppercase; font-size: 0.8rem;">
                         <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> Wipe Logs
                     </button>
                 </div>
             </header>
 
-            <div class="glass-panel" style="padding: 25px; border-radius: 16px;">
-                <!-- Target injection container node where CallsEngine injects dynamic list cards -->
+            <div class="glass-panel">
                 <div class="data-list-container" id="calls-list">
                     <div style="color: #666; text-align: center; padding: 40px; font-weight: 500; font-size: 0.95rem; letter-spacing: 0.5px;">
                         Establishing secure handshake connection to telephony grid...
@@ -190,15 +225,213 @@
         </main>
     </div>
     
-    <!-- Integration Core Scripts Dependency Chain -->
-    <script src="/static/js/auth.js"></script>
-    <script src="/static/js/calls_engine.js"></script>
+    <!-- EMBEDDED JAVASCRIPT LOGIC DIRECTLY INJECTED -->
     <script>
-        // Mount dynamic vector graphic handlers cleanly on page boot lifecycle
-        document.addEventListener('DOMContentLoaded', () => {
-            if (window.lucide) {
-                window.lucide.createIcons();
+        class CallsEngine {
+            constructor() {
+                this.activeDeviceId = localStorage.getItem('active_device_id');
+                this.allData = [];
+                this.currentPage = 1;
+                this.itemsPerPage = 10;
+                this.lastDataHash = "";
+                this.init();
             }
+
+            async init() {
+                this.setupPaginationListeners();
+                await this.loadDevicesList();
+                if (!this.activeDeviceId) return;
+                
+                this.fetchCalls();
+                setInterval(() => this.fetchCalls(), 10000);
+            }
+
+            setupPaginationListeners() {
+                const prevBtn = document.getElementById('call-prev-btn');
+                const nextBtn = document.getElementById('call-next-btn');
+
+                if (prevBtn) {
+                    prevBtn.addEventListener('click', () => {
+                        if (this.currentPage > 1) {
+                            this.currentPage--;
+                            this.renderCurrentPage();
+                        }
+                    });
+                }
+
+                if (nextBtn) {
+                    nextBtn.addEventListener('click', () => {
+                        const totalPages = Math.ceil(this.allData.length / this.itemsPerPage) || 1;
+                        if (this.currentPage < totalPages) {
+                            this.currentPage++;
+                            this.renderCurrentPage();
+                        }
+                    });
+                }
+            }
+
+            async loadDevicesList() {
+                const token = localStorage.getItem('owner_token');
+                try {
+                    const res = await fetch('/api/devices', { headers: { 'Authorization': `Bearer ${token}` } });
+                    const result = await res.json();
+                    if (result.status === 'success') {
+                        const selectEl = document.getElementById('device-select');
+                        if (selectEl) {
+                            selectEl.innerHTML = '';
+                            if (!result.data || result.data.length === 0) {
+                                selectEl.innerHTML = '<option value="">No Devices Found</option>';
+                                return;
+                            }
+                            result.data.forEach(dev => {
+                                const option = document.createElement('option');
+                                option.value = dev.id;
+                                option.textContent = dev.name;
+                                selectEl.appendChild(option);
+                            });
+
+                            if (!this.activeDeviceId && result.data.length > 0) {
+                                this.activeDeviceId = result.data[0].id;
+                                localStorage.setItem('active_device_id', this.activeDeviceId);
+                            }
+                            selectEl.value = this.activeDeviceId;
+
+                            selectEl.addEventListener('change', (e) => {
+                                this.activeDeviceId = e.target.value;
+                                localStorage.setItem('active_device_id', this.activeDeviceId);
+                                this.currentPage = 1; 
+                                this.lastDataHash = ""; 
+                                this.fetchCalls();
+                            });
+                        }
+                    }
+                } catch (e) { console.error("Device list compilation failure:", e); }
+            }
+
+            async fetchCalls() {
+                const token = localStorage.getItem('owner_token');
+                if (!this.activeDeviceId) return;
+                try {
+                    const res = await fetch(`/api/calls?device_id=${this.activeDeviceId}&limit=50`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const result = await res.json();
+                    if (result.status === 'success') {
+                        const incomingData = result.data || [];
+                        const currentDataHash = incomingData.map(c => c.id + "_" + (c.type || '') + "_" + c.timestamp).join("|");
+                        
+                        if (this.lastDataHash !== currentDataHash) {
+                            this.lastDataHash = currentDataHash;
+                            this.allData = incomingData.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+                            this.renderCurrentPage();
+                        }
+                    }
+                } catch (e) { console.error("Telephony Sync Core Exception:", e); }
+            }
+
+            renderCurrentPage() {
+                const container = document.getElementById('calls-list');
+                if (!container) return;
+
+                if (this.allData.length === 0) {
+                    container.innerHTML = '<div style="color: #888; text-align: center; padding: 40px; font-weight: 500;">No telephony logs captured yet. Awaiting hardware agent transmitter sync...</div>';
+                    this.updatePaginationUI(1);
+                    return;
+                }
+
+                const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+                const endIndex = startIndex + this.itemsPerPage;
+                const slicedItems = this.allData.slice(startIndex, endIndex);
+
+                container.innerHTML = slicedItems.map(c => {
+                    const rawName = c.contact_name ? String(c.contact_name).trim() : "";
+                    const isSaved = rawName !== '' && rawName.toLowerCase() !== 'unknown' && rawName.toLowerCase() !== 'unknown number';
+                    const classificationClass = isSaved ? 'saved-contact' : 'unknown-contact';
+                    
+                    let callType = String(c.type).toLowerCase().trim();
+                    let typeLabel = 'INCOMING';
+                    let typeClass = 'type-incoming';
+
+                    if (callType === '2' || callType.includes('outgoing')) {
+                        typeLabel = 'OUTGOING'; 
+                        typeClass = 'type-outgoing';
+                    } else if (callType === '3' || callType.includes('missed') || callType.includes('rejected')) {
+                        typeLabel = 'MISSED'; 
+                        typeClass = 'type-missed';
+                    }
+
+                    let nameMarkup = isSaved 
+                        ? `${c.contact_name} <span class="badge-identity badge-saved">Saved</span>`
+                        : `Unknown Number <span class="badge-identity badge-unknown">${(typeLabel === 'MISSED') ? 'SUSPICIOUS ALERT' : 'UNKNOWN'}</span>`;
+
+                    let durationText = '0s';
+                    if (c.duration > 0) {
+                        const mins = Math.floor(c.duration / 60);
+                        const secs = c.duration % 60;
+                        durationText = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+                    } else if (typeLabel == 'MISSED') {
+                        durationText = 'Unanswered Connection';
+                    }
+
+                    const dateObj = new Date(c.timestamp);
+                    const dateString = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                    const timeString = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+                    return `
+                    <div class="call-card ${classificationClass}">
+                        <div class="call-meta-left">
+                            <div class="call-icon-frame"><i data-lucide="phone" style="width:16px; height:16px; color:#888;"></i></div>
+                            <div class="call-details">
+                                <span class="contact-identity">${nameMarkup}</span>
+                                <span class="phone-raw-number">${c.phone_number || 'Hidden Identity Protocol'}</span>
+                                <span style="color:#aaa; font-size:12px; margin-top:2px;">Duration: <strong style="color:#fff;">${durationText}</strong></span>
+                            </div>
+                        </div>
+                        <div class="call-meta-right">
+                            <span class="badge-call-type ${typeClass}">${typeLabel}</span>
+                            <span class="call-time-string">${dateString} • ${timeString}</span>
+                        </div>
+                    </div>`;
+                }).join('');
+                
+                const totalPages = Math.ceil(this.allData.length / this.itemsPerPage) || 1;
+                this.updatePaginationUI(totalPages);
+                if (window.lucide) window.lucide.createIcons();
+            }
+
+            updatePaginationUI(totalPages) {
+                const prevBtn = document.getElementById('call-prev-btn');
+                const nextBtn = document.getElementById('call-next-btn');
+                const indicator = document.getElementById('call-page-num');
+
+                if (this.currentPage > totalPages) this.currentPage = totalPages;
+                if (indicator) indicator.textContent = `PAGE ${this.currentPage} OF ${totalPages}`;
+                if (prevBtn) prevBtn.disabled = (this.currentPage === 1);
+                if (nextBtn) nextBtn.disabled = (this.currentPage === totalPages);
+            }
+        }
+
+        window.wipeCallsHistory = async function() {
+            if(!confirm("CRITICAL PROTOCOL: Permanently wipe all telephony logs?")) return;
+            const token = localStorage.getItem('owner_token');
+            const deviceId = localStorage.getItem('active_device_id');
+            try {
+                const res = await fetch('/api/calls/clear', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ device_id: deviceId })
+                });
+                const result = await res.json();
+                if(result.status === 'success') {
+                    alert("Database call logs wiped cleanly.");
+                    window.location.reload();
+                }
+            } catch(e) { console.error("Wipe command network failure:", e); }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new CallsEngine();
+            if (window.lucide) window.lucide.createIcons();
         });
     </script>
 </body>
