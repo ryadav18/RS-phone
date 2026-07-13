@@ -13,8 +13,9 @@ gallery_bp = Blueprint('gallery', __name__)
 def upload_gallery_photo():
     """
     Core Proxy Upload Gateway.
-    Intercepts multi-part binary from Android app, encodes to Base64, 
-    relays to Google Drive script, logs reference to Supabase, and enforces 50-photo limit.
+    Intercepts multi-part binary and form-data metadata from Android app, 
+    relays to Google Drive script with correct directory routing, logs reference to Supabase, 
+    and enforces 50-photo limit per device.
     """
     # 1. Telemetry Header Signature Verification Check
     token = request.headers.get('X-Device-Token')
@@ -37,6 +38,10 @@ def upload_gallery_photo():
         if file.filename == '':
             return jsonify({"status": "error", "message": "No stream sequence selected"}), 400
 
+        # 🚀 THE FIX: Intercept contextual metadata parameters dispatched by Android Client
+        upload_type = request.form.get('type', 'gallery') # Default fallback to gallery
+        target_folder = request.form.get('folderPath', 'RollingMediaGallery')
+
         # Read binary block and encode to raw Base64 string matching Apps Script architecture
         file_bytes = file.read()
         base64_image_string = base64.b64encode(file_bytes).decode('utf-8')
@@ -46,10 +51,12 @@ def upload_gallery_photo():
         if not drive_gateway_url:
             return jsonify({"status": "error", "message": "DRIVE_GATEWAY_URL missing in server configurations"}), 500
 
-        # Build JSON Payload structure mapping perfectly with your Google Apps Script e.postData template
+        # 🚀 UPGRADED PAYLOAD: Forward explicit routing maps to the 5TB Drive Setup
         gateway_payload = {
             "image_base64": base64_image_string,
-            "file_name": file.filename
+            "file_name": file.filename,
+            "folder_path": target_folder,
+            "upload_type": upload_type
         }
 
         # Fire high-speed backend-to-backend HTTP POST routing request
@@ -62,7 +69,7 @@ def upload_gallery_photo():
         if response_data.get('status') != 'success':
             return jsonify({"status": "error", "message": response_data.get('error_message', 'Apps Script layer execution failure')}), 502
 
-        # Extract rendering token fields returned by your 5TB Drive setup
+        # Extract rendering token fields returned by Google Apps Script
         direct_url = response_data.get('direct_url')
         drive_file_id = response_data.get('drive_file_id')
 
@@ -88,7 +95,7 @@ def upload_gallery_photo():
             
             # Execute batch network deletion query directly inside Supabase SQL node
             supabase.table('photos').delete().in_('id', ids_to_purge).execute()
-            print(f"[FIFO Gallery Engine] Purged {len(ids_to_purge)} overflow references out of Supabase successfully.")
+            print(f"[FIFO Gallery Engine] Purged {len(ids_to_purge)} overflow references out of Supabase successfully. Drive remains untouched.")
 
         return jsonify({"status": "success", "message": "Media array frame processed, relayed and buffered successfully"}), 201
 
