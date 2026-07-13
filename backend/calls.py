@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from backend.auth import token_required
 from backend.devices import verify_device_access
 from database import supabase
-from datetime import datetime, timezone # 🚀 INJECTED: Absolute time conversion engine
+from datetime import datetime, timezone
 
 calls_bp = Blueprint('calls', __name__)
 
@@ -49,7 +49,7 @@ def upload_calls():
         for record in records:
             raw_type = str(record.get('type', '1')).strip().upper()
             
-            # 🚀 SAFETY MATRIX A: Telephony Type Classifier Protocol
+            # SAFETY MATRIX A: Telephony Type Classifier Protocol
             if raw_type in ['2', 'OUTGOING']:
                 final_type = 'OUTGOING'
             elif raw_type in ['3', 'MISSED', 'REJECTED']:
@@ -57,15 +57,19 @@ def upload_calls():
             else:
                 final_type = 'INCOMING'
 
+            # 🚀 FIXED: Dynamic Key Resolver maps both snake_case and camelCase parameters gracefully
+            phone_num = record.get('phone_number') or record.get('phoneNumber') or 'Unknown'
+            cont_name = record.get('contact_name') or record.get('contactName') or 'Unknown'
+
             row_data = {
                 "device_id": dev_id,
                 "type": final_type,
-                "phone_number": record.get('phone_number', 'Unknown'),
-                "contact_name": record.get('contact_name', 'Unknown'), 
+                "phone_number": phone_num,
+                "contact_name": cont_name, 
                 "duration": int(record.get('duration', 0))
             }
 
-            # 🚀 SAFETY MATRIX B: ISO-8601 Timestamp Normalization Pipeline
+            # SAFETY MATRIX B: ISO-8601 Timestamp Normalization Pipeline
             raw_ts = record.get('timestamp')
             if raw_ts:
                 try:
@@ -91,7 +95,7 @@ def upload_calls():
         supabase.table('calls').insert(calls_payload).execute()
 
         # =================================================================================
-        # 🚀 STRICT 50-ROW ROLLING BUFFER AUTOMATION CLEANUP ENGINE (FIFO)
+        # STRICT 50-ROW ROLLING BUFFER AUTOMATION CLEANUP ENGINE (FIFO)
         # =================================================================================
         calls_query = supabase.table('calls').select('id').eq('device_id', dev_id).order('timestamp', desc=True).execute()
         
