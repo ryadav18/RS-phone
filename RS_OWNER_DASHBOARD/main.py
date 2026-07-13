@@ -17,7 +17,7 @@ if base_dir not in sys.path:
 
 from flask import Flask, send_from_directory, jsonify, session, redirect, send_file, request
 from flask_cors import CORS
-from flask_sock import Sock  # High-speed multi-threaded WebSocket wrapper for Flask
+from flask_sock import Sock  
 from config import Config
 
 static_path = os.path.join(base_dir, 'static')
@@ -27,9 +27,8 @@ app = Flask(__name__, static_folder=static_path, template_folder=template_path)
 app.secret_key = Config.SECRET_KEY
 
 CORS(app)
-sock = Sock(app)  # Initialize WebSocket subsystem context
+sock = Sock(app)  
 
-# Setup internal server logging matrix for monitoring runtime sanity
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
@@ -39,7 +38,7 @@ device_settings_cache = {}
 geofence_config_db = {}
 geofence_alerts_log = {}
 sos_alerts_cache = {}
-dashboard_sockets = {}  # Tracks active web canvas viewing sessions
+dashboard_sockets = {}  
 
 # ================= CORE BACKEND ENGINE IMPORTS =================
 from backend.auth import auth_bp
@@ -76,7 +75,7 @@ app.register_blueprint(contacts_bp)
 app.register_blueprint(settings_bp)
 # ===========================================================
 
-# ================= FRONTEND ROUTES UNIFICATION =============
+# ================= CORE FRONTEND VIEWS =====================
 @app.route('/')
 def index_root():
     if 'session_token' in session:
@@ -95,96 +94,118 @@ def device_view():
 def permissions_view():
     return send_from_directory(template_path, 'permissions.html')
 
-@app.route('/notifications')
-def notifications_view():
-    return send_from_directory(template_path, 'notifications.html')
+# ===========================================================
+# 📥 THE 4 MAIN GATEWAY HUBS ROUTING MATRIX (FIXED VIA VIDEO)
+# ===========================================================
+@app.route('/communication')
+@app.route('/communication.html')
+@app.route('/comm')  
+def communication_hub_view():
+    return send_from_directory(template_path, 'communication.html')
 
+@app.route('/remote-center')
+@app.route('/remote_center')
+@app.route('/remote_center.html')
+def remote_operations_center_view():
+    return send_from_directory(template_path, 'remote_center.html')
+
+@app.route('/safety')
+@app.route('/safety.html')
+def safety_and_gps_hub_view():
+    return send_from_directory(template_path, 'safety.html')
+
+@app.route('/policy')
+@app.route('/policy.html')
+def system_policy_manager_view():
+    return send_from_directory(template_path, 'policy.html')
+
+# ===========================================================
+# 🚀 SUB-FEATURES ROUTING INSIDE THE HUBS (FIXED VIA VIDEO)
+# ===========================================================
 @app.route('/calls')
+@app.route('/calls.html')
 def calls_view():
     return send_from_directory(template_path, 'calls.html')
 
 @app.route('/messages')
+@app.route('/messages.html')
 def messages_view():
     return send_from_directory(template_path, 'messages.html')
 
+@app.route('/locations')
+@app.route('/locations.html')  # Fixed: Added 's' matching video directory layout
+def locations_view():
+    return send_from_directory(template_path, 'locations.html')
+
+@app.route('/geofence-config')
+@app.route('/geofence_config')
+@app.route('/geofence_config.html')  # Fixed: Mapped underscore constraint safely
+def geofence_config_view():
+    return send_from_directory(template_path, 'geofence_config.html')
+
 @app.route('/files')
+@app.route('/files.html')
 def files_view():
     return send_from_directory(template_path, 'files.html')
 
 @app.route('/logs')
+@app.route('/logs.html')
 def logs_view():
     return send_from_directory(template_path, 'logs.html')
 
-@app.route('/locations')
-def locations_view():
-    return send_from_directory(template_path, 'location.html')
-
 @app.route('/gallery')
+@app.route('/gallery.html')
 def gallery_view():
     return send_from_directory(template_path, 'gallery.html')
 
 @app.route('/settings')
+@app.route('/settings.html')
 def settings_view():
     return send_from_directory(template_path, 'settings.html')
 
 @app.route('/contacts')
+@app.route('/contacts.html')
 def contacts_view():
     return send_from_directory(template_path, 'contacts.html')
 
+@app.route('/notifications')
+@app.route('/notifications.html')
+def notifications_view():
+    return send_from_directory(template_path, 'notifications.html')
+
+@app.route('/ops')
+@app.route('/ops.html')
+def live_operations_page():
+    return send_from_directory(template_path, 'ops.html')
+
 @app.route('/apps')
+@app.route('/apps.html')
 def apps_view():
     return send_from_directory(template_path, 'apps.html')
 
 @app.route('/usage')
+@app.route('/usage.html')
 def usage_view():
-    return send_from_directory(template_path, 'usages.html')
-
-@app.route('/ops')
-def live_operations_page():
-    return send_from_directory(template_path, 'ops.html') 
-
-@app.route('/geofence-config')
-def geofence_config_view():
-    return send_from_directory(template_path, 'geofence-config.html')
+    return send_from_directory(template_path, 'usage.html')
 
 @app.route('/screen-mirror')
+@app.route('/screen-mirror.html')
 def screen_mirror_view():
     return send_from_directory(template_path, 'screen-mirror.html')
 
 @app.route('/study-blocker')
+@app.route('/studyblocker.html')
 def study_blocker_view():
     return send_from_directory(template_path, 'studyblocker.html')
 
 @app.route('/sos')
+@app.route('/sos.html')
 def sos_view():
     return send_from_directory(template_path, 'sos.html')
-
-# ===========================================================
-# 🚀 INJECTED CORES: 4 MASTER HUB INTERFACE ROUTING ANCHORS
-# ===========================================================
-@app.route('/remote-center')
-def remote_operations_center_view():
-    """Serves the master remote controls and hardware operations deck."""
-    return send_from_directory(template_path, 'remote_center.html')
-
-@app.route('/safety')
-def safety_and_gps_hub_view():
-    """Serves the security, tracking logs, and dynamic fencing interface."""
-    return send_from_directory(template_path, 'safety.html')
-
-@app.route('/communication')
-def communication_hub_view():
-    """Serves the integrated text log overlays and telemetry aggregation dashboard."""
-    return send_from_directory(template_path, 'communication.html')
-
-@app.route('/policy')
-def system_policy_manager_view():
-    """Serves the rule deployment dashboard for target optimization parameters."""
-    return send_from_directory(template_path, 'policy.html')
 # ===========================================================
 
 # ===========================================================
-# 🚀 ADVANCED FEATURE 1: MULTI-THREADED WEBSOCKET CHANNELS
+# 🚀 WEBSOCKET PIPELINES
 # ===========================================================
 @sock.route('/ws/stream/<device_token>')
 def android_stream_endpoint(ws, device_token):
@@ -213,7 +234,7 @@ def web_dashboard_endpoint(ws, device_token):
             dashboard_sockets[device_token].discard(ws)
 
 # ===========================================================
-# 🚀 ADVANCED FEATURE 2, 3 & 4: POLICY & MONITOR REST API ROUTES
+# 🚀 POLICY & MONITOR REST API ROUTES
 # ===========================================================
 @app.route('/api/settings/toggle-study-hour', methods=['POST'])
 def toggle_study_hour_policy():
@@ -294,7 +315,7 @@ def dismiss_sos_state():
     return jsonify({"status": "success"})
 
 # ===========================================================
-# AUTOMATION POLLING GATEWAYS FOR HARDWARE SYNC
+# AUTOMATION POLLING GATEWAYS
 # ===========================================================
 @app.route('/api/sync/settings', methods=['GET'])
 def get_remote_settings():
@@ -340,7 +361,7 @@ def handle_global_runtime_exception(error):
     logger.error(f"CRITICAL GATEWAY EXCEPTION INTERCEPTED: {str(error)}")
     return jsonify({
         "status": "error", 
-        "message": "A critical backend validation anomaly was gracefully neutralized. Telemetry connection pipeline preserved."
+        "message": "A critical backend validation anomaly was neutralized."
     }), 500
 # ===========================================================
 
