@@ -3,47 +3,257 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Geofence Configuration Boundary</title>
+    <title>Geofence Configuration Boundary - RS OWNER</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- External Map Vectors Engine -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background: #121212; color: #fff; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; }
-        h3 { color: #2ecc71; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px; }
-        #map { width: 100%; height: 350px; background: #1e1e1e; border-radius: 4px; margin-bottom: 15px; border: 1px solid #333; }
-        .control-panel { background: #1e1e1e; padding: 15px; border-radius: 4px; border: 1px solid #333; }
-        .input-group { margin-bottom: 12px; }
-        label { display: block; font-size: 13px; color: #aaa; margin-bottom: 4px; text-transform: uppercase; }
-        input { width: 100%; padding: 10px; background: #2b2b2b; border: 1px solid #444; border-radius: 4px; color: white; outline: none; }
-        .btn-save { width: 100%; padding: 12px; border: none; background: #2ecc71; color: #000; font-weight: bold; border-radius: 4px; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
-        .btn-back { display: block; text-align: center; margin-top: 15px; color: #aaa; text-decoration: none; font-size: 14px; }
+        /* =========================================================
+           RS PHONE - ZERO-LAG FLAT ARCHITECTURE (INJECTED STYLE)
+           ========================================================= */
+        :root {
+            --bg-main: #121212;
+            --bg-card: #1e1e1e;
+            --text-main: #ffffff;
+            --text-muted: #aaaaaa;
+            --accent-cyan: #00f0ff;
+            --accent-green: #2ecc71;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 15px;
+            padding-bottom: 40px;
+            overflow-x: hidden;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-green); }
+
+        /* Sidebar & Layout */
+        .app-container { display: flex; min-height: 100vh; gap: 20px; }
+        .sidebar { width: 260px; background: var(--bg-card); padding: 20px; border-radius: 16px; border: 1px solid #2c2c2e; display: flex; flex-direction: column; gap: 25px; }
+        .sidebar-brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; letter-spacing: 1px; color: var(--text-main); }
+        .sidebar-menu { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+        .sidebar-menu li a { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: var(--text-muted); text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; transition: all 0.2s; }
+        .sidebar-menu li.active a, .sidebar-menu li a:hover { background: rgba(46, 204, 113, 0.1); color: var(--accent-green); }
+        
+        .main-content { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid #2c2c2e; }
+        .glass-panel { background: var(--bg-card); border: 1px solid #2c2c2e; border-radius: 16px; padding: 25px; }
+
+        /* =========================================================
+           GEOFENCE SPECIFIC STYLES
+           ========================================================= */
+        #map { 
+            width: 100%; 
+            height: 400px; 
+            background: #1a1a1a; 
+            border-radius: 12px; 
+            margin-bottom: 20px; 
+            border: 1px solid #333; 
+            z-index: 1; /* Keep map layer below sticky headers */
+        }
+        
+        .control-panel { 
+            background: #161616; 
+            padding: 20px; 
+            border-radius: 12px; 
+            border: 1px solid #2a2a2a; 
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .input-group { display: flex; flex-direction: column; gap: 6px; }
+        .input-group label { font-size: 12px; color: #aaa; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; }
+        .input-group input { 
+            width: 100%; padding: 12px; background: #222; border: 1px solid #333; 
+            border-radius: 6px; color: white; outline: none; font-family: monospace; font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        .input-group input:focus { border-color: var(--accent-green); }
+        
+        .btn-save { 
+            grid-column: 1 / -1; 
+            padding: 14px; 
+            border: none; 
+            background: var(--accent-green); 
+            color: #000; 
+            font-weight: 800; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            text-transform: uppercase; 
+            margin-top: 5px; 
+            letter-spacing: 1px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-save:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4); }
+        .btn-save:active { transform: translateY(0); }
     </style>
 </head>
 <body>
+    <div class="app-container">
+        <!-- Sidebar Unified Navigation -->
+        <div class="sidebar">
+            <div class="sidebar-brand">
+                <i data-lucide="shield" style="color: var(--accent-green);"></i>
+                <span>RS OWNER</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
+                <li><a href="/communication.html"><i data-lucide="message-circle"></i> Comm Hub</a></li>
+                <li><a href="/remote_center.html"><i data-lucide="cpu"></i> Remote Ops</a></li>
+                <li class="active"><a href="/safety.html"><i data-lucide="map-pin"></i> Safety & GPS</a></li>
+                <li><a href="/policy.html"><i data-lucide="lock"></i> Policy Manager</a></li>
+            </ul>
+        </div>
+        
+        <!-- Main Content Core Viewspace -->
+        <main class="main-content">
+            <header class="topbar">
+                <div>
+                    <h2 style="font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--accent-green);">Geofence Safe Zone Editor</h2>
+                    <p style="color: #888; font-size: 0.85rem; margin-top: 4px;">Define perimeter bounds to track target proximity violations.</p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <a href="/safety.html" style="background: rgba(255,255,255,0.05); color: white; padding: 10px 15px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: bold; border: 1px solid #333; display: flex; align-items: center; gap: 5px;">
+                        <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i> Back to Safety
+                    </a>
+                </div>
+            </header>
 
-<div class="container">
-    <h3>Geofence Safe Zone Editor</h3>
-    <div id="map"></div>
-    
-    <div class="control-panel">
-        <div class="input-group">
-            <label>Fence Center Latitude</label>
-            <input type="number" id="fence-lat" step="any" readonly>
-        </div>
-        <div class="input-group">
-            <label>Fence Center Longitude</label>
-            <input type="number" id="fence-lng" step="any" readonly>
-        </div>
-        <div class="input-group">
-            <label>Perimeter Radius (Meters)</label>
-            <input type="number" id="fence-radius" value="500">
-        </div>
-        <button class="btn-save" onclick="saveGeofenceDataToServer()">Lock Dynamic Perimeter</button>
+            <div class="glass-panel">
+                <!-- Map Container -->
+                <div id="map"></div>
+                
+                <!-- Controls Parameters Grid -->
+                <div class="control-panel">
+                    <div class="input-group">
+                        <label>Fence Center Latitude</label>
+                        <input type="number" id="fence-lat" step="any" readonly>
+                    </div>
+                    <div class="input-group">
+                        <label>Fence Center Longitude</label>
+                        <input type="number" id="fence-lng" step="any" readonly>
+                    </div>
+                    <div class="input-group">
+                        <label>Perimeter Radius (Meters)</label>
+                        <input type="number" id="fence-radius" value="500">
+                    </div>
+                    <button class="btn-save" onclick="saveGeofenceDataToServer()">
+                        <i data-lucide="crosshair" style="width: 18px; height: 18px;"></i> Lock Dynamic Perimeter
+                    </button>
+                </div>
+            </div>
+        </main>
     </div>
-    <a href="/dashboard" class="btn-back">< Return to Command Center</a>
-</div>
 
-<script src="/static/js/geofence_engine.js"></script>
+    <!-- EMBEDDED JAVASCRIPT LOGIC -->
+    <script>
+        // Init Icons
+        lucide.createIcons();
+
+        /**
+         * Smart Geofence Map Vector Interpolation Controller.
+         * Handles Leaflet map spatial clicks and posts coordinates safely to server cache.
+         */
+        let map;
+        let geofenceCircle = null;
+
+        // Fallback coordinate mappings (Default center initialization: Patna, India spatial region)
+        let currentLat = 25.611;
+        let currentLng = 85.141;
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Render OpenStreetMap vectors inside placeholder container shell
+            map = L.map('map').setView([currentLat, currentLng], 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+            document.getElementById('fence-lat').value = currentLat;
+            document.getElementById('fence-lng').value = currentLng;
+            
+            updateVisualCircleFence();
+
+            // Catch manual interactive click parameters directly on map viewport layer
+            map.on('click', function(e) {
+                currentLat = e.latlng.lat;
+                currentLng = e.latlng.lng;
+                document.getElementById('fence-lat').value = currentLat;
+                document.getElementById('fence-lng').value = currentLng;
+                updateVisualCircleFence();
+            });
+
+            // Handle real-time radius updates inside input parameters input elements
+            document.getElementById('fence-radius').addEventListener('input', updateVisualCircleFence);
+        });
+
+        function updateVisualCircleFence() {
+            const rad = parseFloat(document.getElementById('fence-radius').value) || 300;
+            
+            if (geofenceCircle) {
+                map.removeLayer(geofenceCircle);
+            }
+            
+            // Paints clean dynamic polygon overlay vectors
+            geofenceCircle = L.circle([currentLat, currentLng], {
+                color: '#2ecc71',
+                fillColor: '#2ecc71',
+                fillOpacity: 0.25,
+                radius: rad
+            }).addTo(map);
+        }
+
+        function saveGeofenceDataToServer() {
+            const radius = parseFloat(document.getElementById('fence-radius').value);
+            const token = localStorage.getItem('owner_token');
+            const activeDeviceId = localStorage.getItem("active_device_id") || "mock_device_token";
+
+            fetch(`/api/geofence/settings?token=${activeDeviceId}`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify({ 
+                    latitude: currentLat, 
+                    longitude: currentLng, 
+                    radius: radius 
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === "success") {
+                    alert("✅ Safe zone spatial bounds securely synchronized into rules engine database.");
+                } else {
+                    alert(`❌ Config update failed: ${data.message || 'Unknown server error'}`);
+                }
+            })
+            .catch(err => {
+                console.error("Geofence post pipeline failure: ", err);
+                alert("Network communication error with routing nodes.");
+            });
+        }
+    </script>
 </body>
 </html>
