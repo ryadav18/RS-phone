@@ -3,56 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Operations - RS Phone</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <title>Live Operations - RS OWNER</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        .ops-container { padding: 20px; }
-        .op-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid #333;
-            border-radius: 6px;
+        /* =========================================================
+           RS PHONE - ZERO-LAG FLAT ARCHITECTURE (INJECTED STYLE)
+           ========================================================= */
+        :root {
+            --bg-main: #121212;
+            --bg-card: #1e1e1e;
+            --text-main: #ffffff;
+            --text-muted: #aaaaaa;
+            --accent-cyan: #00f0ff;
+            --color-green: #27ae60;
+            --color-red: #c0392b;
+            --color-orange: #f39c12;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
             padding: 15px;
-            margin-bottom: 12px;
+            padding-bottom: 40px;
+            overflow-x: hidden;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-cyan); }
+
+        /* Sidebar & Layout */
+        .app-container { display: flex; min-height: 100vh; gap: 20px; }
+        .sidebar { width: 260px; background: var(--bg-card); padding: 20px; border-radius: 16px; border: 1px solid #2c2c2e; display: flex; flex-direction: column; gap: 25px; }
+        .sidebar-brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; letter-spacing: 1px; color: var(--text-main); }
+        .sidebar-menu { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+        .sidebar-menu li a { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: var(--text-muted); text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; transition: all 0.2s; }
+        .sidebar-menu li.active a, .sidebar-menu li a:hover { background: rgba(0, 240, 255, 0.08); color: var(--accent-cyan); }
+        
+        .main-content { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid #2c2c2e; }
+        .glass-panel { background: var(--bg-card); border: 1px solid #2c2c2e; border-radius: 16px; padding: 25px; min-height: 75vh; }
+
+        /* =========================================================
+           OPS TRACKING SPECIFIC STYLES
+           ========================================================= */
+        .ops-container { 
+            max-height: 68vh; 
+            overflow-y: auto; 
+            padding-right: 10px; 
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
+
+        .op-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid #2c2c2e;
+            border-radius: 10px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: transform 0.2s, background 0.2s, border-color 0.2s;
+        }
+        
+        .op-card:hover {
+            transform: translateX(4px);
+            background: rgba(255, 255, 255, 0.04);
+            border-color: #444;
+        }
+
         .op-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #222;
-            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 12px;
         }
-        .op-title { font-weight: bold; font-size: 1.1rem; color: #fff; text-transform: uppercase;}
-        .op-time { color: #888; font-size: 0.85rem; font-family: monospace;}
+
+        .op-title { font-weight: 800; font-size: 1.1rem; color: #fff; text-transform: uppercase; letter-spacing: 0.5px; }
+        .op-time { color: #888; font-size: 0.85rem; font-family: monospace; margin-top: 4px; }
         
-        /* Simple Badges */
-        .status { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
-        .status-pending { background: #f39c12; color: #000; }
-        .status-success { background: #27ae60; color: #fff; }
-        .status-failed { background: #c0392b; color: #fff; }
+        /* Badges */
+        .status { padding: 6px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+        .status-pending { background: rgba(243, 156, 18, 0.15); color: var(--color-orange); border: 1px solid rgba(243, 156, 18, 0.3); }
+        .status-success { background: rgba(39, 174, 96, 0.15); color: var(--color-green); border: 1px solid rgba(39, 174, 96, 0.3); }
+        .status-failed { background: rgba(192, 57, 43, 0.15); color: var(--color-red); border: 1px solid rgba(192, 57, 43, 0.3); }
         
         /* Result Viewers */
-        .result-box { background: #111; padding: 10px; border-radius: 4px; margin-top: 5px; }
-        .result-img { max-width: 100%; max-height: 400px; border: 1px solid #444; border-radius: 4px; display: block; }
-        audio { width: 100%; height: 40px; }
-        .error-text { color: #e74c3c; font-family: monospace; font-size: 0.9rem; }
+        .result-box { background: #111; padding: 15px; border-radius: 8px; margin-top: 5px; border: 1px solid #222; }
+        .result-img { max-width: 100%; max-height: 400px; border: 1px solid #333; border-radius: 6px; display: block; }
+        audio { width: 100%; height: 40px; outline: none; }
+        .error-text { color: var(--color-red); font-family: monospace; font-size: 0.9rem; font-weight: 600; }
+        .success-text { color: var(--color-green); font-family: monospace; font-size: 0.9rem; font-weight: 600; }
     </style>
 </head>
 <body>
     <div class="app-container">
         <!-- Sidebar Navigation -->
-        <div class="sidebar glass-panel">
+        <div class="sidebar">
             <div class="sidebar-brand">
                 <i data-lucide="shield" style="color: var(--accent-cyan);"></i>
                 <span>RS OWNER</span>
             </div>
             <ul class="sidebar-menu">
                 <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
-                <!-- 🚀 NAYA LINK ADD KIYA HAI -->
-                <li class="active"><a href="/ops"><i data-lucide="activity"></i> Live Operations</a></li>
+                <li><a href="/communication.html"><i data-lucide="message-circle"></i> Comm Hub</a></li>
+                <li class="active"><a href="/remote_center.html"><i data-lucide="cpu"></i> Remote Ops</a></li>
                 <li><a href="/calls"><i data-lucide="phone"></i> Call Logs</a></li>
                 <li><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
                 <li><a href="/logs"><i data-lucide="terminal"></i> System Logs</a></li>
@@ -61,19 +129,179 @@
         
         <main class="main-content">
             <header class="topbar">
-                <h2>Live Operations & Commands</h2>
-                <span id="auto-refresh-status" style="color: #27ae60; font-size: 0.8rem; font-family: monospace;">
-                    Auto-syncing every 5s...
-                </span>
+                <div>
+                    <h2 style="font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">Live Operations Engine</h2>
+                    <p style="color: #888; font-size: 0.85rem; margin-top: 4px;">Tracking execution status of dispatched payloads and remote commands.</p>
+                </div>
+                
+                <!-- 🚀 INJECTED FIX: Device Switcher & Status -->
+                <div class="device-switcher" style="display: flex; align-items: center; gap: 15px;">
+                    <span id="auto-refresh-status" style="color: var(--color-green); font-size: 0.8rem; font-family: monospace; font-weight: bold; background: rgba(39, 174, 96, 0.1); padding: 6px 10px; border-radius: 4px; border: 1px solid rgba(39, 174, 96, 0.3);">
+                        <i data-lucide="refresh-cw" style="width: 12px; height: 12px; display: inline-block; vertical-align: middle;" class="lucide-spin"></i> Auto-Sync: 5s
+                    </span>
+                    <select id="device-select" style="padding: 10px 14px; border-radius: 6px; background: #1a1a1c; color: white; border: 1px solid #333; outline: none; font-weight: 600; cursor: pointer;"></select>
+                </div>
             </header>
 
-            <div class="ops-container" id="ops-list">
-                <p style="color: #888;">Fetching operational data...</p>
+            <div class="glass-panel">
+                <div class="ops-container" id="ops-list">
+                    <div style="color: #555; text-align: center; padding: 40px; font-weight: bold; letter-spacing: 1px;">
+                        <i data-lucide="loader" style="width: 40px; height: 40px; margin-bottom: 15px; opacity: 0.5;" class="lucide-spin"></i><br>
+                        FETCHING OPERATIONAL DATA STREAM...
+                    </div>
+                </div>
             </div>
         </main>
     </div>
 
-    <script src="/static/js/ops_engine.js"></script>
-    <script>lucide.createIcons();</script>
+    <!-- EMBEDDED JAVASCRIPT LOGIC -->
+    <script>
+        class OpsEngine {
+            constructor() {
+                this.activeDeviceId = localStorage.getItem('active_device_id');
+                this.syncInterval = null;
+                this.init();
+            }
+
+            async init() {
+                await this.loadDevicesList();
+                if (!this.activeDeviceId) {
+                    document.getElementById('ops-list').innerHTML = `
+                        <div style="color: var(--color-red); text-align: center; padding: 40px; font-weight: bold;">
+                            <i data-lucide="alert-triangle" style="width: 40px; height: 40px; margin-bottom: 15px;"></i><br>
+                            TARGET DEVICE NOT SELECTED.
+                        </div>`;
+                    if (window.lucide) lucide.createIcons();
+                    return;
+                }
+                
+                this.fetchOperations();
+                
+                if (this.syncInterval) clearInterval(this.syncInterval);
+                this.syncInterval = setInterval(() => this.fetchOperations(), 5000);
+            }
+
+            // 🚀 INJECTED FIX: Load Devices List logic added
+            async loadDevicesList() {
+                const token = localStorage.getItem('owner_token');
+                try {
+                    const res = await fetch('/api/devices', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const result = await res.json();
+
+                    if (result.status === 'success') {
+                        const selectEl = document.getElementById('device-select');
+                        if (selectEl) {
+                            selectEl.innerHTML = ''; 
+                            if (result.data.length === 0) {
+                                selectEl.innerHTML = '<option value="">No Devices Found</option>';
+                                return;
+                            }
+                            result.data.forEach(dev => {
+                                const option = document.createElement('option');
+                                option.value = dev.id;
+                                option.textContent = dev.name;
+                                selectEl.appendChild(option);
+                            });
+
+                            if (!this.activeDeviceId && result.data.length > 0) {
+                                this.activeDeviceId = result.data[0].id;
+                                localStorage.setItem('active_device_id', this.activeDeviceId);
+                            }
+                            selectEl.value = this.activeDeviceId;
+
+                            selectEl.addEventListener('change', (e) => {
+                                this.activeDeviceId = e.target.value;
+                                localStorage.setItem('active_device_id', this.activeDeviceId);
+                                document.getElementById('ops-list').innerHTML = `
+                                    <div style="color: #555; text-align: center; padding: 40px; font-weight: bold; letter-spacing: 1px;">
+                                        SCANNING NEW TARGET NODE...
+                                    </div>`;
+                                this.fetchOperations(); 
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.error("Failed to load device list:", e);
+                }
+            }
+
+            async fetchOperations() {
+                const token = localStorage.getItem('owner_token');
+                if (!this.activeDeviceId) return;
+
+                try {
+                    const res = await fetch(`/api/ops?device_id=${this.activeDeviceId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const result = await res.json();
+                    
+                    if (result.status === 'success') {
+                        this.renderOperations(result.data);
+                    }
+                } catch (e) {
+                    console.error("Ops Fetch Error:", e);
+                }
+            }
+
+            renderOperations(ops) {
+                const container = document.getElementById('ops-list');
+                
+                if (ops.length === 0) {
+                    container.innerHTML = `
+                        <div style="color: #555; text-align: center; padding: 60px; font-weight: bold;">
+                            <i data-lucide="activity" style="width: 48px; height: 48px; opacity: 0.3; margin-bottom: 10px;"></i><br>
+                            NO OPERATIONS RECORDED FOR THIS TARGET.
+                        </div>`;
+                    if (window.lucide) lucide.createIcons();
+                    return;
+                }
+
+                container.innerHTML = ops.map(op => {
+                    let statusBadge = '';
+                    if (op.status === 'pending') statusBadge = '<span class="status status-pending">⏳ PENDING</span>';
+                    else if (op.status === 'success') statusBadge = '<span class="status status-success">✅ SUCCESS</span>';
+                    else statusBadge = '<span class="status status-failed">❌ FAILED</span>';
+
+                    const dateStr = new Date(op.created_at).toLocaleString('en-IN', {
+                        day: '2-digit', month: 'short', year: 'numeric', 
+                        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+                    });
+
+                    let resultHtml = '';
+                    if (op.status === 'success' && op.result_data) {
+                        if (op.command.includes('screenshot')) {
+                            resultHtml = `<div class="result-box"><a href="${op.result_data}" target="_blank"><img src="${op.result_data}" class="result-img" alt="Intercepted Output"></a></div>`;
+                        } else if (op.command.includes('audio')) {
+                            resultHtml = `<div class="result-box"><audio controls src="${op.result_data}"></audio></div>`;
+                        } else {
+                            resultHtml = `<div class="result-box"><span class="success-text">>> Payload executed successfully.</span></div>`;
+                        }
+                    } else if (op.status === 'failed' && op.result_data) {
+                        resultHtml = `<div class="result-box"><span class="error-text">>> Execution Halted: ${op.result_data}</span></div>`;
+                    }
+
+                    return `
+                    <div class="op-card">
+                        <div class="op-header">
+                            <div>
+                                <div class="op-title">${op.command.replace(/_/g, ' ')}</div>
+                                <div class="op-time">${dateStr}</div>
+                            </div>
+                            <div>${statusBadge}</div>
+                        </div>
+                        ${resultHtml}
+                    </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            new OpsEngine();
+        });
+    </script>
 </body>
 </html>
