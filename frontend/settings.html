@@ -4,114 +4,106 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Remote Optimization Setup - RS OWNER</title>
-    <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        .toggle-container {
-            display: flex; flex-direction: column; gap: 15px; margin-top: 20px;
+        /* =========================================================
+           RS PHONE - ZERO-LAG FLAT ARCHITECTURE (INJECTED STYLE)
+           ========================================================= */
+        :root {
+            --bg-main: #121212;
+            --bg-card: #1e1e1e;
+            --text-main: #ffffff;
+            --text-muted: #aaaaaa;
+            --accent-cyan: #00f0ff;
+            --color-blue: #3498db;
+            --color-green: #2ecc71;
+            --color-red: #e74c3c;
         }
-        .toggle-row {
-            display: flex; justify-content: space-between; align-items: center;
-            background: rgba(255, 255, 255, 0.05); padding: 18px 25px;
-            border-radius: 8px; border: 1px solid #222; transition: border 0.3s;
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
         }
-        .toggle-row:hover { border-color: #3498db; }
+
+        body { background-color: var(--bg-main); color: var(--text-main); min-height: 100vh; padding: 15px; }
+
+        /* Layout */
+        .app-container { display: flex; min-height: 100vh; gap: 20px; }
+        .sidebar { width: 260px; background: var(--bg-card); padding: 20px; border-radius: 16px; border: 1px solid #2c2c2e; display: flex; flex-direction: column; gap: 25px; }
+        .sidebar-brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; letter-spacing: 1px; }
+        .sidebar-menu { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+        .sidebar-menu li a { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: var(--text-muted); text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; transition: all 0.2s; }
+        .sidebar-menu li.active a, .sidebar-menu li a:hover { background: rgba(0, 240, 255, 0.08); color: var(--accent-cyan); }
+        
+        .main-content { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid #2c2c2e; }
+        .glass-panel { background: var(--bg-card); border: 1px solid #2c2c2e; border-radius: 16px; padding: 25px; max-width: 800px; margin: auto; width: 100%; }
+
+        /* Toggles */
+        .toggle-container { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.03); padding: 18px 25px; border-radius: 8px; border: 1px solid #2c2c2e; transition: border 0.3s; }
+        .toggle-row:hover { border-color: var(--color-blue); }
         .toggle-info { display: flex; flex-direction: column; gap: 4px; }
         .toggle-label { font-size: 1.05rem; font-weight: 600; color: #fff; }
         .toggle-desc { font-size: 0.8rem; color: #888; }
         
-        /* Tactical Pro Switch styling */
         .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider {
-            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #444; transition: .3s ease; border-radius: 34px;
-        }
-        .slider:before {
-            position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px;
-            background-color: white; transition: .3s ease; border-radius: 50%;
-        }
-        input:checked + .slider { background-color: #2ecc71; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #444; transition: .3s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--color-green); }
         input:checked + .slider:before { transform: translateX(24px); }
 
-        #save-btn {
-            width: 100%; padding: 16px; background: #3498db; color: white; border: none;
-            border-radius: 6px; font-size: 1.1rem; font-weight: bold; cursor: pointer;
-            margin-top: 25px; transition: all 0.2s ease; text-transform: uppercase; letter-spacing: 0.5px;
-        }
+        #save-btn { width: 100%; padding: 16px; background: var(--color-blue); color: white; border: none; border-radius: 6px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 25px; transition: all 0.2s; text-transform: uppercase; letter-spacing: 0.5px; }
         #save-btn:hover { background: #2980b9; }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <!-- 🚀 FIX: Sidebar unified alignment with Global Operations Template -->
-        <div class="sidebar glass-panel">
-            <div class="sidebar-brand">
-                <i data-lucide="shield" style="color: var(--accent-cyan);"></i>
-                <span>RS OWNER</span>
-            </div>
+        <div class="sidebar">
+            <div class="sidebar-brand"><i data-lucide="shield" style="color: var(--accent-cyan);"></i> <span>RS OWNER</span></div>
             <ul class="sidebar-menu">
                 <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
-                <li><a href="/permissions"><i data-lucide="shield-check"></i> Permissions</a></li>
-                <li><a href="/ops"><i data-lucide="activity"></i> Live Operations</a></li>
-                <li><a href="/calls"><i data-lucide="phone"></i> Call Logs</a></li>
-                <li><a href="/messages"><i data-lucide="message-square"></i> SMS Audit</a></li>
-                <li><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
+                <li><a href="/remote_center.html"><i data-lucide="cpu"></i> Remote Ops</a></li>
+                <li class="active"><a href="/settings"><i data-lucide="sliders"></i> Policy Config</a></li>
+                <li><a href="/logs"><i data-lucide="terminal"></i> System Logs</a></li>
             </ul>
         </div>
-
-        <!-- Main Content -->
+        
         <main class="main-content">
             <header class="topbar">
                 <div>
-                    <h2 style="font-weight: 700;">Remote Policy Controls</h2>
-                    <p style="color: #888; font-size: 0.85rem; margin-top: 4px;">Configure data syncing switches to save target device asset consumption metrics.</p>
+                    <h2 style="font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">Remote Policy Controls</h2>
+                    <p style="color: #888; font-size: 0.85rem; margin-top: 4px;">Configure data syncing switches to save target device asset consumption.</p>
                 </div>
-                <!-- 🚀 FIX: Embedded the core missing active device dropdown system -->
-                <div class="device-switcher">
-                    <select id="device-select" style="padding: 8px; border-radius: 4px; background: #1e1e1e; color: white; border: 1px solid #333;"></select>
-                </div>
+                <select id="device-select" style="padding: 10px 14px; border-radius: 6px; background: #1a1a1c; color: white; border: 1px solid #333; cursor: pointer;"></select>
             </header>
 
-            <div class="glass-panel" style="padding: 25px; max-width: 750px; margin: auto;">
-                <div id="settings-loading-layer" style="color: #888; text-align: center; padding: 40px;">
-                    Synchronizing device configuration arrays...
-                </div>
+            <div class="glass-panel">
+                <div id="settings-loading-layer" style="color: #888; text-align: center; padding: 40px;">Synchronizing device configuration arrays...</div>
                 
                 <div id="settings-form-layer" style="display: none;" class="toggle-container">
                     <div class="toggle-row">
-                        <div class="toggle-info">
-                            <span class="toggle-label">SMS Synchronizer</span>
-                            <span class="toggle-desc">Logs communications history tracking arrays.</span>
-                        </div>
+                        <div class="toggle-info"><span class="toggle-label">SMS Synchronizer</span><span class="toggle-desc">Logs communications history tracking arrays.</span></div>
                         <label class="switch"><input type="checkbox" id="toggle-sms"><span class="slider"></span></label>
                     </div>
                     <div class="toggle-row">
-                        <div class="toggle-info">
-                            <span class="toggle-label">Telephony Routing Logs</span>
-                            <span class="toggle-desc">Records outgoing, missed, and incoming connection metadata metrics.</span>
-                        </div>
+                        <div class="toggle-info"><span class="toggle-label">Telephony Routing Logs</span><span class="toggle-desc">Records outgoing, missed, and incoming connection metadata.</span></div>
                         <label class="switch"><input type="checkbox" id="toggle-calls"><span class="slider"></span></label>
                     </div>
                     <div class="toggle-row">
-                        <div class="toggle-info">
-                            <span class="toggle-label">Live Satellite GPS Tracking</span>
-                            <span class="toggle-desc">Maintains continuous positioning coordinate sync loops.</span>
-                        </div>
+                        <div class="toggle-info"><span class="toggle-label">Live Satellite GPS Tracking</span><span class="toggle-desc">Maintains continuous positioning coordinate sync loops.</span></div>
                         <label class="switch"><input type="checkbox" id="toggle-location"><span class="slider"></span></label>
                     </div>
                     <div class="toggle-row">
-                        <div class="toggle-info">
-                            <span class="toggle-label">Address Book Synchronization</span>
-                            <span class="toggle-desc">Indexes new system contacts logs.</span>
-                        </div>
+                        <div class="toggle-info"><span class="toggle-label">Address Book Synchronization</span><span class="toggle-desc">Indexes new system contacts logs.</span></div>
                         <label class="switch"><input type="checkbox" id="toggle-contacts"><span class="slider"></span></label>
                     </div>
                     <div class="toggle-row">
-                        <div class="toggle-info">
-                            <span class="toggle-label">Live Media (Photos) Sync</span>
-                            <span class="toggle-desc">Enables local image data mapping components updates.</span>
-                        </div>
+                        <div class="toggle-info"><span class="toggle-label">Live Media (Photos) Sync</span><span class="toggle-desc">Enables local image data mapping components updates.</span></div>
                         <label class="switch"><input type="checkbox" id="toggle-photos"><span class="slider"></span></label>
                     </div>
 
@@ -121,8 +113,103 @@
         </main>
     </div>
 
-    <script src="/static/js/auth.js"></script>
-    <script src="/static/js/settings_engine.js"></script>
-    <script>lucide.createIcons();</script>
+    <script>
+        lucide.createIcons();
+
+        class SettingsEngine {
+            constructor() {
+                this.activeDeviceId = localStorage.getItem('active_device_id');
+                this.init();
+            }
+
+            async init() {
+                await this.populateDevicesDropdown();
+                if (!this.activeDeviceId) return;
+                await this.loadCurrentDevicePolicy();
+            }
+
+            async populateDevicesDropdown() {
+                const token = localStorage.getItem('owner_token');
+                try {
+                    const res = await fetch('/api/devices', { headers: { 'Authorization': `Bearer ${token}` } });
+                    const result = await res.json();
+                    if (result.status === 'success') {
+                        const selectEl = document.getElementById('device-select');
+                        if (selectEl) {
+                            selectEl.innerHTML = '';
+                            result.data.forEach(dev => {
+                                let opt = document.createElement('option');
+                                opt.value = dev.id; opt.textContent = dev.name;
+                                selectEl.appendChild(opt);
+                            });
+                            selectEl.value = this.activeDeviceId;
+                            selectEl.addEventListener('change', (e) => {
+                                this.activeDeviceId = e.target.value;
+                                localStorage.setItem('active_device_id', this.activeDeviceId);
+                                this.loadCurrentDevicePolicy();
+                            });
+                        }
+                    }
+                } catch (e) { console.error(e); }
+            }
+
+            async loadCurrentDevicePolicy() {
+                const token = localStorage.getItem('owner_token');
+                document.getElementById('settings-loading-layer').style.display = 'block';
+                document.getElementById('settings-form-layer').style.display = 'none';
+
+                try {
+                    const res = await fetch(`/api/settings?device_id=${this.activeDeviceId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const result = await res.json();
+                    document.getElementById('settings-loading-layer').style.display = 'none';
+                    document.getElementById('settings-form-layer').style.display = 'flex';
+
+                    if (result.status === 'success' && result.data.length > 0) {
+                        const p = result.data[0];
+                        document.getElementById('toggle-sms').checked = p.sync_sms;
+                        document.getElementById('toggle-calls').checked = p.sync_calls;
+                        document.getElementById('toggle-location').checked = p.sync_location;
+                        document.getElementById('toggle-contacts').checked = p.sync_contacts;
+                        document.getElementById('toggle-photos').checked = p.sync_photos;
+                    } else {
+                        document.querySelectorAll('input[type="checkbox"]').forEach(box => box.checked = true);
+                    }
+                } catch (e) { console.error(e); }
+            }
+
+            async saveActiveDeviceSettings() {
+                const token = localStorage.getItem('owner_token');
+                const btn = document.getElementById('save-btn');
+                btn.innerText = "Deploying Policy...";
+                btn.disabled = true;
+
+                const payload = {
+                    device_id: this.activeDeviceId,
+                    sync_sms: document.getElementById('toggle-sms').checked,
+                    sync_calls: document.getElementById('toggle-calls').checked,
+                    sync_location: document.getElementById('toggle-location').checked,
+                    sync_contacts: document.getElementById('toggle-contacts').checked,
+                    sync_photos: document.getElementById('toggle-photos').checked
+                };
+
+                try {
+                    const res = await fetch('/api/settings', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify(payload)
+                    });
+                    if ((await res.json()).status === 'success') {
+                        btn.innerText = "Configuration Synced!";
+                        btn.style.background = "var(--color-green)";
+                        setTimeout(() => { btn.innerText = "Apply System Rules"; btn.style.background = "var(--color-blue)"; btn.disabled = false; }, 2000);
+                    }
+                } catch (e) { btn.innerText = "Deployment Fault"; btn.style.background = "var(--color-red)"; }
+            }
+        }
+
+        window.settingsEngine = new SettingsEngine();
+    </script>
 </body>
 </html>
