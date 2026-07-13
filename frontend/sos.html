@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOS Panic Monitor - RS OWNER</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* =========================================================
+           RS PHONE - ZERO-LAG FLAT ARCHITECTURE (INJECTED STYLE)
+           ========================================================= */
+        :root {
+            --bg-main: #121212;
+            --bg-card: #1e1e1e;
+            --accent-red: #ff5252;
+            --text-main: #ffffff;
+        }
+
+        body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Segoe UI', Roboto, sans-serif; padding: 20px; }
+
+        .container { max-width: 600px; margin: 0 auto; }
+        .monitor-box { background: var(--bg-card); padding: 30px; border-radius: 12px; border: 1px solid #333; text-align: center; }
+        
+        #metric-sos-badge { font-size: 2rem; font-weight: 800; margin-bottom: 10px; color: #fff; }
+        #sos-status-label { font-size: 0.9rem; color: #888; margin-bottom: 20px; }
+
+        .btn-dismiss { padding: 12px 25px; border: 1px solid #555; background: #222; color: #fff; border-radius: 6px; cursor: pointer; text-transform: uppercase; font-weight: bold; }
+        .btn-dismiss:hover { background: #333; }
+
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="monitor-box">
+        <div id="metric-sos-badge">STANDBY</div>
+        <div id="sos-status-label">Monitoring Panic Signals Matrix</div>
+        <select id="device-select" style="width: 100%; padding: 10px; background:#111; color:white; border:1px solid #333; border-radius:4px; margin-bottom: 20px;"></select>
+        <a href="/dashboard" style="color: #666; text-decoration: none; font-size: 0.9rem;">&larr; Return to Dashboard</a>
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+
+    // Device sync logic
+    async function initDeviceSelector() {
+        const token = localStorage.getItem('owner_token');
+        const res = await fetch('/api/devices', { headers: { 'Authorization': `Bearer ${token}` } });
+        const result = await res.json();
+        const selectEl = document.getElementById('device-select');
+        result.data.forEach(dev => {
+            let opt = document.createElement('option');
+            opt.value = dev.id;
+            opt.textContent = dev.name;
+            selectEl.appendChild(opt);
+        });
+        selectEl.value = localStorage.getItem('active_device_id');
+        selectEl.onchange = (e) => localStorage.setItem('active_device_id', e.target.value);
+    }
+    initDeviceSelector();
+
+    // 🚀 SOS TELEMETRY ENGINE
+    setInterval(checkEmergencySOSState, 4000); 
+
+    function checkEmergencySOSState() {
+        const activeDeviceToken = document.getElementById('device-select').value;
+        const sosBadge = document.getElementById('metric-sos-badge');
+        const sosLabel = document.getElementById('sos-status-label');
+
+        fetch(`/api/sos/monitor?token=${activeDeviceToken}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "success" && data.sos_data.sos_active) {
+                if (sosBadge) { sosBadge.innerText = "🚨 PANIC"; sosBadge.style.color = "#ff5252"; }
+                if (sosLabel) sosLabel.innerText = `CRITICAL STATE: Battery ${data.sos_data.battery}% | Alert: ${data.sos_data.status}`;
+                triggerSOSScreenOverlayModal(data.sos_data.battery, data.sos_data.status);
+            } else {
+                if (sosBadge) { sosBadge.innerText = "STANDBY"; sosBadge.style.color = "#fff"; }
+            }
+        });
+    }
+
+    function triggerSOSScreenOverlayModal(battery, details) {
+        if (document.getElementById('sos-alert-window-overlay')) return;
+        
+        const modal = document.createElement('div');
+        modal.id = 'sos-alert-window-overlay';
+        modal.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,0,0,0.95); z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center; color:white; padding:30px; text-align:center;";
+        
+        modal.innerHTML = `
+            <i data-lucide="alert-octagon" style="width:80px; height:80px; margin-bottom:20px; animation: pulse 1s infinite;"></i>
+            <h1 style="font-size:36px; font-weight:800; letter-spacing:1px; margin-bottom:15px;">EMERGENCY SOS SIGNAL RECEIVED</h1>
+            <p style="font-size:18px; max-width:600px; opacity:0.9; margin-bottom:30px;">
+                The child device triggered a manual panic loop. Battery: ${battery}% | Status: ${details}
+            </p>
+            <button class="btn-dismiss" onclick="dismissEmergencySOSStateAlert()">Dismiss Alert State</button>
+        `;
+        document.body.appendChild(modal);
+        lucide.createIcons();
+    }
+
+    function dismissEmergencySOSStateAlert() {
+        const activeDeviceToken = document.getElementById('device-select').value;
+        fetch(`/api/sos/clear?token=${activeDeviceToken}`, { method: 'POST' })
+        .then(() => {
+            document.getElementById('sos-alert-window-overlay')?.remove();
+            document.getElementById('sos-status-label').innerText = "Monitoring Panic Signals Matrix";
+        });
+    }
+</script>
+</body>
+</html>
