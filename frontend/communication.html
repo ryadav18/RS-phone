@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RS Phone - Communication Hub</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* ==================== CORE STYLES ==================== */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { background-color: #121212; color: #ffffff; padding: 15px; padding-bottom: 40px; }
+        
+        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #333; }
+        .back-btn { background: rgba(255,255,255,0.1); border: none; border-radius: 8px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; transition: background 0.2s; text-decoration: none; }
+        .back-btn:hover { background: rgba(255,255,255,0.2); }
+        .header h2 { font-size: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #e67e22; }
+        .header-desc { font-size: 12px; color: #888; margin-top: 4px; }
+
+        /* ==================== CARD GRID STYLES ==================== */
+        .card-container { display: flex; flex-direction: column; gap: 16px; }
+        
+        .flat-card {
+            background-color: #1e1e1e; padding: 22px 20px; border-radius: 6px;
+            position: relative; overflow: hidden; border-left: 4px solid #555;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); text-decoration: none; color: white;
+            display: flex; justify-content: space-between; align-items: center;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .flat-card:hover { transform: translateY(-2px); background-color: #242424; }
+        .flat-card:active { transform: translateY(0); }
+        
+        /* Thematic Color Borders */
+        .border-indigo { border-left-color: #3f51b5; }
+        .border-emerald { border-left-color: #27ae60; }
+        .border-orange { border-left-color: #e67e22; }
+        .border-purple { border-left-color: #9b59b6; }
+        
+        .card-left { display: flex; align-items: center; gap: 15px; z-index: 2; position: relative; }
+        .card-icon { color: #fff; opacity: 0.9; width: 28px; height: 28px; }
+        .card-title { font-size: 18px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .card-subtitle { font-size: 12px; opacity: 0.7; margin-top: 3px; display: block; }
+        
+        .card-right { z-index: 2; position: relative; }
+        .metric-value { font-size: 22px; font-weight: bold; opacity: 0.8; }
+        
+        .bg-icon { position: absolute; right: -20px; top: -10px; width: 140px; height: 140px; opacity: 0.05; z-index: 1; transform: rotate(-15deg); }
+    </style>
+</head>
+<body>
+
+    <!-- ================================================================================= -->
+    <!-- MASTER NAVIGATION HEADER                                                          -->
+    <!-- ================================================================================= -->
+    <div class="header">
+        <a href="/dashboard" class="back-btn"><i data-lucide="chevron-left"></i></a>
+        <div>
+            <h2>Communication Hub</h2>
+            <div class="header-desc" id="active-device-label">Validating Target Context...</div>
+        </div>
+    </div>
+
+    <!-- ================================================================================= -->
+    <!-- COMMUNICATION METRICS GRID                                                        -->
+    <!-- ================================================================================= -->
+    <div class="card-container">
+
+        <!-- 1. PHONE CALLS -->
+        <a href="/calls" class="flat-card border-indigo">
+            <i data-lucide="phone-call" class="bg-icon"></i>
+            <div class="card-left">
+                <i data-lucide="phone" class="card-icon"></i>
+                <div>
+                    <span class="card-title">Phone Calls</span>
+                    <span class="card-subtitle">Call Logs & Routing History</span>
+                </div>
+            </div>
+            <div class="card-right"><div class="metric-value">></div></div>
+        </a>
+
+        <!-- 2. SMS / RCS MESSAGES -->
+        <a href="/messages" class="flat-card border-emerald">
+            <i data-lucide="message-square" class="bg-icon"></i>
+            <div class="card-left">
+                <i data-lucide="mail" class="card-icon"></i>
+                <div>
+                    <span class="card-title">SMS Messages</span>
+                    <span class="card-subtitle">Inbox, Outbox & RCS Sync</span>
+                </div>
+            </div>
+            <div class="card-right"><div class="metric-value">></div></div>
+        </a>
+
+        <!-- 3. ADDRESS BOOK -->
+        <a href="/contacts" class="flat-card border-orange">
+            <i data-lucide="users" class="bg-icon"></i>
+            <div class="card-left">
+                <i data-lucide="book-open" class="card-icon"></i>
+                <div>
+                    <span class="card-title">Address Book</span>
+                    <span class="card-subtitle">Live Contacts Registry Sync</span>
+                </div>
+            </div>
+            <div class="card-right"><div class="metric-value">></div></div>
+        </a>
+
+        <!-- 4. LIVE NOTIFICATIONS -->
+        <a href="/notifications" class="flat-card border-purple">
+            <i data-lucide="bell" class="bg-icon"></i>
+            <div class="card-left">
+                <i data-lucide="bell-ring" class="card-icon"></i>
+                <div>
+                    <span class="card-title">Live Notifications</span>
+                    <span class="card-subtitle">App Alerts & Status Stream</span>
+                </div>
+            </div>
+            <div class="card-right"><div class="metric-value">></div></div>
+        </a>
+
+    </div>
+
+    <!-- ================================================================================= -->
+    <!-- JAVASCRIPT ENGINE (Isolated Context Initialization)                               -->
+    <!-- ================================================================================= -->
+    <script>
+        // Init Vector Icons
+        lucide.createIcons();
+
+        // Environment Matrix Validation
+        document.addEventListener('DOMContentLoaded', () => {
+            const deviceId = localStorage.getItem('active_device_id');
+            const labelEl = document.getElementById('active-device-label');
+            
+            if (!deviceId) {
+                labelEl.innerText = "ERROR: Target Disconnected / Unassigned";
+                labelEl.style.color = "#e74c3c";
+            } else {
+                labelEl.innerText = `Target Context Authorized [ID: ${deviceId.substring(0,6)}...]`;
+            }
+        });
+    </script>
+</body>
+</html>
