@@ -38,9 +38,9 @@ def upload_gallery_photo():
         if file.filename == '':
             return jsonify({"status": "error", "message": "No stream sequence selected"}), 400
 
-        # 🚀 THE FIX: Intercept contextual metadata parameters dispatched by Android Client
-        upload_type = request.form.get('type', 'gallery') # Default fallback to gallery
-        target_folder = request.form.get('folderPath', 'RollingMediaGallery')
+        # 🚀 FIXED: Dynamic form-data extraction aligned perfectly with Android app keys ('file_type' & 'folder_path')
+        upload_type = request.form.get('file_type') or request.form.get('type') or 'gallery'
+        target_folder = request.form.get('folder_path') or request.form.get('folderPath') or 'RollingMediaGallery'
 
         # Read binary block and encode to raw Base64 string matching Apps Script architecture
         file_bytes = file.read()
@@ -51,7 +51,7 @@ def upload_gallery_photo():
         if not drive_gateway_url:
             return jsonify({"status": "error", "message": "DRIVE_GATEWAY_URL missing in server configurations"}), 500
 
-        # 🚀 UPGRADED PAYLOAD: Forward explicit routing maps to the 5TB Drive Setup
+        # Forward explicit routing maps to the 5TB Drive Setup
         gateway_payload = {
             "image_base64": base64_image_string,
             "file_name": file.filename,
@@ -85,17 +85,14 @@ def upload_gallery_photo():
         # =================================================================================
         # 🚀 STRICT 50-IMAGE FIFO ROLLING BUFFER CLEANUP ENGINES
         # =================================================================================
-        # Query total photos logged for this device id sorted from latest to oldest
         photos_query = supabase.table('photos').select('id').eq('device_id', dev_id).order('id', desc=True).execute()
         
         if len(photos_query.data) > 50:
-            # Isolate all row entries exceeding the 50-limit threshold matrix boundary
             records_to_purge = photos_query.data[50:]
             ids_to_purge = [record['id'] for record in records_to_purge]
             
-            # Execute batch network deletion query directly inside Supabase SQL node
             supabase.table('photos').delete().in_('id', ids_to_purge).execute()
-            print(f"[FIFO Gallery Engine] Purged {len(ids_to_purge)} overflow references out of Supabase successfully. Drive remains untouched.")
+            print(f"[FIFO Gallery Engine] Purged {len(ids_to_purge)} overflow references successfully.")
 
         return jsonify({"status": "success", "message": "Media array frame processed, relayed and buffered successfully"}), 201
 
@@ -114,7 +111,6 @@ def get_dashboard_gallery():
         return jsonify({"status": "error", "message": "Unauthorized client dashboard operation"}), 403
 
     try:
-        # Strictly return maximum 50 dynamic data items directly optimized for your dashboard grid layout
         res = supabase.table('photos').select('*').eq('device_id', device_id).order('id', desc=True).limit(50).execute()
         return jsonify({"status": "success", "data": res.data}), 200
     except Exception as e:
