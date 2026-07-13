@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from backend.auth import token_required
 from backend.devices import verify_device_access
 from database import supabase
+from datetime import datetime, timezone # 🚀 INJECTED: Absolute time conversion engine
 
 calls_bp = Blueprint('calls', __name__)
 
@@ -46,14 +47,45 @@ def upload_calls():
 
         calls_payload = []
         for record in records:
-            calls_payload.append({
+            raw_type = str(record.get('type', '1')).strip().upper()
+            
+            # 🚀 SAFETY MATRIX A: Telephony Type Classifier Protocol
+            if raw_type in ['2', 'OUTGOING']:
+                final_type = 'OUTGOING'
+            elif raw_type in ['3', 'MISSED', 'REJECTED']:
+                final_type = 'MISSED'
+            else:
+                final_type = 'INCOMING'
+
+            row_data = {
                 "device_id": dev_id,
-                "type": str(record.get('type', 'Unknown')),
+                "type": final_type,
                 "phone_number": record.get('phone_number', 'Unknown'),
                 "contact_name": record.get('contact_name', 'Unknown'), 
-                "duration": int(record.get('duration', 0)),
-                "timestamp": record.get('timestamp')
-            })
+                "duration": int(record.get('duration', 0))
+            }
+
+            # 🚀 SAFETY MATRIX B: ISO-8601 Timestamp Normalization Pipeline
+            raw_ts = record.get('timestamp')
+            if raw_ts:
+                try:
+                    if isinstance(raw_ts, (int, float)) or (isinstance(raw_ts, str) and raw_ts.isdigit()):
+                        ts_float = float(raw_ts)
+                        # If the epoch arriving is in milliseconds, scale down to seconds instantly
+                        if ts_float > 10000000000:
+                            ts_float /= 1000.0
+                        
+                        dt = datetime.fromtimestamp(ts_float, tz=timezone.utc)
+                        row_data["timestamp"] = dt.isoformat()
+                    else:
+                        row_data["timestamp"] = str(raw_ts)
+                except Exception as ts_error:
+                    print(f"[Call Timestamp Exception Handled]: {ts_error}")
+                    row_data["timestamp"] = datetime.now(timezone.utc).isoformat()
+            else:
+                row_data["timestamp"] = datetime.now(timezone.utc).isoformat()
+
+            calls_payload.append(row_data)
 
         # Insert new data chunk into the database node
         supabase.table('calls').insert(calls_payload).execute()
@@ -61,15 +93,12 @@ def upload_calls():
         # =================================================================================
         # 🚀 STRICT 50-ROW ROLLING BUFFER AUTOMATION CLEANUP ENGINE (FIFO)
         # =================================================================================
-        # Fetch current record indexes for this device, sorted strictly from latest to oldest
         calls_query = supabase.table('calls').select('id').eq('device_id', dev_id).order('timestamp', desc=True).execute()
         
         if len(calls_query.data) > 50:
-            # Capture all trailing data items that cross over the 50 rows boundary threshold
             records_to_purge = calls_query.data[50:]
             ids_to_purge = [row['id'] for row in records_to_purge]
             
-            # Fire an atomic batch network delete command inside the SQL instance
             supabase.table('calls').delete().in_('id', ids_to_purge).execute()
             print(f"[FIFO Calls Engine] Purged {len(ids_to_purge)} overflow logs from Supabase.")
         # =================================================================================
