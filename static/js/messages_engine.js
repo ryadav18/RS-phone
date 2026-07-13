@@ -6,6 +6,7 @@ class MessagesEngine {
         this.allData = [];
         this.currentPage = 1;
         this.itemsPerPage = 10;
+        this.lastDataHash = "";  // 🚀 THE FIX: Footprint identifier to kill the 12-second flashing glitch
 
         this.init();
     }
@@ -73,6 +74,7 @@ class MessagesEngine {
                         this.activeDeviceId = e.target.value;
                         localStorage.setItem('active_device_id', this.activeDeviceId);
                         this.currentPage = 1; // Reset to page 1 on hardware target switch
+                        this.lastDataHash = ""; // Clear hash to force instant device layout load
                         this.fetchMessages(); 
                     });
                 }
@@ -90,8 +92,16 @@ class MessagesEngine {
             });
             const result = await res.json();
             if (result.status === 'success') {
-                this.allData = result.data || [];
-                this.renderCurrentPage();
+                const incomingData = result.data || [];
+                
+                // Generate data fingerprint hash string to verify if real changes occurred
+                const currentDataHash = incomingData.map(m => m.id + "_" + (m.message_type || m.type || '')).join("|");
+                
+                if (this.lastDataHash !== currentDataHash) {
+                    this.lastDataHash = currentDataHash;
+                    this.allData = incomingData;
+                    this.renderCurrentPage();
+                }
             }
         } catch (e) { console.error("Messages Transmission Engine Error:", e); }
     }
@@ -112,24 +122,19 @@ class MessagesEngine {
         const slicedItems = this.allData.slice(startIndex, endIndex);
 
         container.innerHTML = slicedItems.map(m => {
-            // 🚀 SMART ARCHITECTURE: Multi-Protocol Classifier Node Mapping
+            // 🚀 THE FIX: Flatten Multi-Protocol Types to uniform display layouts
             let directionText = 'RECEIVED';
             let directionClass = 'direction-received';
-            let customInlineBadgeStyle = '';
 
-            const rawType = String(m.message_type || m.type || '1').toUpperCase();
+            const rawType = String(m.message_type || m.type || '1').toUpperCase().trim();
 
-            if (rawType === '2' || rawType === 'SENT') {
+            // Intercept both normal integer states and any residual string states to keep UI unified
+            if (rawType === '2' || rawType === 'SENT' || rawType === 'RCS_SENT') {
                 directionText = 'SENT';
                 directionClass = 'direction-sent';
-            } else if (rawType === 'RCS_RECEIVED') {
-                directionText = 'RCS RECEIVED';
-                directionClass = ''; // Bypass basic SMS css layout bounds
-                customInlineBadgeStyle = 'background: rgba(155, 89, 182, 0.2); color: #a855f7; border: 1px solid rgba(155, 89, 182, 0.4);';
-            } else if (rawType === 'RCS_SENT') {
-                directionText = 'RCS SENT';
-                directionClass = ''; // Bypass basic SMS css layout bounds
-                customInlineBadgeStyle = 'background: rgba(192, 132, 252, 0.15); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.3);';
+            } else {
+                directionText = 'RECEIVED';
+                directionClass = 'direction-received';
             }
 
             const isSaved = m.contact_name && m.contact_name !== 'Unknown' && m.contact_name.trim() !== '';
@@ -139,7 +144,7 @@ class MessagesEngine {
             
             if (m.media_url || (m.message && (m.message.includes('.jpg') || m.message.includes('.png') || m.message.includes('image:')))) {
                 messageBodyHtml += `
-                <div class="sms-media-attachment">
+                <div class="sms-media-attachment" style="display: flex; align-items: center; gap: 6px; margin-top: 8px; color: #00f0ff; font-size: 12px;">
                     <i data-lucide="image" style="width: 14px; height: 14px;"></i>
                     <span>Multimedia Attachment: [IMAGE FILE LOADED]</span>
                 </div>
@@ -151,16 +156,16 @@ class MessagesEngine {
             const timeStr = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
 
             return `
-            <div class="sms-card">
-                <div class="sms-meta-header">
-                    <div class="sms-sender-info">
-                        <span class="sms-sender-name">${senderIdentity}</span>
-                        <span class="sms-sender-phone">${m.sender || m.address || 'Hidden Origin'}</span>
+            <div class="sms-card" style="margin-bottom: 15px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 15px; border-radius: 12px;">
+                <div class="sms-meta-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                    <div class="sms-sender-info" style="display: flex; flex-direction: column;">
+                        <span class="sms-sender-name" style="font-weight: 600; color: #fff; font-size: 14px;">${senderIdentity}</span>
+                        <span class="sms-sender-phone" style="font-size: 12px; color: #666; margin-top: 2px;">${m.sender || m.address || 'Hidden Origin'}</span>
                     </div>
-                    <span class="sms-direction-badge ${directionClass}" style="${customInlineBadgeStyle}">${directionText}</span>
+                    <span class="sms-direction-badge ${directionClass}">${directionText}</span>
                 </div>
                 ${messageBodyHtml}
-                <div class="sms-timestamp-footer">
+                <div class="sms-timestamp-footer" style="font-size: 11px; color: #444; margin-top: 10px; text-align: right;">
                     ${dateStr} • ${timeStr}
                 </div>
             </div>
@@ -179,7 +184,6 @@ class MessagesEngine {
         const nextBtn = document.getElementById('sms-next-btn');
         const indicator = document.getElementById('sms-page-num');
 
-        // Safety fallback: if user is on a page out of bounds due to log wipes, auto clamp to max page
         if (this.currentPage > totalPages) {
             this.currentPage = totalPages;
         }
