@@ -237,7 +237,13 @@
                 this.init();
             }
 
+            // 🚀 DYNAMIC ENGINE TOKEN PARSER
+            getValidToken() {
+                return localStorage.getItem('owner_token') || localStorage.getItem('session_token') || "";
+            }
+
             async init() {
+                window.callsEngineInstance = this;
                 this.setupPaginationListeners();
                 await this.loadDevicesList();
                 if (!this.activeDeviceId) return;
@@ -271,7 +277,7 @@
             }
 
             async loadDevicesList() {
-                const token = localStorage.getItem('owner_token');
+                const token = this.getValidToken();
                 try {
                     const res = await fetch('/api/devices', { headers: { 'Authorization': `Bearer ${token}` } });
                     const result = await res.json();
@@ -309,7 +315,7 @@
             }
 
             async fetchCalls() {
-                const token = localStorage.getItem('owner_token');
+                const token = this.getValidToken();
                 if (!this.activeDeviceId) return;
                 try {
                     const res = await fetch(`/api/calls?device_id=${this.activeDeviceId}&limit=50`, {
@@ -413,7 +419,8 @@
 
         window.wipeCallsHistory = async function() {
             if(!confirm("CRITICAL PROTOCOL: Permanently wipe all telephony logs?")) return;
-            const token = localStorage.getItem('owner_token');
+            const engine = window.callsEngineInstance;
+            const token = engine ? engine.getValidToken() : "";
             const deviceId = localStorage.getItem('active_device_id');
             try {
                 const res = await fetch('/api/calls/clear', {
