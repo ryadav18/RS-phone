@@ -47,22 +47,27 @@ def upload_messages():
         for m in messages_array:
             raw_type = str(m.get('type', '1')).strip().upper()
             
-            # 🚀 SAFETY MATRIX A: Strict directional standardization protocol
+            # SAFETY MATRIX A: Strict directional standardization protocol
             if raw_type in ['2', 'SENT', 'RCS_SENT']:
                 final_message_type = 2  # Integer 2 = Outbound / Sent
             else:
                 final_message_type = 1  # Integer 1 = Inbound / Received
 
+            # 🚀 FIXED: Dynamic multi-mapping to grab fields regardless of naming variants (snake_case/camelCase)
+            sender_val = m.get('sender') or 'Unknown'
+            contact_name_val = m.get('contact_name') or m.get('contactName') or 'Unknown'
+            msg_content = m.get('message') or ''
+
             row_data = {
                 "device_id": dev_id,
-                "sender": m.get('sender', 'Unknown'),
-                "contact_name": m.get('contact_name', 'Unknown'),
-                "message": m.get('message', ''), 
+                "sender": sender_val,
+                "contact_name": contact_name_val,
+                "message": msg_content, 
                 "message_type": final_message_type, 
                 "media_url": m.get('media_url', None)
             }
             
-            # 🚀 SAFETY MATRIX B: Robust ISO-8601 Timestamp Normalization Pipeline
+            # SAFETY MATRIX B: Robust ISO-8601 Timestamp Normalization Pipeline
             raw_ts = m.get('timestamp')
             if raw_ts:
                 try:
@@ -88,7 +93,7 @@ def upload_messages():
         supabase.table('messages').insert(payload).execute()
 
         # =================================================================================
-        # 🚀 STRICT 50-ROW SMS ROLLING BUFFER AUTOMATION CLEANUP ENGINE (FIFO)
+        # STRICT 50-ROW SMS ROLLING BUFFER AUTOMATION CLEANUP ENGINE (FIFO)
         # =================================================================================
         messages_query = supabase.table('messages').select('id').eq('device_id', dev_id).order('timestamp', desc=True).execute()
         
