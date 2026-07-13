@@ -2,22 +2,24 @@ class MessagesEngine {
     constructor() {
         this.activeDeviceId = localStorage.getItem('active_device_id');
         
-        // 🚀 CONVERSATION THREAD STATES: Memory allocation buffers for grouped contexts
+        // 🚀 CLIENT-SIDE STATE ROUTING REGISTERS
         this.allData = [];
         this.currentPage = 1;
-        this.itemsPerPage = 5; // Reduced to 5 threads per page because each thread holds multiple chats safely
+        this.itemsPerPage = 15; // Strictly locked up to 15 primary recent threads per view
+        this.selectedThreadKey = null; // Memory allocation pointer for active target chat
         this.lastDataHash = "";  
 
         this.init();
     }
 
     async init() {
+        window.messagesEngineInstance = this; // Expose instance for secure global scope event routing
         this.setupPaginationListeners();
         await this.loadDevicesList();
         if (!this.activeDeviceId) return; 
         
         this.fetchMessages();
-        // 12 seconds high-speed telemetry polling loop
+        // 12 seconds high-speed telemetry synchronization polling loop
         setInterval(() => this.fetchMessages(), 12000); 
     }
 
@@ -36,9 +38,8 @@ class MessagesEngine {
 
         if (nextBtn) {
             nextBtn.addEventListener('click', () => {
-                // Group calculation for page metrics safety clamping
-                const groupedThreads = this.groupDataIntoThreads();
-                const totalPages = Math.ceil(groupedThreads.length / this.itemsPerPage) || 1;
+                const sortedThreads = this.groupDataIntoThreads();
+                const totalPages = Math.ceil(sortedThreads.length / this.itemsPerPage) || 1;
                 if (this.currentPage < totalPages) {
                     this.currentPage++;
                     this.renderCurrentPage();
@@ -76,6 +77,7 @@ class MessagesEngine {
                         localStorage.setItem('active_device_id', this.activeDeviceId);
                         this.currentPage = 1; 
                         this.lastDataHash = ""; 
+                        this.selectedThreadKey = null; // Clear active workspace channel on device switch
                         this.fetchMessages(); 
                     });
                 }
@@ -104,19 +106,26 @@ class MessagesEngine {
         } catch (e) { console.error("Messages Transmission Engine Error:", e); }
     }
 
-    // 🧠 CORE THREADING ENGINES: Processes the flat array records into structural identities
+    // 🧠 SYSTEM AGGREGATION ALGORITHM: Compresses flat matrix records into sorted unique contact channels
     groupDataIntoThreads() {
         const threadsMap = {};
 
         this.allData.forEach(m => {
-            // Isolate true contact thread name or fallback to number safely
-            let threadIdentity = (m.contact_name && m.contact_name !== 'Unknown' && m.contact_name.trim() !== '') 
-                ? m.contact_name 
-                : (m.sender && m.sender !== 'Me' ? m.sender : 'Unknown Identity');
+            // Absolute Sanitizer: Extract valid identification boundaries
+            let nameTag = m.contact_name ? String(m.contact_name).trim() : "";
+            let phoneTag = m.sender ? String(m.sender).trim() : "";
 
-            // If number details map exists, cross-link it to prevent empty phone tags
-            let associatedPhone = (m.sender && m.sender !== 'Me') ? m.sender : '';
-            if (threadIdentity === associatedPhone) associatedPhone = 'Direct Protocol';
+            if (nameTag === "Me" && phoneTag !== "") {
+                // If outbound frame lists contact name as "Me", fallback mapping keys to actual destination phone index
+                nameTag = "Unknown Identity";
+            }
+
+            let threadIdentity = (nameTag && nameTag !== "Unknown" && nameTag !== "Unknown Number") ? nameTag : phoneTag;
+            if (!threadIdentity || threadIdentity.toLowerCase() === "me") {
+                threadIdentity = "Unknown Target Platform";
+            }
+
+            let associatedPhone = (phoneTag && phoneTag !== "Me") ? phoneTag : "RCS Network Protocol";
 
             if (!threadsMap[threadIdentity]) {
                 threadsMap[threadIdentity] = {
@@ -128,12 +137,18 @@ class MessagesEngine {
             threadsMap[threadIdentity].messagesList.push(m);
         });
 
-        // Convert grouped keys map to linear arrays sorted dynamically by latest chat time execution
+        // RECENCY ENGINE SORT: Shift contacts dynamically to the absolute top slot if new payloads arrive
         return Object.values(threadsMap).sort((a, b) => {
             const latestA = Math.max(...a.messagesList.map(m => new Date(m.timestamp).getTime()));
             const latestB = Math.max(...b.messagesList.map(m => new Date(m.timestamp).getTime()));
             return latestB - latestA;
         });
+    }
+
+    // Dynamic workspace thread selection handler
+    switchActiveChatThread(encodedThreadName) {
+        this.selectedThreadKey = decodeURIComponent(encodedThreadName);
+        this.renderCurrentPage();
     }
 
     renderCurrentPage() {
@@ -143,84 +158,124 @@ class MessagesEngine {
         const sortedThreads = this.groupDataIntoThreads();
 
         if (sortedThreads.length === 0) {
-            container.innerHTML = '<div style="color: #888; text-align: center; padding: 40px;">No communication logs captured. Awaiting mobile transmitter sync...</div>';
+            container.innerHTML = '<div class="canvas-empty-state"><i data-lucide="message-square-off"></i><p>No communication threads captured. Awaiting transmitter node synchronization stream...</p></div>';
             this.updatePaginationUI(1);
+            if (window.lucide) window.lucide.createIcons();
             return;
         }
 
-        // Apply pagination parameters strictly over the Grouped Thread nodes
+        // Auto-Lock Routing Focus: Default viewport load constraints to the topmost recent item if state register is null
+        if (!this.selectedThreadKey || !sortedThreads.some(t => t.name === this.selectedThreadKey)) {
+            this.selectedThreadKey = sortedThreads[0].name;
+        }
+
+        // Paginate sidebar contacts slice parameters safely
         const startIndex = (this.currentPage - 1) * this.itemsPerPage;
         const endIndex = startIndex + this.itemsPerPage;
         const slicedThreads = sortedThreads.slice(startIndex, endIndex);
 
-        container.innerHTML = slicedThreads.map(thread => {
+        // 📥 GENERATE SIDEBAR THREAD LIST ROWS
+        const sidebarRowsHtml = slicedThreads.map(thread => {
+            const isActive = thread.name === this.selectedThreadKey ? 'active-thread' : '';
             
-            // Sort nested logs chronologically (Oldest messages top, newest bottom inside thread viewport)
-            const chronologicalMessages = thread.messagesList.sort((a, b) => 
+            // Extract latest log body context text snippet to display as subtitle preview
+            const sortedChats = thread.messagesList.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+            const latestMessageText = sortedChats[0]?.message || '[Multimedia Content]';
+            
+            const lastDateObj = new Date(sortedChats[0]?.timestamp);
+            const timeString = lastDateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+            const safeEncName = encodeURIComponent(thread.name);
+
+            return `
+            <div class="thread-profile-card ${isActive}" onclick="window.messagesEngineInstance.switchActiveChatThread('${safeEncName}')">
+                <div class="thread-meta-top">
+                    <span class="thread-identity-title">${thread.name}</span>
+                    <span class="thread-time-badge">${timeString}</span>
+                </div>
+                <span class="thread-phone-subtitle">${thread.phone}</span>
+                <span class="thread-excerpt-preview">${latestMessageText}</span>
+            </div>
+            `;
+        }).join('');
+
+        // 📤 GENERATE ACTIVE CHAT CANVAS VIEWPORT SUB-STREAM
+        const activeThreadData = sortedThreads.find(t => t.name === this.selectedThreadKey);
+        let chatCanvasHtml = '';
+
+        if (activeThreadData) {
+            // Sort nested bubbles chronologically: Oldest chats top -> Newest text lines bottom
+            const activeChronologicalChats = activeThreadData.messagesList.sort((a, b) => 
                 new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
             );
 
-            // 🚀 BUBBLE INJECTION CORE: Transforms raw metrics to clear premium Left/Right chat flows
-            const bubblesHtml = chronologicalMessages.map(m => {
+            const bubbleBubblesHtml = activeChronologicalChats.map(m => {
                 const rawType = String(m.message_type || m.type || '1').toUpperCase().trim();
+                const isOutbound = (rawType === '2' || rawType === 'SENT' || rawType === 'RCS_SENT' || m.sender === 'Me');
                 
-                // Absolute Classifier Protocol: Zero confusion rule between incoming and outgoing streams
-                const isSent = (rawType === '2' || rawType === 'SENT' || rawType === 'RCS_SENT' || m.sender === 'Me');
-                
-                // Dynamic alignment vectors mapping configurations
-                const wrapperStyle = isSent 
-                    ? 'display: flex; justify-content: flex-end; width: 100%; margin-bottom: 10px; padding-left: 25%;' 
-                    : 'display: flex; justify-content: flex-start; width: 100%; margin-bottom: 10px; padding-right: 25%;';
-
-                const bubbleStyle = isSent
-                    ? 'background: rgba(0, 240, 255, 0.12); color: #e0faff; border: 1px solid rgba(0, 240, 255, 0.25); border-radius: 14px 14px 2px 14px; padding: 10px 14px;'
-                    : 'background: rgba(255, 255, 255, 0.04); color: #f0f0f0; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px 14px 14px 2px; padding: 10px 14px;';
+                const rowAlignmentClass = isOutbound ? 'row-outgoing' : 'row-incoming';
+                const bubbleColorClass = isOutbound ? 'bubble-outgoing' : 'bubble-incoming';
 
                 const dateObj = new Date(m.timestamp);
-                const timeStr = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+                const chatTimeStr = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
 
-                let mediaAttachmentHtml = '';
+                let mediaElementHtml = '';
                 if (m.media_url || (m.message && (m.message.includes('.jpg') || m.message.includes('.png')))) {
-                    mediaAttachmentHtml = `
-                    <div style="display: flex; align-items: center; gap: 4px; margin-top: 6px; color: #00f0ff; font-size: 11px; font-weight: 500;">
+                    mediaElementHtml = `
+                    <div class="bubble-media-indicator">
                         <i data-lucide="image" style="width: 12px; height: 12px;"></i>
-                        <span>Multimedia Uploaded</span>
+                        <span>Attachment Transmitted</span>
                     </div>`;
                 }
 
                 return `
-                <div style="${wrapperStyle}">
-                    <div style="${bubbleStyle} min-width: 80px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
-                        <p style="margin: 0; font-size: 13px; line-height: 1.5; white-space: pre-wrap; text-align: left;">${m.message || '[Empty Data String]'}</p>
-                        ${mediaAttachmentHtml}
-                        <div style="font-size: 9px; color: rgba(255,255,255,0.3); text-align: right; margin-top: 4px; font-weight: 500;">
-                            ${timeStr}
-                        </div>
+                <div class="msg-bubble-row ${rowAlignmentClass}">
+                    <div class="msg-speech-bubble ${bubbleColorClass}">
+                        <p class="bubble-text-content">${m.message || '[Blank Log Context]'}</p>
+                        ${mediaElementHtml}
+                        <div class="bubble-time-footer">${chatTimeStr}</div>
                     </div>
                 </div>
                 `;
             }).join('');
 
-            return `
-            <div class="sms-card" style="margin-bottom: 25px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
-                <div class="sms-meta-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px; margin-bottom: 15px;">
-                    <div class="sms-sender-info" style="display: flex; flex-direction: column;">
-                        <span class="sms-sender-name" style="font-weight: 700; color: #fff; font-size: 15px; letter-spacing: 0.3px;">${thread.name}</span>
-                        <span class="sms-sender-phone" style="font-size: 11px; color: #666; margin-top: 2px; font-family: monospace;">${thread.phone}</span>
+            chatCanvasHtml = `
+            <div class="chat-window-canvas">
+                <div class="active-canvas-header">
+                    <div class="active-user-meta">
+                        <span class="active-user-name">${activeThreadData.name}</span>
+                        <span class="active-user-phone">${activeThreadData.phone}</span>
                     </div>
-                    <span style="font-size: 11px; background: rgba(0, 240, 255, 0.1); color: #00f0ff; padding: 4px 10px; border-radius: 20px; font-weight: 600; border: 1px solid rgba(0, 240, 255, 0.15);">
-                        ${thread.messagesList.length} LOGS
-                    </span>
+                    <span class="active-logs-badge">${activeThreadData.messagesList.length} Capture Nodes</span>
                 </div>
-                
-                <!-- Chat Viewport Container Frame -->
-                <div class="chat-viewport-stream" style="display: flex; flex-direction: column; max-height: 380px; overflow-y: auto; padding-right: 6px;">
-                    ${bubblesHtml}
+                <div class="chat-messages-stream" id="chat-messages-stream-container">
+                    ${bubbleBubblesHtml}
                 </div>
             </div>
             `;
-        }).join('');
-        
+        } else {
+            chatCanvasHtml = '<div class="canvas-empty-state"><i data-lucide="messages-square"></i><p>Select a thread terminal from the list to view active operations logs</p></div>';
+        }
+
+        // Assemble the full workspace UI blocks cleanly into the primary container wrapper shell
+        container.innerHTML = `
+        <div class="chat-split-workspace">
+            <div class="threads-sidebar-panel">
+                <div class="sidebar-threads-header">Transmission Threads</div>
+                <div class="threads-scroll-viewport">
+                    ${sidebarRowsHtml}
+                </div>
+            </div>
+            ${chatCanvasHtml}
+        </div>
+        `;
+
+        // Micro UX Scroll-Fix: Force right side message stream container to automatically baseline scroll to the lowest bottom element
+        const streamViewport = document.getElementById('chat-messages-stream-container');
+        if (streamViewport) {
+            streamViewport.scrollTop = streamViewport.scrollHeight;
+        }
+
         const totalPages = Math.ceil(sortedThreads.length / this.itemsPerPage) || 1;
         this.updatePaginationUI(totalPages);
 
@@ -249,7 +304,7 @@ class MessagesEngine {
 }
 
 window.wipeSMSHistory = async function() {
-    if(!confirm("WARNING: Force flush all active text logs?")) return;
+    if(!confirm("WARNING: Force flush all active text logs from database mapping?")) return;
     const token = localStorage.getItem('owner_token');
     const activeId = localStorage.getItem('active_device_id');
     try {
