@@ -20,7 +20,7 @@ def get_calls():
         limit = 50
     
     try:
-        # Dashboard yahan se lamba wala UUID dhoondhega
+        # Dashboard yahan se data nikalega
         res = supabase.table('calls').select('*').eq('device_id', str(device_id)).order('timestamp', desc=True).limit(limit).execute()
         return jsonify({"status": "success", "data": res.data if res.data else []}), 200
     except Exception as e:
@@ -35,19 +35,19 @@ def upload_calls():
         return jsonify({"status": "error", "message": "Missing device token"}), 401
 
     try:
-        # 🚀 YAHI WO LINE HAI JO MISS HUI THI: Yahan ab strictly '.select('id')' hoga
+        # 🚀 THE FIX: .select('id') taaki Dashboard ka lamba UUID match ho sake
         dev_check = supabase.table('devices').select('id').eq('device_token', token).execute()
         if not dev_check.data:
             return jsonify({"status": "error", "message": "Invalid credentials"}), 403
 
-        # 🚀 YAHAN BHI strictly '.get('id')' hoga
+        # 🚀 THE FIX: .get('id') use karna hai yahan
         target_uuid = dev_check.data[0].get('id') 
         
         data = request.json or {}
         records = data.get('calls', [])
 
         if not records:
-            return jsonify({"status": "success", "message": "Sync stream completed"}), 200
+            return jsonify({"status": "success", "message": "No new calls found"}), 200
 
         calls_payload = []
         for record in records:
@@ -55,17 +55,18 @@ def upload_calls():
             final_type = 'OUTGOING' if raw_type in ['2', 'OUTGOING'] else ('MISSED' if raw_type in ['3', 'MISSED', 'REJECTED'] else 'INCOMING')
 
             row_data = {
-                "device_id": str(target_uuid), # Ab yahan exactly wahi lamba ID save hoga jo Dashboard dhoondh raha hai
+                "device_id": str(target_uuid), # Lamba wala UUID ab perfect save hoga
                 "type": final_type,
                 "number": record.get('phone_number') or record.get('phoneNumber') or 'Unknown',
                 "duration": int(record.get('duration', 0))
             }
 
-            row_data["timestamp"] = datetime.now(timezone.utc).isoformat()
+            row_data["timestamp"] = record.get('timestamp') or datetime.now(timezone.utc).isoformat()
             calls_payload.append(row_data)
 
         supabase.table('calls').insert(calls_payload).execute()
         return jsonify({"status": "success", "message": f"{len(calls_payload)} calls synced successfully"}), 201
+        
     except Exception as e:
         print(f"[Sync Critical Exception Handled]: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
