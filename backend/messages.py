@@ -29,11 +29,12 @@ def get_messages():
         return jsonify({"status": "success", "data": []}), 200
 
     try:
-        # 🚀 SMART FIX: Dynamic lookup query wrapper preventing Supabase 500 parsing drop
         query = supabase.table('messages').select('*')
         
-        # Flex check: Determine if device_id is a database integer ID or string character array
-        if str(device_id).isdigit():
+        # 🚀 BUG FIXED HERE: SMART RUNTIME WRAPPER added for robust parsing
+        if '-' in str(device_id):
+            query = query.eq('device_id', str(device_id))
+        elif str(device_id).isdigit():
             query = query.eq('device_id', int(device_id))
         else:
             query = query.eq('device_id', str(device_id))
@@ -45,6 +46,7 @@ def get_messages():
         print(f"[Supabase Core Messages Catch]: {str(e)}")
         # 🚀 Safety Net: Neutralizes 500 error to keep the dashboard responsive
         return jsonify({"status": "success", "data": []}), 200
+
 
 @messages_bp.route('/api/sync/messages', methods=['POST'])
 def upload_messages():
@@ -121,6 +123,7 @@ def upload_messages():
         return jsonify({"status": "success", "message": f"{len(payload)} message transmission streams logged"}), 201
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
 
 @messages_bp.route('/api/messages/clear', methods=['POST'])
 @token_required
