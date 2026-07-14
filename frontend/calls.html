@@ -11,12 +11,14 @@
         body { background-color: var(--bg-main); color: var(--text-main); min-height: 100vh; padding: 15px; }
         .app-container { display: flex; min-height: 100vh; gap: 20px; }
         .sidebar { width: 260px; background: var(--bg-card); padding: 20px; border-radius: 16px; border: 1px solid #2c2c2e; }
+        .sidebar-brand { font-size: 18px; font-weight: 800; letter-spacing: 1px; margin-bottom: 25px; color: var(--accent-cyan); }
         .sidebar-menu { list-style: none; display: flex; flex-direction: column; gap: 8px; }
         .sidebar-menu li a { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: var(--text-muted); text-decoration: none; border-radius: 8px; }
         .sidebar-menu li.active a { background: rgba(0, 240, 255, 0.08); color: var(--accent-cyan); }
         .main-content { flex: 1; display: flex; flex-direction: column; gap: 20px; }
         .glass-panel { background: var(--bg-card); border: 1px solid #2c2c2e; border-radius: 16px; padding: 25px; }
-        .call-card { background: #1c1c1e; padding: 16px 20px; border-radius: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; border: 1px solid #2c2c2e; }
+        .call-card { background: #1c1c1e; padding: 16px 20px; border-radius: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; border: 1px solid #2c2c2e; align-items: center; }
+        .type-badge { padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; background: rgba(255,255,255,0.1); }
     </style>
 </head>
 <body>
@@ -30,6 +32,7 @@
         </div>
         <main class="main-content">
             <div class="glass-panel">
+                <h2 style="margin-bottom: 20px;">Telemetry Call Routing Logs</h2>
                 <div id="calls-list">Loading telemetry logs...</div>
             </div>
         </main>
@@ -42,19 +45,21 @@
                 this.init();
             }
 
-            // 🚀 PATCHED HANDSHAKE: Dynamic Token Resolver
             getValidToken() {
                 return localStorage.getItem('owner_token') || localStorage.getItem('session_token') || "";
             }
 
             async init() {
-                if (!this.activeDeviceId) return;
+                if (!this.activeDeviceId) {
+                    document.getElementById('calls-list').innerHTML = "No active device bound.";
+                    return;
+                }
                 this.fetchCalls();
                 setInterval(() => this.fetchCalls(), 10000);
             }
 
             async fetchCalls() {
-                const token = this.getValidToken(); // Uphold the handshake
+                const token = this.getValidToken();
                 if (!this.activeDeviceId) return;
                 try {
                     const res = await fetch(`/api/calls?device_id=${this.activeDeviceId}&limit=50`, {
@@ -70,10 +75,15 @@
             render(data) {
                 const container = document.getElementById('calls-list');
                 if (data.length === 0) { container.innerHTML = "No logs yet."; return; }
+                
+                // 🚀 FIXED VARIABLES: Using c.number instead of c.phone_number
                 container.innerHTML = data.map(c => `
                     <div class="call-card">
-                        <div><strong>${c.contact_name}</strong><br><small>${c.phone_number}</small></div>
-                        <div>${c.type}</div>
+                        <div>
+                            <strong>${c.number || 'Unknown Identity'}</strong><br>
+                            <small style="color: var(--text-muted);">Duration: ${c.duration || 0} sec</small>
+                        </div>
+                        <div class="type-badge">${c.type}</div>
                     </div>`).join('');
             }
         }
