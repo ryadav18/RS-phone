@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live GPS Tracking - RS OWNER</title>
+    <title>Live GPS Tracker - RS OWNER</title>
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Leaflet.js Mapping Infrastructure Components Layer -->
+    <!-- Leaflet.js Mapping Engine (Open-Source, No API Key needed for base map) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <style>
         /* =========================================================
            RS PHONE - ZERO-LAG FLAT ARCHITECTURE (INJECTED STYLE)
@@ -17,206 +19,238 @@
             --bg-card: #1e1e1e;
             --text-main: #ffffff;
             --text-muted: #aaaaaa;
-            --accent-cyan: #00f0ff;
-            --color-blue: #3498db;
+            --accent-blue: #3498db;
             --color-green: #2ecc71;
+            --color-red: #e74c3c;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            -webkit-font-smoothing: antialiased;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main); min-height: 100vh; padding: 15px; }
 
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            min-height: 100vh;
-            padding: 15px;
-            overflow-x: hidden;
-        }
-
+        /* Sidebar & Layout */
         .app-container { display: flex; min-height: 100vh; gap: 20px; }
         .sidebar { width: 260px; background: var(--bg-card); padding: 20px; border-radius: 16px; border: 1px solid #2c2c2e; display: flex; flex-direction: column; gap: 25px; }
-        .sidebar-brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; letter-spacing: 1px; }
+        .sidebar-brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;}
         .sidebar-menu { list-style: none; display: flex; flex-direction: column; gap: 8px; }
         .sidebar-menu li a { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: var(--text-muted); text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; transition: all 0.2s; }
-        .sidebar-menu li.active a, .sidebar-menu li a:hover { background: rgba(0, 240, 255, 0.08); color: var(--accent-cyan); }
+        .sidebar-menu li.active a { background: rgba(52, 152, 219, 0.1); color: var(--accent-blue); border: 1px solid rgba(52, 152, 219, 0.2); }
         
         .main-content { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+        
         .topbar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid #2c2c2e; }
-        .glass-panel { background: var(--bg-card); border: 1px solid #2c2c2e; border-radius: 16px; padding: 25px; height: 75vh; display: flex; flex-direction: column; gap: 15px; }
-
-        /* =========================================================
-           GEOLOCATION MAP SPLIT ARCHITECTURE
-           ========================================================= */
-        .telemetry-bar {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;
-        }
-        .metric-pill {
-            background: rgba(255,255,255,0.02); border: 1px solid #2c2c2e;
-            padding: 12px 16px; border-radius: 8px; display: flex; flex-direction: column; gap: 4px;
-        }
-        .metric-label { font-size: 0.75rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase; }
-        .metric-value { font-size: 1rem; font-weight: 700; color: #fff; font-family: monospace; }
-
-        /* Map Canvas */
-        #map-viewport {
-            flex: 1; width: 100%; border-radius: 10px; border: 1px solid #333;
-            background: #151515; z-index: 1;
-        }
+        .device-switcher { display: flex; align-items: center; gap: 15px; }
+        .sync-badge { font-family: monospace; font-size: 0.8rem; background: rgba(46, 204, 113, 0.1); color: var(--color-green); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(46, 204, 113, 0.3); font-weight: bold; }
+        
+        /* Dashboard Layout: Map & Logs */
+        .tracking-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; height: 75vh; }
+        .glass-panel { background: var(--bg-card); border: 1px solid #2c2c2e; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; }
+        
+        /* Map Container */
+        #map-canvas { flex: 1; border-radius: 12px; border: 1px solid #333; min-height: 400px; background: #111; z-index: 1;}
+        
+        /* History Log Container */
+        .history-list { flex: 1; overflow-y: auto; margin-top: 15px; display: flex; flex-direction: column; gap: 10px; padding-right: 5px; }
+        .history-list::-webkit-scrollbar { width: 4px; }
+        .history-list::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+        
+        .log-card { background: rgba(255,255,255,0.03); border: 1px solid #333; padding: 12px 15px; border-radius: 8px; display: flex; flex-direction: column; gap: 5px; border-left: 3px solid var(--accent-blue); }
+        .log-time { font-size: 0.8rem; color: var(--accent-blue); font-family: monospace; font-weight: bold; }
+        .log-cords { font-size: 0.85rem; color: #ccc; }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar Navigation -->
+        <!-- Sidebar -->
         <div class="sidebar">
-            <div class="sidebar-brand">
-                <i data-lucide="shield" style="color: var(--accent-cyan);"></i>
-                <span>RS OWNER</span>
-            </div>
+            <div class="sidebar-brand"><i data-lucide="shield" style="color: var(--accent-blue);"></i> <span>RS OWNER</span></div>
             <ul class="sidebar-menu">
                 <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
-                <li><a href="/safety"><i data-lucide="shield-alert"></i> Safety Hub</a></li>
-                <li class="active"><a href="/locations"><i data-lucide="map-pin"></i> Live Tracking</a></li>
-                <li><a href="/geofence-config"><i data-lucide="locate"></i> Geofencing</a></li>
-                <li><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
+                <li class="active"><a href="/safety"><i data-lucide="map-pin"></i> GPS Radar</a></li>
+                <li><a href="/geofence-config"><i data-lucide="focus"></i> Geofence Bounds</a></li>
+                <li><a href="/calls"><i data-lucide="phone"></i> Call Logs</a></li>
             </ul>
         </div>
-
+        
         <!-- Main Content -->
         <main class="main-content">
             <header class="topbar">
                 <div>
-                    <h2 style="font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">Live GPS Radar</h2>
-                    <p style="color: #666; font-size: 0.85rem; margin-top: 4px;">Continuous telemetry stream tracking current geospatial vectors.</p>
+                    <h2 style="font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">Live Target Tracking</h2>
+                    <p style="color: #888; font-size: 0.85rem; margin-top: 4px;">Synchronizing continuous satellite telemetry data loops.</p>
                 </div>
-                <select id="device-select" style="padding: 10px 14px; border-radius: 6px; background: #1a1a1c; color: white; border: 1px solid #333; cursor: pointer; font-weight: 600;"></select>
+                <div class="device-switcher">
+                    <span class="sync-badge" id="sync-status">📡 RADAR ACTIVE (10s)</span>
+                    <select id="device-select" style="padding: 10px 14px; background:#1a1a1c; color:white; border:1px solid #333; border-radius:6px; outline:none; font-weight:600; cursor:pointer;"></select>
+                </div>
             </header>
 
-            <div class="glass-panel">
-                <!-- TELEMETRY COUNTERS -->
-                <div class="telemetry-bar">
-                    <div class="metric-pill">
-                        <span class="metric-label">Latitude Vector</span>
-                        <span class="metric-value" id="geo-lat">0.000000</span>
-                    </div>
-                    <div class="metric-pill">
-                        <span class="metric-label">Longitude Vector</span>
-                        <span class="metric-value" id="geo-lng">0.000000</span>
-                    </div>
-                    <div class="metric-pill">
-                        <span class="metric-label">Last Transmission</span>
-                        <span class="metric-value" id="geo-time">NEVER</span>
-                    </div>
+            <div class="tracking-grid">
+                <!-- Map View Area -->
+                <div class="glass-panel">
+                    <h3 style="font-size: 1rem; color: var(--text-muted); margin-bottom: 15px; text-transform: uppercase;">Satellite Map Matrix</h3>
+                    <div id="map-canvas"></div>
                 </div>
 
-                <!-- DYNAMIC MAP DECK -->
-                <div id="map-viewport"></div>
+                <!-- History Logs Area -->
+                <div class="glass-panel">
+                    <h3 style="font-size: 1rem; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase;">Coordinate Log</h3>
+                    <div class="history-list" id="location-logs">
+                        <div style="text-align: center; padding: 30px; color: #666; font-weight: bold; font-size: 0.9rem;">
+                            <i data-lucide="loader" class="lucide-spin" style="margin-bottom: 10px;"></i><br>
+                            AWAITING TELEMETRY...
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
 
+    <!-- Tracking Engine Logic -->
     <script>
-        class GeolocationEngine {
+        class LocationEngine {
             constructor() {
                 this.activeDeviceId = localStorage.getItem('active_device_id');
                 this.map = null;
                 this.marker = null;
+                this.syncInterval = null;
                 this.init();
             }
 
             async init() {
-                this.initMapFrame();
-                await this.loadDevicesList();
-                if (!this.activeDeviceId) return;
+                lucide.createIcons();
+                this.initMapEngine();
+                await this.loadDevices();
                 
-                this.fetchLocation();
-                setInterval(() => this.fetchLocation(), 7000); // 7s Loop stream mapping context
+                if (this.activeDeviceId) {
+                    this.startTelemetryLoop();
+                }
             }
 
-            initMapFrame() {
-                // Initialize default map point targeting center variables
-                this.map = L.map('map-viewport').setView([20.5937, 78.9629], 5);
+            // High-Speed OpenStreetMap Implementation
+            initMapEngine() {
+                // Default coordinates (e.g. Center of India)
+                this.map = L.map('map-canvas').setView([20.5937, 78.9629], 5);
                 
-                // Dark Matter Map Tiles Injection Logic
+                // Load Dark/Standard Map Tiles
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                    maxZoom: 19,
-                    attribution: 'RS Security Core Infrastructure'
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors',
+                    subdomains: 'abcd',
+                    maxZoom: 19
                 }).addTo(this.map);
+
+                // Initialize custom marker
+                const customIcon = L.divIcon({
+                    html: '<div style="background: #3498db; width: 16px; height: 16px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 10px rgba(52, 152, 219, 0.8); animation: pulse 1.5s infinite;"></div>',
+                    className: '',
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 10]
+                });
+
+                this.marker = L.marker([20.5937, 78.9629], {icon: customIcon}).addTo(this.map);
+                
+                // Add pulse animation strictly for the marker
+                const style = document.createElement('style');
+                style.innerHTML = `@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(52, 152, 219, 0); } 100% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0); } }`;
+                document.head.appendChild(style);
             }
 
-            async loadDevicesList() {
+            async loadDevices() {
                 const token = localStorage.getItem('owner_token');
                 try {
                     const res = await fetch('/api/devices', { headers: { 'Authorization': `Bearer ${token}` } });
                     const result = await res.json();
-                    if (result.status === 'success') {
-                        const selectEl = document.getElementById('device-select');
-                        if (selectEl) {
-                            selectEl.innerHTML = ''; 
-                            result.data.forEach(dev => {
-                                const option = document.createElement('option');
-                                option.value = dev.id;
-                                option.textContent = dev.name;
-                                selectEl.appendChild(option);
-                            });
+                    
+                    const selectEl = document.getElementById('device-select');
+                    if (result.status === 'success' && result.data.length > 0) {
+                        selectEl.innerHTML = '';
+                        result.data.forEach(dev => {
+                            const option = document.createElement('option');
+                            option.value = dev.id;
+                            option.textContent = dev.name;
+                            selectEl.appendChild(option);
+                        });
 
-                            if (!this.activeDeviceId && result.data.length > 0) {
-                                this.activeDeviceId = result.data[0].id;
-                                localStorage.setItem('active_device_id', this.activeDeviceId);
-                            }
-                            selectEl.value = this.activeDeviceId;
-                            selectEl.addEventListener('change', (e) => {
-                                this.activeDeviceId = e.target.value;
-                                localStorage.setItem('active_device_id', this.activeDeviceId);
-                                this.fetchLocation(); 
-                            });
+                        if (!this.activeDeviceId) {
+                            this.activeDeviceId = result.data[0].id;
+                            localStorage.setItem('active_device_id', this.activeDeviceId);
                         }
+                        selectEl.value = this.activeDeviceId;
+
+                        selectEl.addEventListener('change', (e) => {
+                            this.activeDeviceId = e.target.value;
+                            localStorage.setItem('active_device_id', this.activeDeviceId);
+                            this.fetchLocationData(); // Instant sync on switch
+                        });
                     }
-                } catch (e) { console.error("Device sync block execution broken:", e); }
+                } catch (e) {
+                    console.error("Device Load Fault:", e);
+                }
             }
 
-            async fetchLocation() {
+            startTelemetryLoop() {
+                this.fetchLocationData();
+                // Har 10 second mein location sync loop chalega
+                if (this.syncInterval) clearInterval(this.syncInterval);
+                this.syncInterval = setInterval(() => this.fetchLocationData(), 10000);
+            }
+
+            async fetchLocationData() {
                 const token = localStorage.getItem('owner_token');
                 if (!this.activeDeviceId) return;
 
+                const badge = document.getElementById('sync-status');
+                badge.style.color = "#f39c12"; // Orange loading state
+                badge.innerText = "📡 SYNCING...";
+
                 try {
-                    const res = await fetch(`/api/locations?device_id=${this.activeDeviceId}&limit=1`, {
+                    const res = await fetch(`/api/locations?device_id=${this.activeDeviceId}&limit=20`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
                     const result = await res.json();
                     
-                    if (result.status === 'success' && result.data && result.data.length > 0) {
-                        const loc = result.data[0];
-                        this.updateMapTelemetry(loc.latitude, loc.longitude, loc.created_at);
+                    if (result.status === 'success' && result.data.length > 0) {
+                        this.updateDashboard(result.data);
+                        badge.style.color = "var(--color-green)";
+                        badge.innerText = "📡 RADAR ACTIVE (10s)";
+                    } else {
+                        badge.style.color = "var(--color-red)";
+                        badge.innerText = "NO SIGNAL";
                     }
-                } catch (e) { console.error("Map Telemetry Fetch Error:", e); }
+                } catch (e) {
+                    console.error("Tracking API Error:", e);
+                    badge.style.color = "var(--color-red)";
+                    badge.innerText = "LINK FAILED";
+                }
             }
 
-            updateMapTelemetry(lat, lng, timestamp) {
-                document.getElementById('geo-lat').innerText = lat.toFixed(6);
-                document.getElementById('geo-lng').innerText = lng.toFixed(6);
-                document.getElementById('geo-time').innerText = new Date(timestamp).toLocaleTimeString('en-IN');
-
-                const targetCoords = [lat, lng];
-
-                if (!this.marker) {
-                    this.marker = L.marker(targetCoords).addTo(this.map);
-                    this.map.setView(targetCoords, 16);
-                } else {
-                    this.marker.setLatLng(targetCoords);
-                    this.map.panTo(targetCoords);
+            updateDashboard(locations) {
+                // 1. Update Map (Pehla record latest hota hai)
+                const latest = locations[0];
+                if (latest.latitude && latest.longitude) {
+                    const latLng = [latest.latitude, latest.longitude];
+                    this.marker.setLatLng(latLng);
+                    this.map.setView(latLng, 15); // Zoom level 15 (Street level)
                 }
-                this.marker.bindPopup(`<b>Target Node</b><br>Lat: ${lat}<br>Lng: ${lng}`).openPopup();
+
+                // 2. Update History Panel
+                const logsContainer = document.getElementById('location-logs');
+                logsContainer.innerHTML = locations.map(loc => {
+                    const dateStr = new Date(loc.timestamp || loc.created_at).toLocaleString('en-IN', {
+                        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit'
+                    });
+                    
+                    return `
+                        <div class="log-card">
+                            <span class="log-time">${dateStr}</span>
+                            <span class="log-cords">LAT: ${parseFloat(loc.latitude).toFixed(5)} <br> LNG: ${parseFloat(loc.longitude).toFixed(5)}</span>
+                        </div>
+                    `;
+                }).join('');
             }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-            new GeolocationEngine();
+            new LocationEngine();
         });
     </script>
 </body>
