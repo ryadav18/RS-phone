@@ -31,15 +31,12 @@ def get_calls():
             limit = 50
         
         # 🚀 SMART ALIGNMENT: Database demands a UUID format string. 
-        # Checking if device_id is a valid UUID structure to prevent query parsing fail.
         query = supabase.table('calls').select('*')
         
         try:
-            # Validating if it can be cast into a UUID object, then query it as exact string representation
             clean_uuid = str(uuid.UUID(str(device_id).strip()))
             query = query.eq('device_id', clean_uuid)
         except ValueError:
-            # Fallback if device_id is passed as plain or primary key tracking references
             query = query.eq('device_id', str(device_id))
             
         res = query.order('timestamp', desc=True).limit(limit).execute()
@@ -48,6 +45,7 @@ def get_calls():
     except Exception as e:
         print(f"[Supabase Production Calls Exception]: {str(e)}")
         return jsonify({"status": "success", "data": []}), 200
+
 
 # POST ROUTE: Sync data packet stream from device agent directly mapping UUID keys
 @calls_bp.route('/api/sync/calls', methods=['POST'])
@@ -62,8 +60,9 @@ def upload_calls():
         if not dev_check.data:
             return jsonify({"status": "error", "message": "Invalid credentials"}), 403
 
-        # 🚀 SMART ALIGNMENT: We select 'device_id' which represents the UUID value required by the foreign key reference
-        target_uuid = dev_check.data[0].get('device_id')
+        # 🚀 BUG FIXED HERE: Changed .get('device_id') to .get('id') to match exact UUID mapping
+        target_uuid = dev_check.data[0].get('id') 
+        
         data = request.json or {}
         records = data.get('calls', [])
 
@@ -85,7 +84,7 @@ def upload_calls():
             cont_name = record.get('contact_name') or record.get('contactName') or 'Unknown'
 
             row_data = {
-                "device_id": target_uuid, # UUID Key mapping matched perfectly
+                "device_id": target_uuid, 
                 "type": final_type,
                 "phone_number": phone_num,
                 "contact_name": cont_name, 
@@ -114,7 +113,7 @@ def upload_calls():
 
         supabase.table('calls').insert(calls_payload).execute()
 
-        # Strict Rolling Clean Cleanup FIFO engine matching UUID constraints
+        # Strict Rolling Clean Cleanup FIFO engine
         calls_query = supabase.table('calls').select('id').eq('device_id', target_uuid).order('timestamp', desc=True).execute()
         
         if len(calls_query.data) > 50:
@@ -128,6 +127,7 @@ def upload_calls():
     except Exception as e:
         print(f"[Sync Critical Exception Handled]: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
+
 
 # DELETE ROUTE: Safe wipe data matching UUID mapping
 @calls_bp.route('/api/calls/clear', methods=['POST'])
