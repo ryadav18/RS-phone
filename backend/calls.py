@@ -20,12 +20,13 @@ def get_calls():
         limit = 50
     
     try:
-        # Simply use the string representation
+        # Dashboard wali request ko handle karega
         res = supabase.table('calls').select('*').eq('device_id', str(device_id)).order('timestamp', desc=True).limit(limit).execute()
         return jsonify({"status": "success", "data": res.data if res.data else []}), 200
     except Exception as e:
         print(f"[Supabase Production Calls Exception]: {str(e)}")
         return jsonify({"status": "success", "data": []}), 200
+
 
 @calls_bp.route('/api/sync/calls', methods=['POST'])
 def upload_calls():
@@ -34,11 +35,14 @@ def upload_calls():
         return jsonify({"status": "error", "message": "Missing device token"}), 401
 
     try:
-        dev_check = supabase.table('devices').select('device_id').eq('device_token', token).execute()
+        # 🚀 FIX YAHAN HAI: .select('id') karna hai taaki Dashboard aur Backend match ho jayein
+        dev_check = supabase.table('devices').select('id').eq('device_token', token).execute()
         if not dev_check.data:
             return jsonify({"status": "error", "message": "Invalid credentials"}), 403
 
-        target_uuid = dev_check.data[0].get('device_id') 
+        # 🚀 FIX YAHAN HAI: .get('id') karna hai
+        target_uuid = dev_check.data[0].get('id') 
+        
         data = request.json or {}
         records = data.get('calls', [])
 
@@ -51,7 +55,7 @@ def upload_calls():
             final_type = 'OUTGOING' if raw_type in ['2', 'OUTGOING'] else ('MISSED' if raw_type in ['3', 'MISSED', 'REJECTED'] else 'INCOMING')
 
             row_data = {
-                "device_id": str(target_uuid), 
+                "device_id": str(target_uuid), # Ye ab lambi wali ID (33a8...) save karega
                 "type": final_type,
                 "number": record.get('phone_number') or record.get('phoneNumber') or 'Unknown',
                 "duration": int(record.get('duration', 0))
