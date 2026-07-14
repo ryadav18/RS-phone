@@ -7,7 +7,7 @@ import uuid
 
 calls_bp = Blueprint('calls', __name__)
 
-# GET ROUTE: Fetch sorted telemetry call logs matching SQL UUID architecture
+# GET ROUTE: Fetch sorted telemetry call logs
 @calls_bp.route('/api/calls', methods=['GET'])
 @token_required
 def get_calls():
@@ -16,7 +16,6 @@ def get_calls():
     if not device_id:
         return jsonify({"status": "error", "message": "Unauthorized target device operation"}), 403
 
-    # Access matrix logic verification
     try:
         if not verify_device_access(request.owner_id, device_id):
             return jsonify({"status": "error", "message": "Unauthorized target device operation"}), 403
@@ -30,7 +29,6 @@ def get_calls():
         except (ValueError, TypeError):
             limit = 50
         
-        # 🚀 SMART ALIGNMENT: Database demands a UUID format string. 
         query = supabase.table('calls').select('*')
         
         try:
@@ -47,7 +45,7 @@ def get_calls():
         return jsonify({"status": "success", "data": []}), 200
 
 
-# POST ROUTE: Sync data packet stream from device agent directly mapping UUID keys
+# POST ROUTE: Sync data matching exact DB Schema
 @calls_bp.route('/api/sync/calls', methods=['POST'])
 def upload_calls():
     token = request.headers.get('X-Device-Token')
@@ -55,14 +53,11 @@ def upload_calls():
         return jsonify({"status": "error", "message": "Missing device token"}), 401
 
     try:
-        # Cross check active hardware logs mapping system token signatures
-        dev_check = supabase.table('devices').select('id', 'device_id').eq('device_token', token).execute()
+        dev_check = supabase.table('devices').select('id').eq('device_token', token).execute()
         if not dev_check.data:
             return jsonify({"status": "error", "message": "Invalid credentials"}), 403
 
-        # 🚀 BUG FIXED HERE: Changed .get('device_id') to .get('id') to match exact UUID mapping
         target_uuid = dev_check.data[0].get('id') 
-        
         data = request.json or {}
         records = data.get('calls', [])
 
@@ -81,14 +76,14 @@ def upload_calls():
                 final_type = 'INCOMING'
 
             phone_num = record.get('phone_number') or record.get('phoneNumber') or 'Unknown'
-            cont_name = record.get('contact_name') or record.get('contactName') or 'Unknown'
 
+            # 🚀 STRICT SCHEMA ALIGNMENT: Matching exact visible columns in your Supabase video
             row_data = {
                 "device_id": target_uuid, 
                 "type": final_type,
-                "phone_number": phone_num,
-                "contact_name": cont_name, 
+                "number": phone_num, # Changed from phone_number to 'number'
                 "duration": int(record.get('duration', 0))
+                # Removed contact_name to prevent schema mismatch drop
             }
 
             raw_ts = record.get('timestamp')
@@ -104,7 +99,6 @@ def upload_calls():
                     else:
                         row_data["timestamp"] = str(raw_ts)
                 except Exception as ts_error:
-                    print(f"[Call Timestamp Matrix Handled]: {ts_error}")
                     row_data["timestamp"] = datetime.now(timezone.utc).isoformat()
             else:
                 row_data["timestamp"] = datetime.now(timezone.utc).isoformat()
@@ -113,15 +107,11 @@ def upload_calls():
 
         supabase.table('calls').insert(calls_payload).execute()
 
-        # Strict Rolling Clean Cleanup FIFO engine
+        # Rolling Cleanup
         calls_query = supabase.table('calls').select('id').eq('device_id', target_uuid).order('timestamp', desc=True).execute()
-        
         if len(calls_query.data) > 50:
-            records_to_purge = calls_query.data[50:]
-            ids_to_purge = [row['id'] for row in records_to_purge]
-            
+            ids_to_purge = [row['id'] for row in calls_query.data[50:]]
             supabase.table('calls').delete().in_('id', ids_to_purge).execute()
-            print(f"[FIFO Engine System] Purged overflow data rows securely.")
 
         return jsonify({"status": "success", "message": f"{len(calls_payload)} calls synced successfully"}), 201
     except Exception as e:
@@ -129,7 +119,6 @@ def upload_calls():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-# DELETE ROUTE: Safe wipe data matching UUID mapping
 @calls_bp.route('/api/calls/clear', methods=['POST'])
 @token_required
 def clear_calls():
