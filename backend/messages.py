@@ -11,7 +11,6 @@ messages_bp = Blueprint('messages', __name__)
 def get_messages():
     device_id = request.args.get('device_id')
     
-    # Safe integer formatting for limits
     try:
         limit = min(int(request.args.get('limit', 50)), 50) 
     except (ValueError, TypeError):
@@ -20,18 +19,15 @@ def get_messages():
     if not device_id:
         return jsonify({"status": "error", "message": "Device request scope unauthorized"}), 403
 
-    # 🚀 SMART FIX: Safe access token validation framework
     try:
         if not verify_device_access(request.owner_id, device_id):
             return jsonify({"status": "error", "message": "Device request scope unauthorized"}), 403
     except Exception as access_err:
-        print(f"[Access Matrix Handled gracefully]: {access_err}")
         return jsonify({"status": "success", "data": []}), 200
 
     try:
         query = supabase.table('messages').select('*')
         
-        # 🚀 BUG FIXED HERE: SMART RUNTIME WRAPPER added for robust parsing
         if '-' in str(device_id):
             query = query.eq('device_id', str(device_id))
         elif str(device_id).isdigit():
@@ -44,7 +40,6 @@ def get_messages():
         
     except Exception as e:
         print(f"[Supabase Core Messages Catch]: {str(e)}")
-        # 🚀 Safety Net: Neutralizes 500 error to keep the dashboard responsive
         return jsonify({"status": "success", "data": []}), 200
 
 
@@ -70,22 +65,24 @@ def upload_messages():
         for m in messages_array:
             raw_type = str(m.get('type', '1')).strip().upper()
             
+            # 🚀 FIXED: DB column 'type' expects TEXT, not Integer.
             if raw_type in ['2', 'SENT', 'RCS_SENT']:
-                final_message_type = 2  
+                final_message_type = 'SENT'  
             else:
-                final_message_type = 1  
+                final_message_type = 'RECEIVED'  
 
-            sender_val = m.get('sender') or 'Unknown'
+            sender_val = m.get('sender') or m.get('number') or 'Unknown'
             contact_name_val = m.get('contact_name') or m.get('contactName') or 'Unknown'
-            msg_content = m.get('message') or ''
+            msg_content = m.get('message') or m.get('body') or ''
 
+            # 🚀 STRICT SCHEMA ALIGNMENT: Matching exactly to your database video
             row_data = {
                 "device_id": dev_id,
-                "sender": sender_val,
-                "contact_name": contact_name_val,
-                "message": msg_content, 
-                "message_type": final_message_type, 
-                "media_url": m.get('media_url', None)
+                "number": sender_val,             # Changed from 'sender'
+                "contact_name": contact_name_val, # Exists in DB video
+                "body": msg_content,              # Changed from 'message'
+                "type": final_message_type        # Changed from 'message_type' & passing Text
+                # Removed media_url as it throws schema error
             }
             
             raw_ts = m.get('timestamp')
@@ -101,7 +98,6 @@ def upload_messages():
                     else:
                         row_data["timestamp"] = str(raw_ts)
                 except Exception as ts_error:
-                    print(f"[Timestamp Exception Handled]: {ts_error}")
                     row_data["timestamp"] = datetime.now(timezone.utc).isoformat()
             else:
                 row_data["timestamp"] = datetime.now(timezone.utc).isoformat()
@@ -110,20 +106,16 @@ def upload_messages():
 
         supabase.table('messages').insert(payload).execute()
 
-        # FIFO Engine rolling cleanup loop
+        # FIFO Engine
         messages_query = supabase.table('messages').select('id').eq('device_id', dev_id).order('timestamp', desc=True).execute()
-        
         if len(messages_query.data) > 50:
-            records_to_purge = messages_query.data[50:]
-            ids_to_purge = [row['id'] for row in records_to_purge]
-            
+            ids_to_purge = [row['id'] for row in messages_query.data[50:]]
             supabase.table('messages').delete().in_('id', ids_to_purge).execute()
-            print(f"[FIFO Messages Engine] Purged {len(ids_to_purge)} overflow items from Supabase mapping.")
 
         return jsonify({"status": "success", "message": f"{len(payload)} message transmission streams logged"}), 201
     except Exception as e:
+        print(f"[Sync Critical Exception]: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
-
 
 @messages_bp.route('/api/messages/clear', methods=['POST'])
 @token_required
