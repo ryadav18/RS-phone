@@ -50,11 +50,12 @@ def upload_messages():
         return jsonify({"status": "error", "message": "Device security token is absent"}), 401
 
     try:
-        dev_check = supabase.table('devices').select('id').eq('device_token', token).execute()
+        # 🚀 FIX: Fetching 'device_id' directly to match the dashboard request
+        dev_check = supabase.table('devices').select('device_id').eq('device_token', token).execute()
         if not dev_check.data:
             return jsonify({"status": "error", "message": "Device verification check failed"}), 403
 
-        dev_id = dev_check.data[0]['id']
+        dev_id = dev_check.data[0].get('device_id')
         data = request.json or {}
         messages_array = data.get('messages', [])
 
@@ -65,7 +66,7 @@ def upload_messages():
         for m in messages_array:
             raw_type = str(m.get('type', '1')).strip().upper()
             
-            # 🚀 FIXED: DB column 'type' expects TEXT, not Integer.
+            # 🚀 SCHEMA FIX: DB column 'type' expects TEXT
             if raw_type in ['2', 'SENT', 'RCS_SENT']:
                 final_message_type = 'SENT'  
             else:
@@ -75,14 +76,13 @@ def upload_messages():
             contact_name_val = m.get('contact_name') or m.get('contactName') or 'Unknown'
             msg_content = m.get('message') or m.get('body') or ''
 
-            # 🚀 STRICT SCHEMA ALIGNMENT: Matching exactly to your database video
+            # 🚀 SCHEMA ALIGNMENT: Matched exactly to your Supabase 'messages' table
             row_data = {
                 "device_id": dev_id,
-                "number": sender_val,             # Changed from 'sender'
-                "contact_name": contact_name_val, # Exists in DB video
-                "body": msg_content,              # Changed from 'message'
-                "type": final_message_type        # Changed from 'message_type' & passing Text
-                # Removed media_url as it throws schema error
+                "number": sender_val,
+                "contact_name": contact_name_val, 
+                "body": msg_content,             
+                "type": final_message_type       
             }
             
             raw_ts = m.get('timestamp')
@@ -116,6 +116,7 @@ def upload_messages():
     except Exception as e:
         print(f"[Sync Critical Exception]: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
+
 
 @messages_bp.route('/api/messages/clear', methods=['POST'])
 @token_required
