@@ -7,7 +7,6 @@ import uuid
 
 calls_bp = Blueprint('calls', __name__)
 
-# GET ROUTE: Fetch sorted telemetry call logs
 @calls_bp.route('/api/calls', methods=['GET'])
 @token_required
 def get_calls():
@@ -45,7 +44,6 @@ def get_calls():
         return jsonify({"status": "success", "data": []}), 200
 
 
-# POST ROUTE: Sync data matching exact DB Schema
 @calls_bp.route('/api/sync/calls', methods=['POST'])
 def upload_calls():
     token = request.headers.get('X-Device-Token')
@@ -53,11 +51,12 @@ def upload_calls():
         return jsonify({"status": "error", "message": "Missing device token"}), 401
 
     try:
-        dev_check = supabase.table('devices').select('id').eq('device_token', token).execute()
+        # 🚀 FIX: Fetching 'device_id' directly to match the dashboard request
+        dev_check = supabase.table('devices').select('device_id').eq('device_token', token).execute()
         if not dev_check.data:
             return jsonify({"status": "error", "message": "Invalid credentials"}), 403
 
-        target_uuid = dev_check.data[0].get('id') 
+        target_uuid = dev_check.data[0].get('device_id') 
         data = request.json or {}
         records = data.get('calls', [])
 
@@ -77,13 +76,12 @@ def upload_calls():
 
             phone_num = record.get('phone_number') or record.get('phoneNumber') or 'Unknown'
 
-            # 🚀 STRICT SCHEMA ALIGNMENT: Matching exact visible columns in your Supabase video
+            # 🚀 SCHEMA ALIGNMENT: Matched exactly to your Supabase 'calls' table
             row_data = {
                 "device_id": target_uuid, 
                 "type": final_type,
-                "number": phone_num, # Changed from phone_number to 'number'
+                "number": phone_num,
                 "duration": int(record.get('duration', 0))
-                # Removed contact_name to prevent schema mismatch drop
             }
 
             raw_ts = record.get('timestamp')
