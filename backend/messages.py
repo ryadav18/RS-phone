@@ -26,6 +26,7 @@ def get_messages():
         print(f"[Supabase Core Messages Catch]: {str(e)}")
         return jsonify({"status": "success", "data": []}), 200
 
+
 @messages_bp.route('/api/sync/messages', methods=['POST'])
 def upload_messages():
     token = request.headers.get('X-Device-Token')
@@ -33,11 +34,14 @@ def upload_messages():
         return jsonify({"status": "error", "message": "Device security token is absent"}), 401
 
     try:
-        dev_check = supabase.table('devices').select('device_id').eq('device_token', token).execute()
+        # 🚀 FIX YAHAN HAI: .select('id') 
+        dev_check = supabase.table('devices').select('id').eq('device_token', token).execute()
         if not dev_check.data:
             return jsonify({"status": "error", "message": "Device verification check failed"}), 403
 
-        dev_id = dev_check.data[0].get('device_id')
+        # 🚀 FIX YAHAN HAI: .get('id')
+        dev_id = dev_check.data[0].get('id')
+        
         data = request.json or {}
         messages_array = data.get('messages', [])
 
@@ -50,7 +54,7 @@ def upload_messages():
             final_message_type = 'SENT' if raw_type in ['2', 'SENT', 'RCS_SENT'] else 'RECEIVED'
 
             row_data = {
-                "device_id": str(dev_id),
+                "device_id": str(dev_id), # Ye ab lambi wali ID save karega
                 "number": m.get('sender') or m.get('number') or 'Unknown',
                 "contact_name": m.get('contact_name') or m.get('contactName') or 'Unknown', 
                 "body": m.get('message') or m.get('body') or '',             
