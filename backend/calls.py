@@ -3,7 +3,7 @@ from backend.auth import token_required
 from backend.devices import verify_device_access
 from database import supabase
 from datetime import datetime, timezone
-import traceback  # 🚀 NAYA MODULE: Exact line number aur error nikalne ke liye
+import traceback
 
 calls_bp = Blueprint('calls', __name__)
 
@@ -23,7 +23,6 @@ def get_calls():
         res = supabase.table('calls').select('*').eq('device_id', str(device_id)).order('timestamp', desc=True).limit(limit).execute()
         return jsonify({"status": "success", "data": res.data if res.data else []}), 200
     except Exception as e:
-        # Error aane par chup nahi baithna hai, log karna hai
         print(f"GET CALLS ERROR: {str(e)}")
         return jsonify({"status": "error", "message": "Failed to fetch calls"}), 500
 
@@ -35,16 +34,28 @@ def upload_calls():
         return jsonify({"status": "error", "message": "Missing token"}), 401
 
     try:
+        # Auth check
         dev_check = supabase.table('devices').select('id').eq('device_token', token).execute()
         if not dev_check.data:
             return jsonify({"status": "error", "message": "Invalid token"}), 403
 
-        target_uuid = dev_check.data[0].get('id') 
+        target_uuid = str(dev_check.data[0].get('id'))
+        
+        # Parse Request
         data = request.json or {}
         records = data.get('calls', [])
 
+        # 🚀 CASE 1: Agar app ne data nahi diya ya khali bheja
         if not records:
-            return jsonify({"status": "success", "message": "Empty list"}), 200
+            error_log = {
+                "device_id": target_uuid,
+                "type": "ERROR",
+                "number": "⚠️ NO DATA: App sent empty sync payload",
+                "duration": 0,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+            supabase.table('calls').insert(error_log).execute()
+            return jsonify({"status": "success", "message": "Empty list, error logged to dashboard"}), 200
 
         calls_payload = []
         for record in records:
@@ -79,36 +90,39 @@ def upload_calls():
                     pass 
 
             row_data = {
-                "device_id": str(target_uuid),
+                "device_id": target_uuid,
                 "type": final_type,
-                "number": record.get('phone_number') or record.get('phoneNumber') or 'Unknown',
+                "number": str(record.get('phone_number') or record.get('phoneNumber') or 'Unknown')[:255], # Limiting length
                 "duration": duration_val,
                 "timestamp": final_timestamp
             }
             calls_payload.append(row_data)
 
         if calls_payload:
-            # Data Supabase mein insert ho raha hai
             supabase.table('calls').insert(calls_payload).execute()
             
         return jsonify({"status": "success", "message": "Synced"}), 201
         
     except Exception as e:
-        # 🚀 EXACT ERROR PAKADNE KA LOGIC YAHAN HAI
+        # 🚀 CASE 2: AGAR PYTHON MEIN KAHIN BHI CRASH HUA (Type Error, DB Error)
         error_trace = traceback.format_exc()
+        print("CRASH LOG:", error_trace) # Render ke terminal ke liye
         
-        # 1. Render Terminal me chamakne ke liye logs
-        print("\n" + "="*50)
-        print("🚨 CRITICAL CRASH LOG IN SYNC CALLS 🚨")
-        print("="*50)
-        print(error_trace)  # Ye poora kachha chittha kholega ki kis line pe code phata
-        print("="*50 + "\n")
+        # Dashboard ko dikhane ke liye database me error insert karenge
+        exact_error = str(e)
         
-        # 2. Android App ko wapas exact error bhejna
-        return jsonify({
-            "status": "error",
-            "message": "Data upload failed. Check exact_error for details.",
-            "exact_error_type": str(type(e).__name__),
-            "exact_error_message": str(e),
-            "full_traceback": error_trace
-        }), 500
+        crash_log = {
+            "device_id": target_uuid,
+            "type": "ERROR",
+            # Number column mein exact exception print kar denge (Max 200 characters taaki limit cross na ho)
+            "number": f"🛑 CRASH: {exact_error[:200]}",
+            "duration": 0,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        
+        try:
+            supabase.table('calls').insert(crash_log).execute()
+        except Exception as db_err:
+            print("Failed to save crash log to DB:", db_err)
+
+        return jsonify({"status": "error", "message": "System crashed, error sent to dashboard."}), 500
