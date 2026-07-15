@@ -1,4 +1,7 @@
 from flask import Blueprint, request, jsonify
+import os
+# Ye server ke logs mein print karega ki file kahan se load ho rahi hai
+print(f"SERVER IS RUNNING VERSION: 2026-07-15-BETA", flush=True)
 from backend.auth import token_required
 from backend.devices import verify_device_access
 from database import supabase
