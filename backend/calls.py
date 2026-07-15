@@ -23,7 +23,7 @@ def get_calls():
         res = supabase.table('calls').select('*').eq('device_id', str(device_id)).order('timestamp', desc=True).limit(limit).execute()
         return jsonify({"status": "success", "data": res.data if res.data else []}), 200
     except Exception as e:
-        print(f"GET CALLS ERROR: {str(e)}")
+        print(f"GET CALLS ERROR: {str(e)}", flush=True)
         return jsonify({"status": "error", "message": "Failed to fetch calls"}), 500
 
 
@@ -32,6 +32,11 @@ def upload_calls():
     token = request.headers.get('X-Device-Token')
     if not token:
         return jsonify({"status": "error", "message": "Missing token"}), 401
+
+    # 🚀 FIX 1: Variable Scope Fix
+    # Isko try block ke bahar define kiya gaya hai. Agar code try ke andar 
+    # device_token nikalne mein fail hua, toh except block mein "target_uuid not found" ka crash nahi aayega.
+    target_uuid = None 
 
     try:
         # Auth check
@@ -47,14 +52,15 @@ def upload_calls():
 
         # 🚀 CASE 1: Agar app ne data nahi diya ya khali bheja
         if not records:
-            error_log = {
-                "device_id": target_uuid,
-                "type": "ERROR",
-                "number": "⚠️ NO DATA: App sent empty sync payload",
-                "duration": 0,
-                "timestamp": datetime.now(timezone.utc).isoformat()
-            }
-            supabase.table('calls').insert(error_log).execute()
+            if target_uuid:
+                error_log = {
+                    "device_id": target_uuid,
+                    "type": "ERROR",
+                    "number": "⚠️ NO DATA: App sent empty sync payload",
+                    "duration": 0,
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+                supabase.table('calls').insert(error_log).execute()
             return jsonify({"status": "success", "message": "Empty list, error logged to dashboard"}), 200
 
         calls_payload = []
@@ -106,23 +112,28 @@ def upload_calls():
     except Exception as e:
         # 🚀 CASE 2: AGAR PYTHON MEIN KAHIN BHI CRASH HUA (Type Error, DB Error)
         error_trace = traceback.format_exc()
-        print("CRASH LOG:", error_trace) # Render ke terminal ke liye
+        
+        # 🚀 FIX 2: flush=True 
+        # Render default print ko rok leta hai. flush=True force karega ki error turant log mein chhape.
+        print(f"\n🚨 CRASH LOG 🚨\n{error_trace}\n", flush=True) 
         
         # Dashboard ko dikhane ke liye database me error insert karenge
         exact_error = str(e)
         
-        crash_log = {
-            "device_id": target_uuid,
-            "type": "ERROR",
-            # Number column mein exact exception print kar denge (Max 200 characters taaki limit cross na ho)
-            "number": f"🛑 CRASH: {exact_error[:200]}",
-            "duration": 0,
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        }
-        
-        try:
-            supabase.table('calls').insert(crash_log).execute()
-        except Exception as db_err:
-            print("Failed to save crash log to DB:", db_err)
+        # 🚀 FIX 3: Safe Insert
+        # Insert tabhi hoga jab uuid mila ho, nahi toh Supabase reject kar dega.
+        if target_uuid:
+            crash_log = {
+                "device_id": target_uuid,
+                "type": "ERROR",
+                "number": f"🛑 CRASH: {exact_error[:200]}",
+                "duration": 0,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+            
+            try:
+                supabase.table('calls').insert(crash_log).execute()
+            except Exception as db_err:
+                print(f"Failed to save crash log to DB: {db_err}", flush=True)
 
-        return jsonify({"status": "error", "message": "System crashed, error sent to dashboard."}), 500
+        return jsonify({"status": "error", "message": exact_error}), 500
