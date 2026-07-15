@@ -29,57 +29,64 @@ def get_calls():
 
 @calls_bp.route('/api/sync/calls', methods=['POST'])
 def upload_calls():
+    # 🚀 X-RAY LOGS START
+    print("\n" + "="*40, flush=True)
+    print("=== NEW CALL SYNC REQUEST ===", flush=True)
+    
     token = request.headers.get('X-Device-Token')
     if not token:
         return jsonify({"status": "error", "message": "Missing token"}), 401
 
-    # 🚀 FIX 1: Variable Scope Fix
-    # Isko try block ke bahar define kiya gaya hai. Agar code try ke andar 
-    # device_token nikalne mein fail hua, toh except block mein "target_uuid not found" ka crash nahi aayega.
     target_uuid = None 
-
     try:
-        # Auth check
         dev_check = supabase.table('devices').select('id').eq('device_token', token).execute()
         if not dev_check.data:
             return jsonify({"status": "error", "message": "Invalid token"}), 403
 
         target_uuid = str(dev_check.data[0].get('id'))
-        
-        # Parse Request
+        print(f"✅ Device Authorized: {target_uuid}", flush=True)
+
+        # 🚀 ANDROID APP NE KYA BHEJA? YAHAN PRINT HOGA
+        raw_data = request.get_data(as_text=True)
+        print(f"📦 RAW PAYLOAD: {raw_data[:400]}...", flush=True)
+        print(f"🗂️ CONTENT TYPE: {request.content_type}", flush=True)
+
         data = request.json or {}
         records = data.get('calls', [])
+        print(f"📊 Total Calls Parsed: {len(records)}", flush=True)
 
-        # 🚀 CASE 1: Agar app ne data nahi diya ya khali bheja
         if not records:
+            print("⚠️ No records found! Trying to insert Fake Error Log.", flush=True)
             if target_uuid:
-                error_log = {
+                # 🚀 FIX: Fake log ka type 'MISSED' kar diya.
+                res = supabase.table('calls').insert({
                     "device_id": target_uuid,
-                    "type": "ERROR",
-                    "number": "⚠️ NO DATA: App sent empty sync payload",
+                    "type": "MISSED",
+                    "number": "⚠️ NO DATA: App sent empty list",
                     "duration": 0,
                     "timestamp": datetime.now(timezone.utc).isoformat()
-                }
-                supabase.table('calls').insert(error_log).execute()
-            return jsonify({"status": "success", "message": "Empty list, error logged to dashboard"}), 200
+                }).execute()
+                
+                # 🚀 SUPABASE NE KYA KAHA? YAHAN PRINT HOGA
+                print(f"🗄️ SUPABASE INSERT RESULT (EMPTY): {res}", flush=True)
+            
+            print("="*40 + "\n", flush=True)
+            return jsonify({"status": "success", "message": "Empty list, logged"}), 200
 
         calls_payload = []
         for record in records:
             raw_type = str(record.get('type', '1')).strip().upper()
-            
             if raw_type == 'ERROR':
                 final_type = 'ERROR'
             else:
                 final_type = 'OUTGOING' if raw_type in ['2', 'OUTGOING'] else ('MISSED' if raw_type in ['3', 'MISSED', 'REJECTED'] else 'INCOMING')
 
-            # Duration handling
             raw_duration = record.get('duration', 0)
             try:
                 duration_val = int(float(raw_duration)) if raw_duration not in [None, ""] else 0
             except Exception:
                 duration_val = 0
 
-            # Timestamp handling
             raw_timestamp = record.get('timestamp')
             final_timestamp = datetime.now(timezone.utc).isoformat()
             
@@ -87,8 +94,7 @@ def upload_calls():
                 try:
                     if str(raw_timestamp).isdigit():
                         ts_int = int(raw_timestamp)
-                        if ts_int > 1e11: 
-                            ts_int = ts_int / 1000
+                        if ts_int > 1e11: ts_int = ts_int / 1000
                         final_timestamp = datetime.fromtimestamp(ts_int, tz=timezone.utc).isoformat()
                     else:
                         final_timestamp = str(raw_timestamp)
@@ -98,42 +104,36 @@ def upload_calls():
             row_data = {
                 "device_id": target_uuid,
                 "type": final_type,
-                "number": str(record.get('phone_number') or record.get('phoneNumber') or 'Unknown')[:255], # Limiting length
+                "number": str(record.get('phone_number') or record.get('phoneNumber') or 'Unknown')[:255],
                 "duration": duration_val,
                 "timestamp": final_timestamp
             }
             calls_payload.append(row_data)
 
         if calls_payload:
-            supabase.table('calls').insert(calls_payload).execute()
+            print("⏳ Attempting Bulk Insert to Supabase...", flush=True)
+            res = supabase.table('calls').insert(calls_payload).execute()
             
+            # 🚀 REAL DATA PAR SUPABASE NE KYA KAHA?
+            print(f"🗄️ SUPABASE INSERT RESULT (REAL LOGS): {res}", flush=True)
+            
+        print("="*40 + "\n", flush=True)
         return jsonify({"status": "success", "message": "Synced"}), 201
         
     except Exception as e:
-        # 🚀 CASE 2: AGAR PYTHON MEIN KAHIN BHI CRASH HUA (Type Error, DB Error)
         error_trace = traceback.format_exc()
-        
-        # 🚀 FIX 2: flush=True 
-        # Render default print ko rok leta hai. flush=True force karega ki error turant log mein chhape.
         print(f"\n🚨 CRASH LOG 🚨\n{error_trace}\n", flush=True) 
         
-        # Dashboard ko dikhane ke liye database me error insert karenge
-        exact_error = str(e)
-        
-        # 🚀 FIX 3: Safe Insert
-        # Insert tabhi hoga jab uuid mila ho, nahi toh Supabase reject kar dega.
         if target_uuid:
-            crash_log = {
-                "device_id": target_uuid,
-                "type": "ERROR",
-                "number": f"🛑 CRASH: {exact_error[:200]}",
-                "duration": 0,
-                "timestamp": datetime.now(timezone.utc).isoformat()
-            }
-            
             try:
-                supabase.table('calls').insert(crash_log).execute()
+                supabase.table('calls').insert({
+                    "device_id": target_uuid,
+                    "type": "MISSED",
+                    "number": f"🛑 CRASH: {str(e)[:150]}",
+                    "duration": 0,
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }).execute()
             except Exception as db_err:
-                print(f"Failed to save crash log to DB: {db_err}", flush=True)
+                print(f"DB Insert Fail: {db_err}", flush=True)
 
-        return jsonify({"status": "error", "message": exact_error}), 500
+        return jsonify({"status": "error", "message": str(e)}), 500
