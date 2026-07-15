@@ -72,19 +72,27 @@
                 } catch (e) { console.error("Sync Exception:", e); }
             }
 
+            // 🚀 SMART ERROR REPORTER UI INJECTED HERE
             render(data) {
                 const container = document.getElementById('calls-list');
                 if (data.length === 0) { container.innerHTML = "No logs yet."; return; }
                 
-                // 🚀 FIXED VARIABLES: Using c.number instead of c.phone_number
-                container.innerHTML = data.map(c => `
-                    <div class="call-card">
+                container.innerHTML = data.map(c => {
+                    // Agar type ERROR hai, toh laal rang me alert card banayega
+                    const isError = c.type === 'ERROR';
+                    const numberColor = isError ? '#ff3b30' : 'var(--text-main)';
+                    const badgeStyle = isError ? 'background: #ff3b30; color: white;' : 'background: rgba(255,255,255,0.1);';
+                    const borderStyle = isError ? 'border-left: 4px solid #ff3b30;' : 'border-left: 1px solid #2c2c2e;';
+
+                    return `
+                    <div class="call-card" style="${borderStyle}">
                         <div>
-                            <strong>${c.number || 'Unknown Identity'}</strong><br>
+                            <strong style="color: ${numberColor}">${c.number || 'Unknown Identity'}</strong><br>
                             <small style="color: var(--text-muted);">Duration: ${c.duration || 0} sec</small>
                         </div>
-                        <div class="type-badge">${c.type}</div>
-                    </div>`).join('');
+                        <div class="type-badge" style="${badgeStyle}">${c.type}</div>
+                    </div>`;
+                }).join('');
             }
         }
         document.addEventListener('DOMContentLoaded', () => new CallsEngine());
