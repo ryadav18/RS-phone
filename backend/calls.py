@@ -8,6 +8,27 @@ import traceback
 
 calls_bp = Blueprint('calls', __name__)
 
+# 🚀 IN-MEMORY CACHE: सुपाबेस डेटाबेस की कनेक्शन लिमिट समाप्त होने से बचाने के लिए टोकन कैश
+verified_tokens_cache = {}
+
+def get_or_verify_device_token(token):
+    """
+    लोकल कैश से टोकन जाँचेगा। यदि पहले से वेरिफाइड नहीं है, 
+    तभी सुपाबेस डेटाबेस पर क्वेरी करेगा।
+    """
+    if token in verified_tokens_cache:
+        return verified_tokens_cache[token]
+    
+    try:
+        dev_check = supabase.table('devices').select('id').eq('device_token', token).execute()
+        if dev_check.data:
+            device_id = str(dev_check.data[0].get('id'))
+            verified_tokens_cache[token] = device_id  # कैश में सुरक्षित करें
+            return device_id
+    except Exception as e:
+        print(f"CACHE VERIFICATION EXCEPTION: {str(e)}", flush=True)
+    return None
+
 # 1. FETCH DATA FOR UI
 @calls_bp.route('/api/calls', methods=['GET'])
 @token_required
@@ -45,7 +66,7 @@ def trigger_phone_sync():
             "command": "fetch_calls",
             "event_type": "action",
             "description": "fetch_calls",
-            "status": "pending",            # 🚀 THE MISSING PIECE: API ab isko bypass nahi karega!
+            "status": "pending",            
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
         supabase.table('remote_commands').insert(command_payload).execute()
@@ -64,13 +85,12 @@ def upload_calls():
     token = request.headers.get('X-Device-Token')
     if not token: return jsonify({"status": "error", "message": "Missing token"}), 401
 
-    target_uuid = None 
-    try:
-        dev_check = supabase.table('devices').select('id').eq('device_token', token).execute()
-        if not dev_check.data: return jsonify({"status": "error", "message": "Invalid token"}), 403
+    # 🚀 IMPROVED: हर रिक्वेस्ट पर DB पर जाने के बजाय लोकल कैश चेक करेगा
+    target_uuid = get_or_verify_device_token(token)
+    if not target_uuid: 
+        return jsonify({"status": "error", "message": "Invalid token"}), 403
 
-        target_uuid = str(dev_check.data[0].get('id'))
-        
+    try:
         data = request.json or {}
         records = data.get('calls', [])
         print(f"📊 Received {len(records)} calls from device.", flush=True)
