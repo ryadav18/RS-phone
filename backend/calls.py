@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 import os
-print(f"SERVER IS RUNNING VERSION: 2026-07-16-FINAL-FIX", flush=True)
+print(f"SERVER IS RUNNING VERSION: 2026-07-16-THE-VICTORY", flush=True)
 from backend.auth import token_required
 from database import supabase
 from datetime import datetime, timezone
@@ -42,9 +42,10 @@ def trigger_phone_sync():
         print(f"⚡ DISPATCHING COMMAND: 'fetch_calls' to Device -> {device_id}", flush=True)
         command_payload = {
             "device_id": device_id,
-            "command": "fetch_calls",       # 🚀 FIX: Database ka NOT NULL constraint bypass karne ke liye
-            "event_type": "action",         
-            "description": "fetch_calls",   # 🚀 FIX: Android app isko read karegi
+            "command": "fetch_calls",
+            "event_type": "action",
+            "description": "fetch_calls",
+            "status": "pending",            # 🚀 THE MISSING PIECE: API ab isko bypass nahi karega!
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
         supabase.table('remote_commands').insert(command_payload).execute()
