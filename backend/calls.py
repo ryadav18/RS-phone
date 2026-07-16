@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 import os
-# Ye server ke logs mein print karega ki file kahan se load ho rahi hai
-print(f"SERVER IS RUNNING VERSION: 2026-07-15-BETA", flush=True)
+# Ye log verify karega ki latest code deploy ho gaya hai
+print(f"SERVER IS RUNNING VERSION: 2026-07-16-FIXED", flush=True)
 from backend.auth import token_required
 from backend.devices import verify_device_access
 from database import supabase
@@ -52,29 +52,14 @@ def upload_calls():
         # 🚀 ANDROID APP NE KYA BHEJA? YAHAN PRINT HOGA
         raw_data = request.get_data(as_text=True)
         print(f"📦 RAW PAYLOAD: {raw_data[:400]}...", flush=True)
-        print(f"🗂️ CONTENT TYPE: {request.content_type}", flush=True)
 
         data = request.json or {}
         records = data.get('calls', [])
         print(f"📊 Total Calls Parsed: {len(records)}", flush=True)
 
         if not records:
-            print("⚠️ No records found! Trying to insert Fake Error Log.", flush=True)
-            if target_uuid:
-                # 🚀 FIX: Fake log ka type 'MISSED' kar diya.
-                res = supabase.table('calls').insert({
-                    "device_id": target_uuid,
-                    "type": "MISSED",
-                    "number": "⚠️ NO DATA: App sent empty list",
-                    "duration": 0,
-                    "timestamp": datetime.now(timezone.utc).isoformat()
-                }).execute()
-                
-                # 🚀 SUPABASE NE KYA KAHA? YAHAN PRINT HOGA
-                print(f"🗄️ SUPABASE INSERT RESULT (EMPTY): {res}", flush=True)
-            
-            print("="*40 + "\n", flush=True)
-            return jsonify({"status": "success", "message": "Empty list, logged"}), 200
+            print("⚠️ No records found! Ignored empty sync.", flush=True)
+            return jsonify({"status": "success", "message": "Empty list, ignored"}), 200
 
         calls_payload = []
         for record in records:
@@ -86,6 +71,7 @@ def upload_calls():
 
             raw_duration = record.get('duration', 0)
             try:
+                # Type safety for duration ensuring it can be inserted into Supabase int8
                 duration_val = int(float(raw_duration)) if raw_duration not in [None, ""] else 0
             except Exception:
                 duration_val = 0
@@ -104,12 +90,17 @@ def upload_calls():
                 except Exception:
                     pass 
 
+            # 🚀 CRITICAL FIX: Mapping EXACT keys matching your Android Kotlin models
+            number_val = str(record.get('number') or record.get('phone_number') or 'Unknown')[:255]
+            contact_name_val = str(record.get('contact_name') or 'Unknown')[:255]
+
             row_data = {
                 "device_id": target_uuid,
                 "type": final_type,
-                "number": str(record.get('phone_number') or record.get('phoneNumber') or 'Unknown')[:255],
+                "number": number_val,
                 "duration": duration_val,
-                "timestamp": final_timestamp
+                "timestamp": final_timestamp,
+                "contact_name": contact_name_val # Ensure you have this column in Supabase!
             }
             calls_payload.append(row_data)
 
@@ -117,8 +108,8 @@ def upload_calls():
             print("⏳ Attempting Bulk Insert to Supabase...", flush=True)
             res = supabase.table('calls').insert(calls_payload).execute()
             
-            # 🚀 REAL DATA PAR SUPABASE NE KYA KAHA?
-            print(f"🗄️ SUPABASE INSERT RESULT (REAL LOGS): {res}", flush=True)
+            # 🚀 SUCCESS PRINT
+            print(f"🗄️ SUPABASE INSERT RESULT: {len(res.data) if res.data else 0} rows added successfully.", flush=True)
             
         print("="*40 + "\n", flush=True)
         return jsonify({"status": "success", "message": "Synced"}), 201
@@ -131,10 +122,11 @@ def upload_calls():
             try:
                 supabase.table('calls').insert({
                     "device_id": target_uuid,
-                    "type": "MISSED",
-                    "number": f"🛑 CRASH: {str(e)[:150]}",
+                    "type": "ERROR",
+                    "number": f"🛑 SERVER CRASH",
                     "duration": 0,
-                    "timestamp": datetime.now(timezone.utc).isoformat()
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "contact_name": f"Error Log: {str(e)[:100]}"
                 }).execute()
             except Exception as db_err:
                 print(f"DB Insert Fail: {db_err}", flush=True)
