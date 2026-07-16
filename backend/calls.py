@@ -40,14 +40,14 @@ def trigger_phone_sync():
         
     try:
         print(f"⚡ DISPATCHING COMMAND: 'fetch_calls' to Device -> {device_id}", flush=True)
-        # Assuming your table is named 'commands' based on standard architectures
         command_payload = {
             "device_id": device_id,
             "event_type": "action",
             "description": "fetch_calls",
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
-        supabase.table('commands').insert(command_payload).execute()
+        # 🚀 FIX: 'commands' se 'remote_commands' kar diya gaya hai
+        supabase.table('remote_commands').insert(command_payload).execute()
         return jsonify({"status": "success", "message": "Command successfully dispatched to target device"}), 200
     except Exception as e:
         error_trace = traceback.format_exc()
