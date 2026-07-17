@@ -4,365 +4,366 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live Notifications - RS OWNER</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* =========================================================
-           RS PHONE - ZERO-LAG FLAT ARCHITECTURE (INJECTED STYLE)
-           ========================================================= */
-        :root {
-            --bg-main: #121212;
-            --bg-card: #1e1e1e;
-            --text-main: #ffffff;
-            --text-muted: #aaaaaa;
-            --accent-cyan: #00f0ff;
-            --color-red: #ff3b30;
-            --color-green: #2ecc71;
-            --color-pink: #e91e63;
-            --color-dark: #2c3e50;
-            --color-blue: #3498db;
+        :root { 
+            --bg-main: #0d1117; 
+            --bg-card: #161b22; 
+            --text-main: #e6edf3; 
+            --text-muted: #8b949e; 
+            --accent-cyan: #2f81f7;
+            --border-color: #30363d;
+            --brand-wa: #25D366;
+            --brand-ig: #E1306C;
         }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            min-height: 100vh;
-            padding: 15px;
-            padding-bottom: 40px;
-            overflow-x: hidden;
-        }
-
-        /* Custom Scrollbar */
+        body { background-color: var(--bg-main); color: var(--text-main); min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; overflow-x: hidden; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg-main); }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--accent-cyan); }
-
-        /* Sidebar & Layout */
-        .app-container { display: flex; min-height: 100vh; gap: 20px; }
-        .sidebar { width: 260px; background: var(--bg-card); padding: 20px; border-radius: 16px; border: 1px solid #2c2c2e; display: flex; flex-direction: column; gap: 25px; }
-        .sidebar-brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; letter-spacing: 1px; color: var(--text-main); }
-        .sidebar-menu { list-style: none; display: flex; flex-direction: column; gap: 8px; }
-        .sidebar-menu li a { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: var(--text-muted); text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; transition: all 0.2s; }
-        .sidebar-menu li.active a, .sidebar-menu li a:hover { background: rgba(0, 240, 255, 0.08); color: var(--accent-cyan); }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #484f58; border-radius: 10px; }
         
-        .main-content { flex: 1; display: flex; flex-direction: column; gap: 20px; }
-        .topbar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid #2c2c2e; }
-        .glass-panel { background: var(--bg-card); border: 1px solid #2c2c2e; border-radius: 16px; padding: 25px; }
-
-        /* =========================================
-           NOTIFICATION SPECIFIC UI (APP FILTERS)
-           ========================================= */
-        .wipe-btn { 
-            background: rgba(255, 59, 48, 0.1); 
-            color: var(--color-red); 
-            border: 1px solid var(--color-red); 
-            border-radius: 6px; 
-            padding: 8px 16px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            display: flex; 
-            align-items: center; 
-            gap: 6px; 
-            transition: 0.2s; 
-            font-size: 13px;
-            text-transform: uppercase;
-        }
-        .wipe-btn:hover { background: var(--color-red); color: white; }
-
-        /* The Horizontal App Filter Engine */
-        .filter-bar {
-            display: flex; gap: 12px; overflow-x: auto; padding-bottom: 15px; margin-bottom: 20px;
-            scrollbar-width: none;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        .filter-bar::-webkit-scrollbar { display: none; }
+        .glass-panel { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; }
         
-        .filter-pill {
-            display: flex; align-items: center; gap: 8px; padding: 10px 18px;
-            background: rgba(255,255,255,0.03); border: 1px solid #333; border-radius: 20px;
-            color: var(--text-muted); font-size: 13px; font-weight: 700;
-            cursor: pointer; white-space: nowrap; transition: all 0.2s;
-            text-transform: uppercase; letter-spacing: 0.5px;
-        }
-        .filter-pill:hover { background: rgba(255,255,255,0.08); }
-        .filter-pill:active { transform: scale(0.95); }
+        /* Card Styles */
+        .notif-card { position: relative; transition: all 0.2s ease; border-left: 4px solid #484f58; background: rgba(255,255,255,0.01); border-top: 1px solid transparent; border-right: 1px solid transparent; border-bottom: 1px solid var(--border-color); }
+        .notif-card:hover { background: rgba(255,255,255,0.03); border-color: var(--border-color); transform: translateY(-1px); border-radius: 8px; }
+        .notif-card.brand-whatsapp { border-left-color: var(--brand-wa); }
+        .notif-card.brand-instagram { border-left-color: var(--brand-ig); }
+        .notif-card.brand-system { border-left-color: #484f58; opacity: 0.8; }
         
-        /* Active State Colors */
-        .filter-pill.active { background: var(--color-blue); color: white; border-color: var(--color-blue); }
-        .filter-pill.active[data-filter="whatsapp"] { background: rgba(46, 204, 113, 0.2); color: var(--color-green); border-color: var(--color-green); }
-        .filter-pill.active[data-filter="instagram"] { background: rgba(233, 30, 99, 0.2); color: var(--color-pink); border-color: var(--color-pink); }
-        .filter-pill.active[data-filter="system"] { background: rgba(255, 255, 255, 0.1); color: #fff; border-color: #666; }
+        /* Keyword Alarm Glow */
+        .alarm-glow { border: 1px solid #f85149 !important; box-shadow: 0 0 15px rgba(248, 81, 73, 0.2); animation: pulse-red 2s infinite; }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 10px rgba(248,81,73,0.2); } 50% { box-shadow: 0 0 20px rgba(248,81,73,0.5); } 100% { box-shadow: 0 0 10px rgba(248,81,73,0.2); } }
+        .highlight-word { background: rgba(248, 81, 73, 0.2); color: #ff7b72; font-weight: bold; padding: 0 2px; border-radius: 3px; }
 
-        /* Clean Feed Container */
-        .data-list-container { 
-            display: flex; flex-direction: column; gap: 12px; 
-            max-height: 65vh; overflow-y: auto; padding-right: 10px; 
-        }
+        /* Copy Button (Shows on hover) */
+        .copy-btn { opacity: 0; transition: opacity 0.2s; }
+        .notif-card:hover .copy-btn { opacity: 1; }
 
-        .notif-card {
-            background: rgba(255,255,255,0.02); 
-            padding: 16px 20px; 
-            border-radius: 12px; 
-            border-left: 4px solid var(--color-blue); 
-            border-top: 1px solid rgba(255,255,255,0.05);
-            border-right: 1px solid rgba(255,255,255,0.05);
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            transition: transform 0.2s, background 0.2s;
-        }
-        .notif-card:hover { transform: translateX(4px); background: rgba(255,255,255,0.04); }
-        .notif-card[data-app="whatsapp"] { border-left-color: var(--color-green); }
-        .notif-card[data-app="instagram"] { border-left-color: var(--color-pink); }
-        .notif-card[data-app="system"] { border-left-color: #666; }
-        
-        .notif-header { display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center; }
-        .notif-app { font-size: 0.85rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-        .notif-time { color: #888; font-size: 0.8rem; font-family: monospace; }
-        .notif-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; color: #fff; }
-        .notif-desc { font-size: 0.9rem; color: #bbb; line-height: 1.4; word-break: break-word; }
+        /* Toggle Switch */
+        .toggle-checkbox:checked { right: 0; border-color: var(--accent-cyan); }
+        .toggle-checkbox:checked + .toggle-label { background-color: var(--accent-cyan); }
+
+        /* Toast & Modal */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; opacity: 0; transform: translateX(100%); transition: all 0.3s; display: flex; align-items: center; gap: 10px; color: white; }
+        .toast.show { opacity: 1; transform: translateX(0); }
+        .toast-success { background: rgba(46, 160, 67, 0.95); border: 1px solid #3fb950; }
+        .toast-error { background: rgba(248, 81, 73, 0.95); border: 1px solid #f85149; }
     </style>
 </head>
-<body>
-    <div class="app-container">
-        <!-- Sidebar Navigation -->
-        <div class="sidebar">
-            <div class="sidebar-brand">
-                <i data-lucide="shield" style="color: var(--accent-cyan);"></i>
-                <span>RS OWNER</span>
+<body class="p-3 md:p-6 flex flex-col md:flex-row gap-6">
+
+    <div id="toast-container"></div>
+    
+    <!-- DANGER WIPE MODAL -->
+    <div id="wipe-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-[#161b22] border border-[#f85149] rounded-xl p-6 max-w-md w-full shadow-2xl">
+            <div class="flex items-center gap-3 text-[#f85149] mb-4">
+                <i data-lucide="alert-triangle" class="w-8 h-8"></i>
+                <h2 class="text-xl font-bold">CRITICAL WARNING</h2>
             </div>
-            <ul class="sidebar-menu">
-                <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
-                <li class="active"><a href="/communication.html"><i data-lucide="message-circle"></i> Comm Hub</a></li>
-                <li><a href="/remote_center.html"><i data-lucide="cpu"></i> Remote Ops</a></li>
-                <li><a href="/calls"><i data-lucide="phone"></i> Call Logs</a></li>
-                <li><a href="/messages"><i data-lucide="message-square"></i> SMS Audit</a></li>
-                <li><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
-            </ul>
+            <p class="text-[var(--text-muted)] mb-6 text-sm">
+                You are about to permanently eradicate all intercepted notification records for this device. This action cannot be reversed. Proceed with wipe?
+            </p>
+            <div class="flex gap-3 justify-end">
+                <button onclick="document.getElementById('wipe-modal').classList.add('hidden')" class="px-4 py-2 rounded font-semibold text-gray-300 hover:bg-gray-800 transition">Cancel</button>
+                <button onclick="engine.executeWipe()" class="px-4 py-2 rounded font-bold bg-[#f85149]/20 text-[#ff7b72] border border-[#f85149] hover:bg-[#f85149] hover:text-white transition flex items-center gap-2">
+                    <i data-lucide="flame" class="w-4 h-4"></i> EXECUTE WIPE
+                </button>
+            </div>
         </div>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <header class="topbar">
-                <div>
-                    <h2 style="font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">Live Notification Stream</h2>
-                    <p style="color: #666; font-size: 0.85rem; margin-top: 4px;">Intercepting active pushes from the target status bar.</p>
-                </div>
-                <div class="device-switcher" style="display: flex; align-items: center; gap: 15px;">
-                    <select id="device-select" style="padding: 10px 14px; border-radius: 6px; background: #1a1a1c; color: white; border: 1px solid #333; outline: none; font-weight: 600; cursor: pointer;"></select>
-                    
-                    <button onclick="wipeNotificationsHistory()" class="wipe-btn">
-                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> Wipe Log
-                    </button>
-                </div>
-            </header>
-
-            <div class="glass-panel">
-                <!-- PRO APP FILTER BAR -->
-                <div class="filter-bar" id="app-filter-bar">
-                    <div class="filter-pill active" data-filter="all">
-                        <i data-lucide="layout-grid"></i> All Alerts
-                    </div>
-                    <div class="filter-pill" data-filter="whatsapp">
-                        <i data-lucide="message-circle"></i> WhatsApp
-                    </div>
-                    <div class="filter-pill" data-filter="instagram">
-                        <i data-lucide="instagram"></i> Instagram
-                    </div>
-                    <div class="filter-pill" data-filter="sms">
-                        <i data-lucide="message-square"></i> SMS
-                    </div>
-                    <div class="filter-pill" data-filter="system">
-                        <i data-lucide="settings"></i> System
-                    </div>
-                </div>
-
-                <!-- DATA FEED CONTAINER -->
-                <div class="data-list-container" id="dashboard-notif-feed">
-                    <div style="text-align: center; color: #888; padding: 40px; font-weight: bold; letter-spacing: 1px;">
-                        <i data-lucide="loader" class="lucide-spin" style="width: 30px; height: 30px; margin-bottom: 10px;"></i><br>
-                        FETCHING ENCRYPTED NOTIFICATIONS...
-                    </div>
-                </div>
-            </div>
-        </main>
     </div>
     
-    <!-- EMBEDDED JAVASCRIPT LOGIC -->
+    <!-- Sidebar -->
+    <aside class="w-full md:w-64 flex-shrink-0 hidden md:block">
+        <div class="glass-panel p-5 h-full">
+            <div class="flex items-center gap-2 mb-8 text-[var(--accent-cyan)] font-bold text-lg tracking-wide">
+                <i data-lucide="shield-check"></i> RS OWNER
+            </div>
+            <nav class="flex flex-col gap-2">
+                <a href="/calls" class="flex items-center gap-3 px-4 py-3 rounded-lg text-[var(--text-muted)] hover:bg-[rgba(255,255,255,0.05)] hover:text-white transition-colors">
+                    <i data-lucide="phone" class="w-5 h-5"></i> Call Matrix
+                </a>
+                <a href="/messages" class="flex items-center gap-3 px-4 py-3 rounded-lg text-[var(--text-muted)] hover:bg-[rgba(255,255,255,0.05)] hover:text-white transition-colors">
+                    <i data-lucide="message-square" class="w-5 h-5"></i> SMS Audit
+                </a>
+                <a href="/notifications.html" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-[rgba(47,129,247,0.1)] text-[var(--accent-cyan)] font-medium transition-colors">
+                    <i data-lucide="bell" class="w-5 h-5"></i> Live Alerts
+                </a>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 min-w-0 flex flex-col gap-5 h-[calc(100vh-48px)]">
+        
+        <!-- Header & Master Controls -->
+        <div class="glass-panel p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                    <i data-lucide="radio" class="w-5 h-5 text-[var(--accent-cyan)]"></i>
+                    Live Interception Stream
+                </h2>
+                <p class="text-xs text-[var(--text-muted)] mt-1 font-mono">Intercepting active pushes from the target status bar.</p>
+            </div>
+            <div class="flex items-center gap-3 w-full md:w-auto">
+                <button onclick="document.getElementById('wipe-modal').classList.remove('hidden')" class="flex-1 md:flex-none flex justify-center items-center gap-2 px-4 py-2 rounded bg-[#f85149]/10 hover:bg-[#f85149]/20 text-[#ff7b72] border border-[#f85149]/50 transition-colors font-bold text-sm">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    <span>NUKE FEED</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Live Analytics Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="glass-panel p-3 flex flex-col items-center justify-center text-center">
+                <p class="text-[10px] text-[var(--text-muted)] font-bold tracking-wider">TOTAL ALERTS</p>
+                <h3 class="text-xl font-black text-white" id="stat-total">0</h3>
+            </div>
+            <div class="glass-panel p-3 flex flex-col items-center justify-center text-center border-b-2 border-b-[var(--brand-wa)]">
+                <p class="text-[10px] text-[var(--text-muted)] font-bold tracking-wider">WHATSAPP</p>
+                <h3 class="text-xl font-black text-white" id="stat-wa">0</h3>
+            </div>
+            <div class="glass-panel p-3 flex flex-col items-center justify-center text-center border-b-2 border-b-[var(--brand-ig)]">
+                <p class="text-[10px] text-[var(--text-muted)] font-bold tracking-wider">INSTAGRAM</p>
+                <h3 class="text-xl font-black text-white" id="stat-ig">0</h3>
+            </div>
+            <div class="glass-panel p-3 flex flex-col items-center justify-center text-center border-b-2 border-b-gray-500">
+                <p class="text-[10px] text-[var(--text-muted)] font-bold tracking-wider">SYSTEM/OTHER</p>
+                <h3 class="text-xl font-black text-white" id="stat-sys">0</h3>
+            </div>
+        </div>
+
+        <!-- Smart Controls: Zen Mode & Keyword Alarm -->
+        <div class="glass-panel p-3 flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div class="flex items-center gap-4 w-full md:w-auto">
+                <!-- Zen Mode Toggle -->
+                <div class="flex items-center gap-2 cursor-pointer" onclick="engine.toggleZenMode()" title="Hide System/Android alerts">
+                    <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" name="toggle" id="zen-toggle" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 border-gray-600 appearance-none cursor-pointer z-10 transition-transform duration-200 ease-in-out"/>
+                        <label for="zen-toggle" class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-600 cursor-pointer"></label>
+                    </div>
+                    <span class="text-sm font-bold text-white flex items-center gap-1"><i data-lucide="moon" class="w-4 h-4 text-yellow-400"></i> Zen Mode</span>
+                </div>
+
+                <!-- Auto Scroll Toggle -->
+                <div class="flex items-center gap-2 cursor-pointer" onclick="engine.toggleAutoScroll()">
+                    <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" name="toggle2" id="scroll-toggle" checked class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 border-gray-600 appearance-none cursor-pointer z-10 transition-transform duration-200 ease-in-out"/>
+                        <label for="scroll-toggle" class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-600 cursor-pointer"></label>
+                    </div>
+                    <span class="text-sm font-bold text-white flex items-center gap-1"><i data-lucide="arrow-down-to-line" class="w-4 h-4 text-[var(--accent-cyan)]"></i> Auto-Scroll</span>
+                </div>
+            </div>
+
+            <!-- Keyword Alarm Input -->
+            <div class="relative w-full md:w-64">
+                <i data-lucide="siren" class="absolute left-3 top-2 w-4 h-4 text-red-400"></i>
+                <input type="text" id="alarm-keyword" onkeyup="engine.updateAlarmKeyword()" placeholder="Set Alarm Keyword (e.g. OTP)" class="w-full bg-[var(--bg-main)] border border-[var(--border-color)] text-white text-sm rounded-lg pl-9 pr-3 py-1.5 focus:outline-none focus:border-red-500 transition placeholder-gray-600">
+            </div>
+        </div>
+
+        <!-- Notification Feed Container -->
+        <div class="glass-panel p-2 flex-1 overflow-y-auto" id="feed-container">
+            <div class="flex flex-col gap-2 p-2" id="notifications-list">
+                <!-- Data injected here -->
+                <div class="py-12 flex flex-col items-center justify-center gap-4 text-[var(--text-muted)]">
+                    <i data-lucide="radio" class="w-12 h-12 animate-pulse text-[var(--accent-cyan)]"></i>
+                    <p class="font-mono text-sm tracking-widest">SCANNING TARGET SYSTEM...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
     <script>
+        lucide.createIcons();
+
         class NotificationsEngine {
             constructor() {
                 this.activeDeviceId = localStorage.getItem('active_device_id');
                 this.allData = [];
-                this.currentFilter = 'all'; // Default active filter state
+                this.zenMode = false;
+                this.autoScroll = true;
+                this.alarmKeyword = "";
                 this.init();
             }
 
+            getValidToken() { return localStorage.getItem('owner_token') || localStorage.getItem('session_token') || ""; }
+
+            showToast(msg, type = 'success') {
+                const c = document.getElementById('toast-container');
+                const t = document.createElement('div');
+                t.className = `toast toast-${type}`;
+                t.innerHTML = `<i data-lucide="${type === 'error' ? 'alert-octagon' : 'check-circle'}" class="w-5 h-5"></i> ${msg}`;
+                c.appendChild(t);
+                lucide.createIcons();
+                setTimeout(() => t.classList.add('show'), 10);
+                setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 3000);
+            }
+
             async init() {
-                this.setupFilters();
-                await this.loadDevicesList();
-                if (!this.activeDeviceId) return;
+                if (!this.activeDeviceId) {
+                    document.getElementById('notifications-list').innerHTML = '<div class="text-center py-10 text-red-500 font-bold">NO TARGET DEVICE LINKED</div>';
+                    return;
+                }
                 
-                this.fetchNotifications();
+                // Event Listeners for custom toggles
+                document.getElementById('zen-toggle').addEventListener('change', (e) => { this.zenMode = e.target.checked; this.renderData(); });
+                document.getElementById('scroll-toggle').addEventListener('change', (e) => { this.autoScroll = e.target.checked; });
+                
+                await this.fetchNotifications();
                 setInterval(() => this.fetchNotifications(), 5000);
             }
 
-            // 🚀 INJECTED: Interactive Filter Linking Logic
-            setupFilters() {
-                const pills = document.querySelectorAll('.filter-pill');
-                pills.forEach(pill => {
-                    pill.addEventListener('click', (e) => {
-                        pills.forEach(p => p.classList.remove('active'));
-                        e.currentTarget.classList.add('active');
-                        this.currentFilter = e.currentTarget.getAttribute('data-filter');
-                        this.renderNotifications(); // Re-render instantly from memory cache
-                    });
-                });
-            }
-
-            // 🚀 INJECTED: Device Loading Logic
-            async loadDevicesList() {
-                const token = localStorage.getItem('owner_token');
+            async fetchNotifications() {
                 try {
-                    const res = await fetch('/api/devices', { headers: { 'Authorization': `Bearer ${token}` } });
+                    const res = await fetch(`/api/notifications?device_id=${this.activeDeviceId}&limit=300`, {
+                        headers: { 'Authorization': `Bearer ${this.getValidToken()}` }
+                    });
                     const result = await res.json();
                     if (result.status === 'success') {
-                        const selectEl = document.getElementById('device-select');
-                        if (selectEl) {
-                            selectEl.innerHTML = ''; 
-                            if (!result.data || result.data.length === 0) {
-                                selectEl.innerHTML = '<option value="">No Devices Found</option>';
-                                return;
-                            }
-                            result.data.forEach(dev => {
-                                const option = document.createElement('option');
-                                option.value = dev.id;
-                                option.textContent = dev.name;
-                                selectEl.appendChild(option);
-                            });
-
-                            if (!this.activeDeviceId && result.data.length > 0) {
-                                this.activeDeviceId = result.data[0].id;
-                                localStorage.setItem('active_device_id', this.activeDeviceId);
-                            }
-                            selectEl.value = this.activeDeviceId;
-
-                            selectEl.addEventListener('change', (e) => {
-                                this.activeDeviceId = e.target.value;
-                                localStorage.setItem('active_device_id', this.activeDeviceId);
-                                document.getElementById('dashboard-notif-feed').innerHTML = '<div style="text-align: center; color: #888; padding: 40px;">SCANNING NEW TARGET NODE...</div>';
-                                this.fetchNotifications(); 
-                            });
+                        // Compare length to trigger auto-scroll if new items arrived
+                        const isNewData = this.allData.length !== (result.data || []).length;
+                        this.allData = result.data || [];
+                        this.calculateAnalytics();
+                        this.renderData();
+                        
+                        if(isNewData && this.autoScroll) {
+                            const feed = document.getElementById('feed-container');
+                            // Scroll to top because newest are usually at the top
+                            feed.scrollTo({ top: 0, behavior: 'smooth' });
                         }
                     }
-                } catch (e) { console.error("Failed to load device list:", e); }
+                } catch(e) { console.error("Feed error:", e); }
             }
 
-            async fetchNotifications() {
-                const token = localStorage.getItem('owner_token');
-                if (!this.activeDeviceId) return;
+            calculateAnalytics() {
+                let wa = 0, ig = 0, sys = 0;
+                this.allData.forEach(n => {
+                    const app = (n.app_name || '').toLowerCase();
+                    if(app.includes('whatsapp')) wa++;
+                    else if(app.includes('instagram')) ig++;
+                    else sys++;
+                });
+                document.getElementById('stat-total').innerText = this.allData.length;
+                document.getElementById('stat-wa').innerText = wa;
+                document.getElementById('stat-ig').innerText = ig;
+                document.getElementById('stat-sys').innerText = sys;
+            }
 
-                try {
-                    const res = await fetch(`/api/notifications?device_id=${this.activeDeviceId}&limit=100`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    const result = await res.json();
-                    if (result.status === 'success') {
-                        this.allData = result.data || [];
-                        this.renderNotifications();
+            updateAlarmKeyword() {
+                this.alarmKeyword = document.getElementById('alarm-keyword').value.toLowerCase().trim();
+                this.renderData();
+            }
+
+            toggleZenMode() { document.getElementById('zen-toggle').click(); }
+            toggleAutoScroll() { document.getElementById('scroll-toggle').click(); }
+
+            formatDate(iso) {
+                const d = new Date(iso);
+                return d.toLocaleString('en-US', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+            }
+
+            highlightAndCheckAlarm(text) {
+                if(!text) return { html: '[Hidden Payload]', isAlarm: false };
+                let isAlarm = false;
+                let html = text;
+                
+                if (this.alarmKeyword && this.alarmKeyword.length > 1) {
+                    const regex = new RegExp(`(${this.alarmKeyword})`, 'gi');
+                    if (regex.test(text)) {
+                        isAlarm = true;
+                        html = text.replace(regex, '<span class="highlight-word">$1</span>');
                     }
-                } catch (e) { console.error("Notifications Engine Error:", e); }
+                }
+                // Escape HTML tags to prevent injection, but keep our highlight span
+                html = html.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/&lt;span class="highlight-word"&gt;/g, '<span class="highlight-word">').replace(/&lt;\/span&gt;/g, '</span>');
+                
+                return { html, isAlarm };
             }
 
-            // 🚀 SMART ENGINE: Applies Client-Side App Filtering dynamically
-            renderNotifications() {
-                const container = document.getElementById('dashboard-notif-feed');
-                if (!container) return;
-
-                // Execute Filter Logic
-                let filteredItems = this.allData;
-                if (this.currentFilter !== 'all') {
-                    filteredItems = this.allData.filter(n => {
-                        const appName = (n.app_name || '').toLowerCase();
-                        if (this.currentFilter === 'whatsapp') return appName.includes('whatsapp');
-                        if (this.currentFilter === 'instagram') return appName.includes('instagram');
-                        if (this.currentFilter === 'sms') return appName.includes('message') || appName.includes('sms');
-                        if (this.currentFilter === 'system') return appName.includes('system') || appName.includes('android');
-                        return false; // For strictly mapped filters
+            renderData() {
+                const container = document.getElementById('notifications-list');
+                
+                let filtered = this.allData;
+                
+                // Zen Mode Logic (Hide System/Android)
+                if (this.zenMode) {
+                    filtered = filtered.filter(n => {
+                        const app = (n.app_name || '').toLowerCase();
+                        return !(app.includes('system') || app.includes('android') || app.includes('ui') || app.includes('settings'));
                     });
                 }
 
-                if (filteredItems.length === 0) {
-                    container.innerHTML = `
-                        <div style="color: #666; text-align: center; padding: 60px;">
-                            <i data-lucide="bell-off" style="width: 48px; height: 48px; opacity: 0.3; margin-bottom: 10px;"></i><br>
-                            No alerts matching this filter configuration.
-                        </div>`;
-                    if (window.lucide) window.lucide.createIcons();
-                    return;
+                if (filtered.length === 0) {
+                    container.innerHTML = `<div class="py-12 flex flex-col items-center justify-center gap-4 text-[var(--text-muted)]"><i data-lucide="bell-off" class="w-12 h-12 opacity-50"></i><p class="font-mono text-sm">FEED IS CLEAR</p></div>`;
+                    lucide.createIcons(); return;
                 }
 
-                container.innerHTML = filteredItems.map(n => {
+                container.innerHTML = filtered.map(n => {
                     const appLower = (n.app_name || '').toLowerCase();
-                    let themeClass = 'other';
-                    let appColor = 'var(--color-blue)';
+                    let brandClass = 'brand-system';
+                    let iconHtml = '<i data-lucide="settings" class="w-4 h-4 text-gray-500"></i>';
                     
-                    if (appLower.includes('whatsapp')) { themeClass = 'whatsapp'; appColor = 'var(--color-green)'; }
-                    else if (appLower.includes('instagram')) { themeClass = 'instagram'; appColor = 'var(--color-pink)'; }
-                    else if (appLower.includes('system') || appLower.includes('android')) { themeClass = 'system'; appColor = '#aaa'; }
+                    if (appLower.includes('whatsapp')) { brandClass = 'brand-whatsapp'; iconHtml = '<i data-lucide="message-circle" class="w-4 h-4 text-[var(--brand-wa)]"></i>'; }
+                    else if (appLower.includes('instagram')) { brandClass = 'brand-instagram'; iconHtml = '<i data-lucide="instagram" class="w-4 h-4 text-[var(--brand-ig)]"></i>'; }
+                    else if (appLower.includes('message') || appLower.includes('sms')) { iconHtml = '<i data-lucide="message-square" class="w-4 h-4 text-blue-400"></i>'; }
 
-                    const dateObj = new Date(n.received_at);
-                    const timeString = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-                    const dateString = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+                    const titleCheck = this.highlightAndCheckAlarm(n.title || 'System Alert');
+                    const msgCheck = this.highlightAndCheckAlarm(n.message || 'Payload intercepted cleanly.');
+                    
+                    const isAlarmTriggered = titleCheck.isAlarm || msgCheck.isAlarm;
+                    const cardClass = isAlarmTriggered ? 'alarm-glow' : '';
+
+                    const rawPayload = `${n.title || ''}\n${n.message || ''}`.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
                     return `
-                    <div class="notif-card" data-app="${themeClass}">
-                        <div class="notif-header">
-                            <span class="notif-app" style="color: ${appColor};">${n.app_name || 'System Alert'}</span>
-                            <span class="notif-time">${dateString} • ${timeString}</span>
+                    <div class="notif-card p-3 md:p-4 rounded-lg flex flex-col gap-2 ${brandClass} ${cardClass}">
+                        <div class="flex justify-between items-start w-full">
+                            <div class="flex items-center gap-2">
+                                ${iconHtml}
+                                <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">${n.app_name || 'System'}</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button onclick="navigator.clipboard.writeText('${rawPayload}'); engine.showToast('Payload Copied!', 'info');" class="copy-btn text-gray-500 hover:text-white bg-white/5 p-1 rounded" title="Copy Text">
+                                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <span class="text-[10px] text-[var(--text-muted)] font-mono">${this.formatDate(n.received_at)}</span>
+                            </div>
                         </div>
-                        <div class="notif-title">${n.title || '[Hidden Element]'}</div>
-                        <div class="notif-desc">${n.message || 'Payload intercepted cleanly.'}</div>
+                        
+                        <div class="mt-1 flex flex-col gap-1 pr-8">
+                            <h4 class="font-bold text-sm md:text-base text-white break-words">${titleCheck.html}</h4>
+                            <p class="text-xs md:text-sm text-gray-300 break-words leading-relaxed whitespace-pre-wrap">${msgCheck.html}</p>
+                        </div>
                     </div>
                     `;
                 }).join('');
+                lucide.createIcons();
+            }
+
+            // ================= NUKE PROTOCOL =================
+            async executeWipe() {
+                document.getElementById('wipe-modal').classList.add('hidden');
+                try {
+                    const res = await fetch('/api/notifications/clear', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${this.getValidToken()}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ device_id: this.activeDeviceId })
+                    });
+                    this.showToast("NOTIFICATION FEED WIPED CLEAN.", "success");
+                    this.allData = [];
+                    this.calculateAnalytics();
+                    this.renderData();
+                } catch(e) {
+                    this.showToast("Server refused connection.", "error");
+                }
             }
         }
-
-        window.wipeNotificationsHistory = async function() {
-            if(!confirm("CRITICAL WARNING: Permanently wipe all intercepted notification logs from the cloud storage?")) return;
-            const token = localStorage.getItem('owner_token');
-            const activeId = localStorage.getItem('active_device_id');
-            
-            try {
-                const res = await fetch('/api/notifications/clear', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ device_id: activeId })
-                });
-                const result = await res.json();
-                if (result.status === 'success') {
-                    alert("Notification matrix wiped cleanly.");
-                    window.location.reload();
-                } else {
-                    alert("Execution Error: " + result.message);
-                }
-            } catch (e) {
-                console.error(e);
-                alert("Network Gateway timeout.");
-            }
-        };
-
-        document.addEventListener('DOMContentLoaded', () => {
-            if (window.lucide) window.lucide.createIcons();
-            new NotificationsEngine();
-        });
+        
+        const engine = new NotificationsEngine();
     </script>
 </body>
 </html>
