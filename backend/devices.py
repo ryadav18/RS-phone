@@ -32,16 +32,15 @@ def get_devices():
 @token_required
 def connect_device():
     data = request.json or {}
-    device_uid = data.get('device_id') # Ye phone ki permanent ANDROID_ID hai
+    device_uid = data.get('device_id') 
     name = data.get('name')
     model = data.get('model', 'Unknown Phone')
-    fcm_token = data.get('fcm_token') # 🚀 FCM Master Key from App
+    fcm_token = data.get('fcm_token')
 
     if not device_uid or not name:
         return jsonify({"status": "error", "message": "Parameters device_id and name are required"}), 400
 
     try:
-        # 🚀 ANTI-DUPLICATE ENGINE: Check if this specific phone is already registered
         existing = supabase.table('devices').select('*').eq('device_id', device_uid).execute()
         
         device_payload = {
@@ -55,15 +54,15 @@ def connect_device():
             "battery_level": data.get('battery_level', 100),
             "is_charging": data.get('is_charging', False),
             "network_type": data.get('network_type', 'WIFI'),
+            "ip_address": data.get('ip_address', '--.--.--.--'), # 🚀 NEW: IP Tracking
+            "sim_provider": data.get('sim_provider', 'Unknown'), # 🚀 NEW: Carrier Tracking
             "storage_used": data.get('storage_used', '0%'),
             "temperature": data.get('temperature', 30.0),
-            "fcm_token": fcm_token # 🚀 Store FCM Token in database
+            "fcm_token": fcm_token 
         }
 
         if existing.data:
-            # 🚀 UPSERT LOGIC: Update the existing row instead of making a duplicate
             dev_id = existing.data[0]['id']
-            # Keep the old device_token intact so dashboard links don't break
             device_payload["device_token"] = existing.data[0]['device_token']
             
             response = supabase.table('devices').update(device_payload).eq('id', dev_id).execute()
@@ -74,7 +73,6 @@ def connect_device():
                 "description": f"Context re-established for {model} with updated FCM token"
             }).execute()
         else:
-            # First time installation
             new_device_token = str(uuid.uuid4())
             device_payload["device_token"] = new_device_token
             device_payload["device_id"] = device_uid
@@ -114,6 +112,8 @@ def update_status():
             "battery_level": data.get('battery_level', 100),
             "is_charging": data.get('is_charging', False),
             "network_type": data.get('network_type', 'WIFI'),
+            "ip_address": data.get('ip_address', '--.--.--.--'), # 🚀 NEW
+            "sim_provider": data.get('sim_provider', 'Unknown'), # 🚀 NEW
             "storage_used": data.get('storage_used', '0%'),
             "temperature": data.get('temperature', 30.0)
         }
