@@ -15,3 +15,6 @@ bcrypt==4.1.2
 # Network Client Pipelines & Multi-Part Parsers
 requests==2.31.0
 python-multipart==0.0.9
+
+# 🚀 NAYA INTEGRATION: Firebase Cloud Messaging Engine
+firebase-admin==6.4.0
