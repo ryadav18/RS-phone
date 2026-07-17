@@ -94,7 +94,6 @@ def connect_device():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# ... (rest of devices.py remains exactly the same as you provided)
 @devices_bp.route('/api/devices/status', methods=['POST'])
 def update_status():
     token = request.headers.get('X-Device-Token')
@@ -197,27 +196,8 @@ def sync_permissions():
         return jsonify({"status": "success", "message": "Permissions synchronized successfully"}), 200
     except Exception as e: return jsonify({"status": "error", "message": str(e)}), 500
 
-@devices_bp.route('/api/sync/calls', methods=['POST'])
-def sync_calls():
-    # ... unchanged standard route ...
-    token = request.headers.get('X-Device-Token')
-    if not token: return jsonify({"status": "error", "message": "Missing device token"}), 401
-    try:
-        device_check = supabase.table('devices').select('id').eq('device_token', token).execute()
-        if not device_check.data: return jsonify({"status": "error", "message": "Device not authenticated"}), 403
-        dev_id = device_check.data[0]['id']
-        data = request.json or {}
-        calls_list = data.get('calls', [])
-        if not calls_list: return jsonify({"status": "success", "message": "No calls received to sync"}), 200
-        bulk_payload = [{"device_id": dev_id, "type": call.get("type", "UNKNOWN"), "phone_number": call.get("phone_number", "Unknown"), "duration": call.get("duration", 0), "timestamp": call.get("timestamp")} for call in calls_list]
-        supabase.table('calls').delete().eq('device_id', dev_id).execute()
-        supabase.table('calls').insert(bulk_payload).execute()
-        return jsonify({"status": "success", "message": "Calls synchronized"}), 200
-    except Exception as e: return jsonify({"status": "error", "message": str(e)}), 500
-
 @devices_bp.route('/api/sync/usage', methods=['POST'])
 def sync_app_usage():
-    # ... unchanged standard route ...
     token = request.headers.get('X-Device-Token')
     if not token: return jsonify({"status": "error", "message": "Missing device token"}), 401
     try:
@@ -235,7 +215,6 @@ def sync_app_usage():
 
 @devices_bp.route('/api/sync/commands', methods=['GET'])
 def get_pending_commands():
-    # ... unchanged standard route ...
     token = request.headers.get('X-Device-Token')
     if not token: return jsonify({"status": "error", "message": "Missing token"}), 401
     try:
