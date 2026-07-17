@@ -1,47 +1,39 @@
 from flask import Blueprint, request, jsonify
 import os
-print(f"SERVER IS RUNNING VERSION: 2026-07-16-THE-VICTORY", flush=True)
+print(f"SERVER IS RUNNING VERSION: 2026-07-16-FCM-ENTERPRISE-ENGINE", flush=True)
 from backend.auth import token_required
 from database import supabase
 from datetime import datetime, timezone
 import traceback
+from firebase_admin import messaging # 🚀 NAYA: FCM Sender
 
 calls_bp = Blueprint('calls', __name__)
 
-# 🚀 IN-MEMORY CACHE: सुपाबेस डेटाबेस की कनेक्शन लिमिट समाप्त होने से बचाने के लिए टोकन कैश
 verified_tokens_cache = {}
 
 def get_or_verify_device_token(token):
-    """
-    लोकल कैश से टोकन जाँचेगा। यदि पहले से वेरिफाइड नहीं है, 
-    तभी सुपाबेस डेटाबेस पर क्वेरी करेगा।
-    """
     if token in verified_tokens_cache:
         return verified_tokens_cache[token]
-    
     try:
         dev_check = supabase.table('devices').select('id').eq('device_token', token).execute()
         if dev_check.data:
             device_id = str(dev_check.data[0].get('id'))
-            verified_tokens_cache[token] = device_id  # कैश में सुरक्षित करें
+            verified_tokens_cache[token] = device_id
             return device_id
     except Exception as e:
         print(f"CACHE VERIFICATION EXCEPTION: {str(e)}", flush=True)
     return None
 
-# 1. FETCH DATA FOR UI
 @calls_bp.route('/api/calls', methods=['GET'])
 @token_required
 def get_calls():
     device_id = request.args.get('device_id')
     if not device_id:
         return jsonify({"status": "error", "message": "Unauthorized"}), 403
-
     try:
         limit = min(int(request.args.get('limit', 50)), 50)
     except (ValueError, TypeError):
         limit = 50
-    
     try:
         res = supabase.table('calls').select('*').eq('device_id', str(device_id)).order('timestamp', desc=True).limit(limit).execute()
         return jsonify({"status": "success", "data": res.data if res.data else []}), 200
@@ -49,7 +41,7 @@ def get_calls():
         print(f"GET CALLS ERROR: {str(e)}", flush=True)
         return jsonify({"status": "error", "message": "Failed to fetch calls"}), 500
 
-# 🚀 2. THE NEW TRIGGER ENGINE (Sends command to phone)
+# 🚀 2. THE NEW FCM PUSH NOTIFICATION ENGINE
 @calls_bp.route('/api/calls/trigger', methods=['POST'])
 @token_required
 def trigger_phone_sync():
@@ -60,23 +52,33 @@ def trigger_phone_sync():
         return jsonify({"status": "error", "message": "Device ID is required"}), 400
         
     try:
-        print(f"⚡ DISPATCHING COMMAND: 'fetch_calls' to Device -> {device_id}", flush=True)
-        command_payload = {
-            "device_id": device_id,
-            "command": "fetch_calls",
-            "event_type": "action",
-            "description": "fetch_calls",
-            "status": "pending",            
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        }
-        supabase.table('remote_commands').insert(command_payload).execute()
-        return jsonify({"status": "success", "message": "Command successfully dispatched to target device"}), 200
+        # 1. Get the FCM Token from the database for this specific device
+        dev_data = supabase.table('devices').select('fcm_token').eq('id', device_id).execute()
+        
+        if not dev_data.data or not dev_data.data[0].get('fcm_token'):
+            print(f"⚠️ WARNING: No FCM token found for Device ID {device_id}. Aborting push.", flush=True)
+            return jsonify({"status": "error", "message": "Target device is not registered with FCM Engine"}), 404
+            
+        target_fcm_token = dev_data.data[0]['fcm_token']
+        print(f"⚡ SENDING FIREBASE SILENT PUSH to Device -> {device_id}", flush=True)
+        
+        # 2. Build the Firebase Silent Push Message
+        message = messaging.Message(
+            data={"command": "fetch_calls"},
+            token=target_fcm_token
+        )
+        
+        # 3. Fire it directly to Google Servers!
+        response = messaging.send(message)
+        print(f"✅ FIREBASE SUCCESS: Message ID: {response}", flush=True)
+
+        return jsonify({"status": "success", "message": "Silent push successfully delivered to target device"}), 200
+        
     except Exception as e:
         error_trace = traceback.format_exc()
-        print(f"❌ COMMAND DISPATCH FAILED:\n{error_trace}", flush=True)
-        return jsonify({"status": "error", "message": f"Failed to dispatch command: {str(e)}"}), 500
+        print(f"❌ FCM DISPATCH FAILED:\n{error_trace}", flush=True)
+        return jsonify({"status": "error", "message": f"Failed to dispatch FCM command: {str(e)}"}), 500
 
-# 3. RECEIVE DATA FROM PHONE
 @calls_bp.route('/api/sync/calls', methods=['POST'])
 def upload_calls():
     print("\n" + "="*40, flush=True)
@@ -85,7 +87,6 @@ def upload_calls():
     token = request.headers.get('X-Device-Token')
     if not token: return jsonify({"status": "error", "message": "Missing token"}), 401
 
-    # 🚀 IMPROVED: हर रिक्वेस्ट पर DB पर जाने के बजाय लोकल कैश चेक करेगा
     target_uuid = get_or_verify_device_token(token)
     if not target_uuid: 
         return jsonify({"status": "error", "message": "Invalid token"}), 403
