@@ -1,6 +1,8 @@
 import os
 import sys
 import logging
+import firebase_admin
+from firebase_admin import credentials
 
 # ================= AUTOMATIC PATH RESOLUTION =================
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -14,6 +16,19 @@ else:
 if base_dir not in sys.path:
     sys.path.insert(0, base_dir)
 # =============================================================
+
+# ================= FIREBASE ENGINE INITIALIZATION =================
+try:
+    cred_path = os.path.join(base_dir, 'firebase-key.json')
+    if os.path.exists(cred_path):
+        cred = credentials.Certificate(cred_path)
+        firebase_admin.initialize_app(cred)
+        print("🚀 FIREBASE ADMIN SDK INITIALIZED SUCCESSFULLY!", flush=True)
+    else:
+        print("⚠️ WARNING: firebase-key.json NOT FOUND! Push triggers will fail.", flush=True)
+except Exception as e:
+    print(f"❌ FIREBASE INIT CRASH: {e}", flush=True)
+# ==================================================================
 
 from flask import Flask, send_from_directory, jsonify, session, redirect, send_file, request
 from flask_cors import CORS
@@ -133,13 +148,13 @@ def messages_view():
     return send_from_directory(template_path, 'messages.html')
 
 @app.route('/locations')
-@app.route('/locations.html')  # Fixed: Added 's' matching video directory layout
+@app.route('/locations.html')
 def locations_view():
     return send_from_directory(template_path, 'locations.html')
 
 @app.route('/geofence-config')
 @app.route('/geofence_config')
-@app.route('/geofence_config.html')  # Fixed: Mapped underscore constraint safely
+@app.route('/geofence_config.html')
 def geofence_config_view():
     return send_from_directory(template_path, 'geofence_config.html')
 
@@ -202,7 +217,6 @@ def study_blocker_view():
 @app.route('/sos.html')
 def sos_view():
     return send_from_directory(template_path, 'sos.html')
-# ===========================================================
 
 # ===========================================================
 # 🚀 WEBSOCKET PIPELINES
@@ -363,7 +377,6 @@ def handle_global_runtime_exception(error):
         "status": "error", 
         "message": "A critical backend validation anomaly was neutralized."
     }), 500
-# ===========================================================
 
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 5000))
