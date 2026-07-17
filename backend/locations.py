@@ -13,9 +13,22 @@ def get_locations():
         return jsonify({"status": "error", "message": "Device security restriction matched"}), 403
 
     try:
-        # Fetch top 50 recent locations
         res = supabase.table('locations').select('*').eq('device_id', device_id).order('timestamp', desc=True).limit(50).execute()
         return jsonify({"status": "success", "data": res.data}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# 🚀 NEW: Tactical Radar - Fetches only the last known live coordinate
+@locations_bp.route('/api/locations/latest', methods=['GET'])
+@token_required
+def get_latest_location():
+    device_id = request.args.get('device_id')
+    if not device_id or not verify_device_access(request.owner_id, device_id):
+        return jsonify({"status": "error", "message": "Unauthorized"}), 403
+
+    try:
+        res = supabase.table('locations').select('*').eq('device_id', device_id).order('timestamp', desc=True).limit(1).execute()
+        return jsonify({"status": "success", "data": res.data[0] if res.data else None}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
