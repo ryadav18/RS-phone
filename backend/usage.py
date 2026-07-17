@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 
 usage_bp = Blueprint('usage', __name__)
 
-# 1. SERVER -> DASHBOARD: Past 7 Days ka sorted analytics fetch karega
 @usage_bp.route('/api/usage/analytics', methods=['GET'])
 @token_required
 def get_usage_analytics():
@@ -15,10 +14,8 @@ def get_usage_analytics():
         return jsonify({"status": "error", "message": "Device request scope unauthorized"}), 403
 
     try:
-        # Aaj se exactly 7 din pehle ki date calculate karo
         seven_days_ago = (datetime.utcnow() - timedelta(days=7)).date().isoformat()
         
-        # Telemetry data fetch karo jo last 7 din ka ho aur usage_date & time_spent ke hisab se ordered ho
         res = supabase.table('app_usage')\
             .select('*')\
             .eq('device_id', device_id)\
@@ -31,7 +28,31 @@ def get_usage_analytics():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# 2. APP -> SERVER: Phone ka Digital Wellbeing stats upload handler
+# 🚀 NEW: Dashboard Radar Analytics - Top 3 Apps for Today
+@usage_bp.route('/api/usage/top', methods=['GET'])
+@token_required
+def get_top_apps():
+    device_id = request.args.get('device_id')
+    if not device_id or not verify_device_access(request.owner_id, device_id):
+        return jsonify({"status": "error", "message": "Unauthorized"}), 403
+    
+    try:
+        today = datetime.utcnow().date().isoformat()
+        res = supabase.table('app_usage').select('*').eq('device_id', device_id).eq('usage_date', today).execute()
+        
+        app_stats = {}
+        for row in res.data:
+            app_name = row.get('app_name', 'Unknown')
+            app_stats[app_name] = app_stats.get(app_name, 0) + int(row.get('time_spent', 0))
+        
+        # Sort and take top 3
+        sorted_apps = sorted(app_stats.items(), key=lambda x: x[1], reverse=True)[:3]
+        top_apps = [{"app_name": k, "time_spent": v} for k, v in sorted_apps]
+        
+        return jsonify({"status": "success", "data": top_apps}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 @usage_bp.route('/api/sync/usage', methods=['POST'])
 def sync_device_usage():
     token = request.headers.get('X-Device-Token')
