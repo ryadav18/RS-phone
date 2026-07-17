@@ -3,296 +3,380 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Address Book & Contacts - RS OWNER</title>
+    <title>Address Book - RS OWNER</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* =========================================================
-           RS PHONE - ZERO-LAG FLAT ARCHITECTURE (INJECTED STYLE)
-           ========================================================= */
-        :root {
-            --bg-main: #121212;
-            --bg-card: #1e1e1e;
-            --text-main: #ffffff;
-            --text-muted: #aaaaaa;
-            --accent-cyan: #00f0ff;
-            
-            /* Flat Status Colors */
-            --color-dark: #2c3e50;
-            --color-red: #e74c3c;
-            --color-green: #2ecc71;
-            --color-blue: #2980b9;
+        :root { 
+            --bg-main: #0d1117; 
+            --bg-card: #161b22; 
+            --text-main: #e6edf3; 
+            --text-muted: #8b949e; 
+            --accent-cyan: #2f81f7;
+            --color-green: #2ea043;
+            --border-color: #30363d;
         }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            min-height: 100vh;
-            padding: 15px;
-            padding-bottom: 40px;
-            overflow-x: hidden;
-        }
-
-        /* Custom Scrollbar */
+        body { background-color: var(--bg-main); color: var(--text-main); min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; overflow-x: hidden; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--color-green); }
-
-        /* Sidebar & Layout */
-        .app-container { display: flex; min-height: 100vh; gap: 20px; }
-        .sidebar { width: 260px; background: var(--bg-card); padding: 20px; border-radius: 16px; border: 1px solid #2c2c2e; display: flex; flex-direction: column; gap: 25px; }
-        .sidebar-brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; letter-spacing: 1px; color: var(--text-main); }
-        .sidebar-menu { list-style: none; display: flex; flex-direction: column; gap: 8px; }
-        .sidebar-menu li a { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: var(--text-muted); text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; transition: all 0.2s; }
-        .sidebar-menu li.active a, .sidebar-menu li a:hover { background: rgba(39, 174, 96, 0.1); color: var(--color-green); }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #484f58; border-radius: 10px; }
         
-        .main-content { flex: 1; display: flex; flex-direction: column; gap: 20px; }
-        .topbar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid #2c2c2e; }
-        .glass-panel { background: var(--bg-card); border: 1px solid #2c2c2e; border-radius: 16px; padding: 25px; }
+        .glass-panel { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; }
+        
+        /* Contact Cards (Grid & List) */
+        .contact-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+        .contact-list { display: flex; flex-direction: column; gap: 12px; }
+        
+        .contact-card { background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; transition: all 0.2s; position: relative; overflow: hidden; }
+        .contact-card:hover { background: rgba(255,255,255,0.03); border-color: rgba(46, 160, 67, 0.4); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .contact-card::before { content: ''; position: absolute; left: 0; top: 0; height: 100%; width: 4px; background: var(--color-green); opacity: 0; transition: opacity 0.2s; }
+        .contact-card:hover::before { opacity: 1; }
 
-        /* =========================================================
-           CONTACTS SPECIFIC STYLES
-           ========================================================= */
-        .search-box {
-            width: 100%;
-            padding: 14px 18px;
-            background: #141416;
-            border: 1px solid #333;
-            color: white;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 15px;
-            box-sizing: border-box;
-            transition: border-color 0.2s;
-        }
-        .search-box:focus { outline: none; border-color: var(--color-green); box-shadow: 0 0 10px rgba(39, 174, 96, 0.2); }
+        /* Avatars */
+        .avatar { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; color: white; border: 2px solid rgba(255,255,255,0.1); }
+        .avatar-1 { background: linear-gradient(135deg, #f85149, #b33939); }
+        .avatar-2 { background: linear-gradient(135deg, #2f81f7, #1e5aab); }
+        .avatar-3 { background: linear-gradient(135deg, #2ea043, #1e702e); }
+        .avatar-4 { background: linear-gradient(135deg, #d29922, #9e7319); }
+        .avatar-5 { background: linear-gradient(135deg, #a371f7, #724eb0); }
 
-        .contact-row {
-            background: rgba(255,255,255,0.03); 
-            padding: 16px 20px; 
-            border-radius: 10px; 
-            margin-bottom: 10px; 
-            border-left: 4px solid var(--color-green);
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            border-top: 1px solid transparent;
-            border-right: 1px solid transparent;
-            border-bottom: 1px solid transparent;
-            transition: all 0.2s;
-        }
-        .contact-row:hover {
-            background: rgba(255,255,255,0.06);
-            border-color: rgba(39, 174, 96, 0.4);
-            transform: translateX(4px);
-        }
+        /* Duplicate Badge */
+        .badge-dup { background: rgba(210, 153, 34, 0.15); color: #d29922; border: 1px solid rgba(210, 153, 34, 0.4); font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 8px; }
 
-        .contact-name { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.5px; color: #fff; }
-        .contact-phone { color: var(--color-green); font-family: monospace; font-size: 1.05rem; font-weight: 600; letter-spacing: 0.5px; }
-
-        .btn-burn {
-            background: rgba(231, 76, 60, 0.15); 
-            color: #e74c3c; 
-            padding: 12px 24px; 
-            border: 1px solid rgba(231, 76, 60, 0.3); 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-weight: 800; 
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .btn-burn:hover { background: rgba(231, 76, 60, 0.8); color: white; }
-
-        .data-list-container {
-            max-height: 65vh;
-            overflow-y: auto;
-            padding-right: 10px;
-        }
+        /* Toast & Modal */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; opacity: 0; transform: translateX(100%); transition: all 0.3s; display: flex; align-items: center; gap: 10px; color: white; }
+        .toast.show { opacity: 1; transform: translateX(0); }
+        .toast-success { background: rgba(46, 160, 67, 0.95); border: 1px solid #3fb950; }
+        .toast-error { background: rgba(248, 81, 73, 0.95); border: 1px solid #f85149; }
     </style>
 </head>
-<body>
-    <div class="app-container">
-        <!-- Sidebar Unified Navigation -->
-        <div class="sidebar">
-            <div class="sidebar-brand">
-                <i data-lucide="shield" style="color: var(--color-green);"></i>
-                <span>RS OWNER</span>
+<body class="p-3 md:p-6 flex flex-col md:flex-row gap-6">
+
+    <div id="toast-container"></div>
+    
+    <!-- HARDCORE BURN MODAL -->
+    <div id="wipe-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-[#161b22] border border-[#f85149] rounded-xl p-6 max-w-md w-full shadow-2xl">
+            <div class="flex items-center gap-3 text-[#f85149] mb-4">
+                <i data-lucide="shield-alert" class="w-8 h-8"></i>
+                <h2 class="text-xl font-bold">HARDCORE BURN PROTOCOL</h2>
             </div>
-            <ul class="sidebar-menu">
-                <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
-                <li><a href="/communication.html"><i data-lucide="message-circle"></i> Comm Hub</a></li>
-                <li class="active"><a href="/contacts"><i data-lucide="book-open"></i> Address Book</a></li>
-                <li><a href="/calls"><i data-lucide="phone"></i> Call Logs</a></li>
-                <li><a href="/messages"><i data-lucide="message-square"></i> SMS Audit</a></li>
-                <li><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
-            </ul>
+            <p class="text-[var(--text-muted)] mb-4 text-sm leading-relaxed">
+                You are initiating a total eradication of the target's address book from the master database. 
+                <br><br><span class="text-white font-bold">Type "BURN" in the box below to confirm.</span>
+            </p>
+            <input type="text" id="burn-confirm" placeholder="Type BURN" onkeyup="engine.validateBurn()" class="w-full bg-black border border-[#f85149]/50 text-white font-mono text-center rounded p-2 mb-5 focus:outline-none focus:border-[#f85149]">
+            <div class="flex gap-3 justify-end">
+                <button onclick="engine.closeModal()" class="px-4 py-2 rounded font-semibold text-gray-300 hover:bg-gray-800 transition">Cancel</button>
+                <button id="burn-btn" disabled onclick="engine.executeWipe()" class="px-4 py-2 rounded font-bold bg-gray-800 text-gray-500 cursor-not-allowed transition flex items-center gap-2">
+                    <i data-lucide="flame" class="w-4 h-4"></i> BURN DB
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <aside class="w-full md:w-64 flex-shrink-0 hidden md:block">
+        <div class="glass-panel p-5 h-full">
+            <div class="flex items-center gap-2 mb-8 text-[var(--color-green)] font-bold text-lg tracking-wide">
+                <i data-lucide="shield-check"></i> RS OWNER
+            </div>
+            <nav class="flex flex-col gap-2">
+                <a href="/calls" class="flex items-center gap-3 px-4 py-3 rounded-lg text-[var(--text-muted)] hover:bg-[rgba(255,255,255,0.05)] hover:text-white transition-colors">
+                    <i data-lucide="phone" class="w-5 h-5"></i> Call Matrix
+                </a>
+                <a href="/messages" class="flex items-center gap-3 px-4 py-3 rounded-lg text-[var(--text-muted)] hover:bg-[rgba(255,255,255,0.05)] hover:text-white transition-colors">
+                    <i data-lucide="message-square" class="w-5 h-5"></i> SMS Audit
+                </a>
+                <a href="/contacts" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-[rgba(46,160,67,0.1)] text-[var(--color-green)] font-medium transition-colors">
+                    <i data-lucide="book-open" class="w-5 h-5"></i> Address Book
+                </a>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 min-w-0 flex flex-col gap-5">
+        
+        <!-- Header & Master Controls -->
+        <div class="glass-panel p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                    <i data-lucide="users" class="w-5 h-5 text-[var(--color-green)]"></i>
+                    Live Address Book
+                </h2>
+                <p class="text-xs text-[var(--text-muted)] mt-1 font-mono">Synchronized identity matrix from target device.</p>
+            </div>
+            <div class="flex items-center gap-3 w-full md:w-auto">
+                <button onclick="engine.exportVCF()" class="p-2 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 transition" title="Export V-Card (.vcf)">
+                    <i data-lucide="download" class="w-5 h-5"></i>
+                </button>
+                <button onclick="document.getElementById('wipe-modal').classList.remove('hidden')" class="flex-1 md:flex-none flex justify-center items-center gap-2 px-4 py-2 rounded bg-[#f85149]/10 hover:bg-[#f85149]/20 text-[#ff7b72] border border-[#f85149]/50 transition-colors font-bold text-sm">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    <span>NUKE DB</span>
+                </button>
+            </div>
         </div>
 
-        <!-- Main Content Core Viewspace -->
-        <main class="main-content">
-            <header class="topbar">
-                <div>
-                    <h2 style="font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--color-green);">Live Address Book</h2>
-                    <p style="color: #888; font-size: 0.85rem; margin-top: 4px;">Synchronized contacts matrix from the target device.</p>
+        <!-- Analytics & Smart Search -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="glass-panel p-4 flex flex-col justify-center border-l-4 border-l-[var(--color-green)] md:col-span-1">
+                <span class="text-[10px] text-[var(--text-muted)] font-bold tracking-wider">TOTAL IDENTITIES</span>
+                <div class="flex items-end gap-2 mt-1">
+                    <h3 class="text-2xl font-black text-white" id="stat-total">0</h3>
+                    <span class="text-xs text-[#d29922] font-mono mb-1 hidden" id="stat-dups"></span>
                 </div>
-            </header>
-
-            <div class="glass-panel">
-                <!-- Search Filter -->
-                <input type="text" id="search-input" class="search-box" placeholder="Search by name or number..." onkeyup="filterContacts()">
-
-                <!-- Target injection container node -->
-                <div class="data-list-container" id="contacts-list">
-                    <p id="loading-text" style="color: #888; font-style: italic; text-align: center; padding: 30px;">Establishing secure connection... Fetching contacts...</p>
-                </div>
-                
-                <!-- Pagination Controls Container -->
-                <div id="pagination-controls" style="margin-top: 20px; text-align: center;"></div>
             </div>
-        </main>
-    </div>
+            
+            <div class="glass-panel p-2 flex flex-col sm:flex-row gap-3 items-center md:col-span-3">
+                <div class="relative flex-1 w-full">
+                    <i data-lucide="search" class="absolute left-3 top-3 w-4 h-4 text-gray-500"></i>
+                    <input type="text" id="search-input" onkeyup="engine.filterData()" placeholder="Search by name or number..." class="w-full bg-[var(--bg-main)] border border-[var(--border-color)] text-white text-sm rounded-lg pl-9 pr-3 py-2.5 focus:outline-none focus:border-[var(--color-green)] transition">
+                </div>
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <button onclick="engine.toggleView()" id="view-toggle" class="p-2.5 rounded bg-white/5 hover:bg-white/10 text-gray-300 transition" title="Toggle Grid/List">
+                        <i data-lucide="layout-grid" class="w-5 h-5" id="view-icon"></i>
+                    </button>
+                    <button onclick="engine.findDuplicates()" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded border border-[#d29922]/50 text-[#d29922] bg-[#d29922]/10 hover:bg-[#d29922]/20 transition text-sm font-bold">
+                        <i data-lucide="scan-line" class="w-4 h-4"></i> Scan Duplicates
+                    </button>
+                </div>
+            </div>
+        </div>
 
-    <!-- EMBEDDED JAVASCRIPT LOGIC -->
+        <!-- Contacts Container (Zero Scroll Cards) -->
+        <div class="glass-panel p-4 flex-1">
+            <div id="contacts-list" class="contact-grid">
+                <!-- Data injected here -->
+                <div class="col-span-full py-12 flex flex-col items-center justify-center gap-4 text-[var(--text-muted)]">
+                    <i data-lucide="radar" class="w-12 h-12 animate-pulse text-[var(--color-green)]"></i>
+                    <p class="font-mono text-sm tracking-widest">FETCHING ADDRESS BOOK...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
     <script>
-        // Init Icons
-        document.addEventListener('DOMContentLoaded', () => {
-            if (window.lucide) window.lucide.createIcons();
-        });
+        lucide.createIcons();
 
-        // 🚀 LIVE SEARCH FILTER SCRIPT
-        function filterContacts() {
-            let input = document.getElementById('search-input').value.toLowerCase();
-            let list = document.getElementById('contacts-list');
-            let items = list.getElementsByClassName('contact-row');
-
-            for (let i = 0; i < items.length; i++) {
-                let text = items[i].innerText.toLowerCase();
-                if (text.indexOf(input) > -1) {
-                    items[i].style.display = "flex";
-                } else {
-                    items[i].style.display = "none";
-                }
-            }
-        }
-
-        // 🚀 CONTACTS ENGINE CLASS
         class ContactsEngine {
             constructor() {
                 this.activeDeviceId = localStorage.getItem('active_device_id');
-                this.currentContactsIds = []; 
+                this.allData = [];
+                this.isGridView = true;
+                this.duplicateMap = {};
                 this.init();
             }
 
-            async init() {
-                const container = document.getElementById('contacts-list');
-                if (!container) return;
+            getValidToken() { return localStorage.getItem('owner_token') || localStorage.getItem('session_token') || ""; }
 
+            showToast(msg, type = 'success') {
+                const c = document.getElementById('toast-container');
+                const t = document.createElement('div');
+                t.className = `toast toast-${type}`;
+                t.innerHTML = `<i data-lucide="${type === 'error' ? 'alert-octagon' : 'check-circle'}" class="w-5 h-5"></i> ${msg}`;
+                c.appendChild(t);
+                lucide.createIcons();
+                setTimeout(() => t.classList.add('show'), 10);
+                setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 3000);
+            }
+
+            async init() {
                 if (!this.activeDeviceId) {
-                    container.innerHTML = '<p style="color: #e74c3c; text-align: center; padding: 30px; font-weight: bold;">Target Device ID missing. Please select a device from Dashboard.</p>';
+                    document.getElementById('contacts-list').innerHTML = '<div class="col-span-full text-center py-10 text-red-500 font-bold">NO TARGET DEVICE LINKED</div>';
                     return;
                 }
-                
-                this.fetchContacts();
+                await this.fetchContacts();
             }
 
             async fetchContacts() {
-                const token = localStorage.getItem('owner_token');
-                const container = document.getElementById('contacts-list');
-                const controls = document.getElementById('pagination-controls');
-                
-                container.innerHTML = '<p style="color:#aaa; text-align:center; padding: 30px;">Loading secure contacts stream...</p>';
-                controls.innerHTML = '';
-
                 try {
                     const res = await fetch(`/api/contacts?device_id=${this.activeDeviceId}`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
+                        headers: { 'Authorization': `Bearer ${this.getValidToken()}` }
                     });
                     const result = await res.json();
-
                     if (result.status === 'success') {
-                        if (result.data.length === 0) {
-                            container.innerHTML = '<p style="color:#aaa; text-align:center; padding: 30px;">No contacts available. Waiting for device sync payload...</p>';
-                            return;
-                        }
-
-                        // Store IDs in memory to burn them on next page request
-                        this.currentContactsIds = result.data.map(c => c.id);
-
-                        container.innerHTML = result.data.map(c => `
-                            <div class="contact-row">
-                                <strong class="contact-name">${c.name}</strong>
-                                <span class="contact-phone">${c.phone_number}</span>
-                            </div>
-                        `).join('');
-
-                        // If exactly 50 contacts, generate the Burn & Load Next button
-                        if (result.data.length === 50) {
-                            controls.innerHTML = `
-                                <button id="next-chunk-btn" class="btn-burn">
-                                    <i data-lucide="flame" style="width: 16px; height: 16px;"></i> Delete These & Load Next 50
-                                </button>
-                            `;
-                            if (window.lucide) window.lucide.createIcons();
-                            document.getElementById('next-chunk-btn').addEventListener('click', () => this.loadNextPageAndBurn());
-                        }
+                        // Sort Alphabetically by default
+                        this.allData = (result.data || []).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                        document.getElementById('stat-total').innerText = this.allData.length;
+                        this.renderData();
                     }
-                } catch (e) {
-                    console.error("Contacts Fetch Error:", e);
-                    container.innerHTML = '<p style="color: #e74c3c; text-align: center; padding: 30px;">Network Error: Failed to fetch contacts.</p>';
+                } catch(e) { console.error(e); }
+            }
+
+            // High-Level Feature: Smart Avatar Color Generator based on Name
+            getAvatarClass(name) {
+                if(!name) return 'avatar-1';
+                const charCode = name.charCodeAt(0) || 0;
+                const index = (charCode % 5) + 1;
+                return `avatar-${index}`;
+            }
+
+            filterData() {
+                const q = document.getElementById('search-input').value.toLowerCase();
+                const filtered = this.allData.filter(c => 
+                    (c.name || '').toLowerCase().includes(q) || 
+                    (c.phone_number || '').includes(q)
+                );
+                this.renderData(filtered);
+            }
+
+            toggleView() {
+                this.isGridView = !this.isGridView;
+                const container = document.getElementById('contacts-list');
+                const icon = document.getElementById('view-icon');
+                
+                if(this.isGridView) {
+                    container.className = 'contact-grid';
+                    icon.setAttribute('data-lucide', 'list');
+                } else {
+                    container.className = 'contact-list';
+                    icon.setAttribute('data-lucide', 'layout-grid');
+                }
+                lucide.createIcons();
+            }
+
+            // AI Feature: Find duplicate numbers
+            findDuplicates() {
+                this.duplicateMap = {};
+                let dupsCount = 0;
+                const freq = {};
+
+                this.allData.forEach(c => {
+                    const cleanNum = (c.phone_number || '').replace(/[\s\-\(\)]/g, '');
+                    if(cleanNum) {
+                        freq[cleanNum] = (freq[cleanNum] || 0) + 1;
+                    }
+                });
+
+                this.allData.forEach(c => {
+                    const cleanNum = (c.phone_number || '').replace(/[\s\-\(\)]/g, '');
+                    if(freq[cleanNum] > 1) {
+                        this.duplicateMap[cleanNum] = true;
+                    }
+                });
+
+                dupsCount = Object.keys(this.duplicateMap).length;
+                
+                const statDups = document.getElementById('stat-dups');
+                if(dupsCount > 0) {
+                    statDups.innerText = `(${dupsCount} Duplicate Numbers)`;
+                    statDups.classList.remove('hidden');
+                    this.showToast(`Found ${dupsCount} duplicate numbers!`, 'info');
+                } else {
+                    statDups.classList.add('hidden');
+                    this.showToast("Address book is clean. No duplicates.", 'success');
+                }
+                this.renderData();
+            }
+
+            renderData(dataToRender = this.allData) {
+                const container = document.getElementById('contacts-list');
+
+                if (dataToRender.length === 0) {
+                    container.innerHTML = `<div class="col-span-full py-12 flex flex-col items-center justify-center gap-4 text-[var(--text-muted)]"><i data-lucide="user-x" class="w-12 h-12 opacity-50"></i><p class="font-mono text-sm">NO IDENTITIES FOUND</p></div>`;
+                    lucide.createIcons(); return;
+                }
+
+                container.innerHTML = dataToRender.map(c => {
+                    const name = c.name || 'Unknown Identity';
+                    const initial = name !== 'Unknown Identity' ? name.charAt(0).toUpperCase() : '?';
+                    const phone = c.phone_number || 'No Number';
+                    const cleanNum = phone.replace(/[\s\-\(\)]/g, '');
+                    const isDup = this.duplicateMap[cleanNum];
+
+                    return `
+                    <div class="contact-card flex flex-col sm:flex-row gap-4 sm:items-center justify-between">
+                        <div class="flex items-center gap-4 w-full overflow-hidden">
+                            <div class="avatar flex-shrink-0 ${this.getAvatarClass(name)} shadow-lg">${initial}</div>
+                            <div class="flex flex-col overflow-hidden">
+                                <div class="flex items-center w-full">
+                                    <span class="font-bold text-white text-[15px] truncate pr-2">${name}</span>
+                                    ${isDup ? `<span class="badge-dup flex-shrink-0">DUPLICATE</span>` : ''}
+                                </div>
+                                <span class="text-[13px] text-[var(--color-green)] font-mono mt-0.5 tracking-wide">${phone}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex sm:flex-col gap-2 mt-3 sm:mt-0 justify-end flex-shrink-0">
+                            <button onclick="window.location.href='/calls'" class="p-2 rounded-full bg-white/5 hover:bg-[var(--color-green)] hover:text-white text-gray-400 transition" title="View Call History">
+                                <i data-lucide="phone" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="window.location.href='/messages'" class="p-2 rounded-full bg-white/5 hover:bg-[var(--accent-cyan)] hover:text-white text-gray-400 transition" title="View SMS Audit">
+                                <i data-lucide="message-square" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+                lucide.createIcons();
+            }
+
+            // ================= EXPORT V-CARD (.vcf) =================
+            exportVCF() {
+                if(this.allData.length === 0) { this.showToast("No contacts to export", "error"); return; }
+                
+                let vcfData = "";
+                this.allData.forEach(c => {
+                    vcfData += "BEGIN:VCARD\nVERSION:3.0\n";
+                    vcfData += `FN:${c.name || 'Unknown'}\n`;
+                    vcfData += `TEL;TYPE=CELL:${c.phone_number || ''}\n`;
+                    vcfData += "END:VCARD\n";
+                });
+
+                const blob = new Blob([vcfData], { type: 'text/vcard' });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `RS_Contacts_${new Date().getTime()}.vcf`;
+                link.click();
+                this.showToast("V-Card (.vcf) Exported successfully!");
+            }
+
+            // ================= HARDCORE BURN PROTOCOL =================
+            validateBurn() {
+                const input = document.getElementById('burn-confirm').value;
+                const btn = document.getElementById('burn-btn');
+                if(input === 'BURN') {
+                    btn.disabled = false;
+                    btn.classList.remove('bg-gray-800', 'text-gray-500', 'cursor-not-allowed');
+                    btn.classList.add('bg-[#f85149]/20', 'text-[#ff7b72]', 'border', 'border-[#f85149]', 'hover:bg-[#f85149]', 'hover:text-white');
+                } else {
+                    btn.disabled = true;
+                    btn.classList.add('bg-gray-800', 'text-gray-500', 'cursor-not-allowed');
+                    btn.classList.remove('bg-[#f85149]/20', 'text-[#ff7b72]', 'border', 'border-[#f85149]', 'hover:bg-[#f85149]', 'hover:text-white');
                 }
             }
 
-            async loadNextPageAndBurn() {
-                const isConfirmed = confirm("WARNING: This will permanently wipe these 50 contacts from the cloud database to load the next chunk. Proceed?");
-                if (!isConfirmed) return;
+            closeModal() {
+                document.getElementById('wipe-modal').classList.add('hidden');
+                document.getElementById('burn-confirm').value = '';
+                this.validateBurn(); // reset button state
+            }
 
-                const token = localStorage.getItem('owner_token');
-                const nextBtn = document.getElementById('next-chunk-btn');
-                if (nextBtn) {
-                    nextBtn.innerHTML = '<i data-lucide="loader" style="width: 16px; height: 16px;" class="lucide-spin"></i> Burning old data...';
-                    if (window.lucide) window.lucide.createIcons();
-                }
-
+            async executeWipe() {
+                this.closeModal();
                 try {
-                    // Burn current 50 contacts
-                    if (this.currentContactsIds.length > 0) {
-                        await fetch('/api/contacts/burn', {
-                            method: 'POST',
-                            headers: { 
-                                'Authorization': `Bearer ${token}`, 
-                                'Content-Type': 'application/json' 
-                            },
-                            body: JSON.stringify({
-                                device_id: this.activeDeviceId,
-                                contact_ids: this.currentContactsIds
-                            })
-                        });
-                    }
-
-                    // Fetch next batch
-                    this.fetchContacts();
-
-                } catch (e) {
-                    console.error("Burn Engine Error:", e);
-                    alert("Failed to process the next chunk.");
-                    if (nextBtn) nextBtn.innerHTML = '<i data-lucide="flame"></i> Delete These & Load Next 50';
+                    // Backend endpoint needs to exist: /api/contacts/burn-all
+                    const res = await fetch('/api/contacts/burn-all', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${this.getValidToken()}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ device_id: this.activeDeviceId })
+                    });
+                    this.showToast("ADDRESS BOOK ERADICATED.", "success");
+                    this.allData = [];
+                    this.duplicateMap = {};
+                    document.getElementById('stat-total').innerText = "0";
+                    document.getElementById('stat-dups').classList.add('hidden');
+                    this.renderData();
+                } catch(e) {
+                    this.showToast("Server refused connection.", "error");
                 }
             }
         }
-
-        document.addEventListener('DOMContentLoaded', () => new ContactsEngine());
+        
+        const engine = new ContactsEngine();
     </script>
 </body>
 </html>
