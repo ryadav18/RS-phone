@@ -19,13 +19,23 @@ if base_dir not in sys.path:
 
 # ================= FIREBASE ENGINE INITIALIZATION =================
 try:
-    cred_path = os.path.join(base_dir, 'firebase-key.json')
+    # 🚀 SMART ROUTING: Check Render's secure vault first, then local fallback
+    render_secret_path = '/etc/secrets/firebase-key.json'
+    local_path = os.path.join(base_dir, 'firebase-key.json')
+    
+    if os.path.exists(render_secret_path):
+        cred_path = render_secret_path
+        print("🔐 Using Render secure vault for Firebase key...", flush=True)
+    else:
+        cred_path = local_path
+        print("📂 Using local directory for Firebase key...", flush=True)
+
     if os.path.exists(cred_path):
         cred = credentials.Certificate(cred_path)
         firebase_admin.initialize_app(cred)
         print("🚀 FIREBASE ADMIN SDK INITIALIZED SUCCESSFULLY!", flush=True)
     else:
-        print("⚠️ WARNING: firebase-key.json NOT FOUND! Push triggers will fail.", flush=True)
+        print("⚠️ WARNING: firebase-key.json NOT FOUND in both paths! Push triggers will fail.", flush=True)
 except Exception as e:
     print(f"❌ FIREBASE INIT CRASH: {e}", flush=True)
 # ==================================================================
