@@ -7,11 +7,7 @@ import sys
 
 devices_bp = Blueprint('devices', __name__)
 
-# =================================================================================
-# 🚀 SMART INTEGRATION: REFLECTING MEMORY CHANNELS FROM CORE GATEWAY
-# =================================================================================
 def get_shared_memory_matrix():
-    """Dynamically links global memory registries from main runtime to bypass cross-file blocking."""
     main_module = sys.modules.get('__main__')
     return {
         "commands_queue": getattr(main_module, 'device_commands_queue', {}),
@@ -20,7 +16,6 @@ def get_shared_memory_matrix():
     }
 
 def verify_device_access(owner_id, device_id):
-    # Flexible lookup: Validates whether the parameter is primary database ID or UUID string token
     check = supabase.table('devices').select('id').eq('owner_id', owner_id).or_(f"id.eq.{device_id},device_token.eq.{device_id}").execute()
     return len(check.data) > 0
 
@@ -28,7 +23,6 @@ def verify_device_access(owner_id, device_id):
 @token_required
 def get_devices():
     try:
-        # 🚀 SMART ARCHITECTURE: Instantly pulls every device registered under the exact same login ID
         response = supabase.table('devices').select('*').eq('owner_id', request.owner_id).order('last_seen', desc=True).execute()
         return jsonify({"status": "success", "data": response.data}), 200
     except Exception as e:
@@ -38,16 +32,17 @@ def get_devices():
 @token_required
 def connect_device():
     data = request.json or {}
-    device_uid = data.get('device_id')
+    device_uid = data.get('device_id') # Ye phone ki permanent ANDROID_ID hai
     name = data.get('name')
     model = data.get('model', 'Unknown Phone')
+    fcm_token = data.get('fcm_token') # 🚀 FCM Master Key from App
 
     if not device_uid or not name:
         return jsonify({"status": "error", "message": "Parameters device_id and name are required"}), 400
 
     try:
+        # 🚀 ANTI-DUPLICATE ENGINE: Check if this specific phone is already registered
         existing = supabase.table('devices').select('*').eq('device_id', device_uid).execute()
-        new_device_token = str(uuid.uuid4())
         
         device_payload = {
             "name": name,
@@ -62,22 +57,28 @@ def connect_device():
             "network_type": data.get('network_type', 'WIFI'),
             "storage_used": data.get('storage_used', '0%'),
             "temperature": data.get('temperature', 30.0),
-            "device_token": new_device_token
+            "fcm_token": fcm_token # 🚀 Store FCM Token in database
         }
 
         if existing.data:
+            # 🚀 UPSERT LOGIC: Update the existing row instead of making a duplicate
             dev_id = existing.data[0]['id']
-            # Preserve old token to keep the active communication pipeline alive
+            # Keep the old device_token intact so dashboard links don't break
             device_payload["device_token"] = existing.data[0]['device_token']
+            
             response = supabase.table('devices').update(device_payload).eq('id', dev_id).execute()
             
             supabase.table('activity_logs').insert({
                 "device_id": dev_id,
                 "event_type": "Device Reconnected",
-                "description": f"Context re-established for {model}"
+                "description": f"Context re-established for {model} with updated FCM token"
             }).execute()
         else:
+            # First time installation
+            new_device_token = str(uuid.uuid4())
+            device_payload["device_token"] = new_device_token
             device_payload["device_id"] = device_uid
+            
             response = supabase.table('devices').insert(device_payload).execute()
             dev_id = response.data[0]['id']
 
@@ -93,6 +94,7 @@ def connect_device():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+# ... (rest of devices.py remains exactly the same as you provided)
 @devices_bp.route('/api/devices/status', methods=['POST'])
 def update_status():
     token = request.headers.get('X-Device-Token')
@@ -119,7 +121,6 @@ def update_status():
 
         supabase.table('devices').update(update_payload).eq('id', dev_id).execute()
 
-        # 🚀 SMART UPGRADE: Intercepts Panic Signals and mirrors them to the live Flask memory mapping
         mem = get_shared_memory_matrix()
         if update_payload["network_type"] == "CRITICAL_SOS_ACTIVE":
             mem["sos_cache"][str(dev_id)] = {"sos_active": True, "battery": update_payload["battery_level"], "status": update_payload["storage_used"]}
@@ -136,7 +137,6 @@ def update_status():
 @token_required
 def execute_device_action(device_id):
     try:
-        # Smart checking maps both primary numerical ID and token signatures seamlessly
         check = supabase.table('devices').select('id', 'device_token').eq('owner_id', request.owner_id).or_(f"id.eq.{device_id},device_token.eq.{device_id}").execute()
         if not check.data:
             return jsonify({"status": "error", "message": "Device not found or unauthorized"}), 404
@@ -155,14 +155,12 @@ def execute_device_action(device_id):
 
         log_desc = f"Triggered '{action_type}' command remotely."
         
-        # 1. Permanent Supabase Audit Logging
         supabase.table('activity_logs').insert({
             "device_id": real_db_id,
             "event_type": "Remote Action Issued",
             "description": log_desc
         }).execute()
         
-        # 2. 🚀 SMART UPGRADE: Double injection into the active memory layer to trigger immediate WebSocket execution loops
         mem = get_shared_memory_matrix()
         for key in [str(real_db_id), str(real_token)]:
             if key not in mem["commands_queue"]:
@@ -201,6 +199,7 @@ def sync_permissions():
 
 @devices_bp.route('/api/sync/calls', methods=['POST'])
 def sync_calls():
+    # ... unchanged standard route ...
     token = request.headers.get('X-Device-Token')
     if not token: return jsonify({"status": "error", "message": "Missing device token"}), 401
     try:
@@ -218,6 +217,7 @@ def sync_calls():
 
 @devices_bp.route('/api/sync/usage', methods=['POST'])
 def sync_app_usage():
+    # ... unchanged standard route ...
     token = request.headers.get('X-Device-Token')
     if not token: return jsonify({"status": "error", "message": "Missing device token"}), 401
     try:
@@ -235,6 +235,7 @@ def sync_app_usage():
 
 @devices_bp.route('/api/sync/commands', methods=['GET'])
 def get_pending_commands():
+    # ... unchanged standard route ...
     token = request.headers.get('X-Device-Token')
     if not token: return jsonify({"status": "error", "message": "Missing token"}), 401
     try:
