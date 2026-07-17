@@ -1,362 +1,361 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RS Phone - Command Center V2</title>
+    <title>RS Command Center V3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* ==================== CORE RESET & TYPOGRAPHY ==================== */
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
-        body { background-color: #121212; color: #ffffff; padding: 15px; padding-bottom: 40px; }
-        
-        .header { display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px; border-bottom: 1px solid #333; padding-bottom: 15px; }
-        .header h2 { font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #ffffff; }
-        .device-selector { background: #1e1e1e; color: white; border: 1px solid #444; border-radius: 6px; padding: 12px; font-size: 15px; outline: none; width: 100%; font-weight: bold; }
+        /* ================= THEME ENGINE ================= */
+        :root[data-theme="dark"] { --bg-main: #0d1117; --bg-card: #161b22; --text-main: #e6edf3; --accent: #2f81f7; --accent-dim: rgba(47,129,247,0.1); --border: #30363d; --success: #2ea043; --danger: #f85149; }
+        :root[data-theme="tactical"] { --bg-main: #0a0000; --bg-card: #1a0505; --text-main: #ffb3b3; --accent: #ff3333; --accent-dim: rgba(255,51,51,0.1); --border: #4d0000; --success: #ff3333; --danger: #ff0000; }
+        :root[data-theme="matrix"] { --bg-main: #000b00; --bg-card: #001a00; --text-main: #b3ffb3; --accent: #00ff00; --accent-dim: rgba(0,255,0,0.1); --border: #004d00; --success: #00ff00; --danger: #ff0000; }
 
-        /* ==================== VITAL BOXES GRID (3 Boxes + 1 Orb) ==================== */
-        .vitals-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 25px; }
+        body { background-color: var(--bg-main); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", monospace; min-height: 100vh; transition: all 0.3s ease; }
+        .glass-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; transition: all 0.3s ease; }
         
-        .vital-box { background: #1e1e1e; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; border: 1px solid #2a2a2a; }
-        .vital-icon { color: #888; margin-bottom: 8px; }
-        .vital-title { font-size: 12px; color: #aaa; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
-        .vital-value { font-size: 20px; font-weight: 800; margin-top: 5px; }
-        
-        .box-blue { border-left: 4px solid #3498db; }
-        .box-green { border-left: 4px solid #2ecc71; }
-        .box-purple { border-left: 4px solid #9b59b6; }
+        /* Pulse Orb & Latency */
+        .orb { width: 12px; height: 12px; border-radius: 50%; display: inline-block; box-shadow: 0 0 10px var(--success); background: var(--success); animation: pulse 2s infinite; }
+        .orb-offline { background: var(--danger); box-shadow: 0 0 10px var(--danger); animation: none; }
+        @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(var(--success), 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(var(--success), 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(var(--success), 0); } }
 
-        /* ==================== THE SYSTEM HEALTH ORB ==================== */
-        .health-box { background: #1a1a1a; border-radius: 8px; padding: 15px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #333; grid-column: span 2; }
-        
-        .health-left { display: flex; align-items: center; gap: 15px; }
-        
-        .orb { width: 24px; height: 24px; border-radius: 50%; transition: all 0.3s ease; }
-        .orb-green { background: #2ecc71; box-shadow: 0 0 15px #2ecc71, 0 0 30px #2ecc71; animation: levitate 2s infinite ease-in-out; }
-        .orb-red { background: #e74c3c; box-shadow: 0 0 20px #e74c3c, 0 0 40px #e74c3c; animation: fastBlink 0.6s infinite; }
-        
-        .health-text { font-size: 14px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
-        .settings-btn { background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
-        .settings-btn:hover { background: rgba(52, 152, 219, 0.5); transform: rotate(45deg); }
+        /* Security Gauge */
+        .score-circle { width: 60px; height: 60px; border-radius: 50%; border: 4px solid var(--border); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.2rem; }
+        .score-high { border-color: var(--success); color: var(--success); }
+        .score-med { border-color: #d29922; color: #d29922; }
+        .score-low { border-color: var(--danger); color: var(--danger); }
 
-        @keyframes levitate { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-        @keyframes fastBlink { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.9); } }
+        /* Progress Bars */
+        .progress-track { width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; display: flex; }
+        
+        /* Drag & Drop Zones */
+        .draggable { cursor: grab; }
+        .draggable:active { cursor: grabbing; opacity: 0.8; transform: scale(0.98); }
+        .drag-over { border: 2px dashed var(--accent) !important; }
 
-        /* ==================== VAULT GATEWAYS (4 Main Options) ==================== */
-        .vault-grid { display: flex; flex-direction: column; gap: 14px; }
+        /* Terminal */
+        .terminal { font-family: 'Courier New', Courier, monospace; background: #000; padding: 10px; border-radius: 6px; height: 150px; overflow-y: auto; font-size: 11px; }
+        .terminal p { margin: 2px 0; }
         
-        .vault-card { background: #242424; border-radius: 8px; padding: 20px; display: flex; align-items: center; justify-content: space-between; text-decoration: none; color: white; transition: all 0.2s; border: 1px solid #333; position: relative; overflow: hidden; }
-        .vault-card:hover { transform: translateY(-3px); background: #2a2a2a; border-color: #555; }
-        .vault-card:active { transform: translateY(0); }
-        
-        .vault-left { display: flex; align-items: center; gap: 15px; z-index: 2; }
-        .vault-icon { width: 32px; height: 32px; opacity: 0.9; }
-        .vault-title { font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
-        .vault-desc { font-size: 12px; color: #aaa; margin-top: 4px; }
-        
-        .gate-blue .vault-icon { color: #3498db; }
-        .gate-red .vault-icon { color: #e74c3c; }
-        .gate-green .vault-icon { color: #2ecc71; }
-        .gate-yellow .vault-icon { color: #f1c40f; }
-
-        /* ==================== MODAL STYLES ==================== */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(4px); }
-        .modal-content { background: #1e1e1e; width: 100%; max-width: 400px; border-radius: 10px; padding: 25px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 15px; }
-        .modal-header h3 { font-size: 18px; color: #3498db; text-transform: uppercase; letter-spacing: 1px; }
-        .close-btn { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; transition: 0.2s; }
-        .close-btn:hover { color: #e74c3c; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
     </style>
 </head>
-<body>
+<body class="p-4 md:p-6 flex flex-col gap-6">
 
-    <!-- ================================================================================= -->
-    <!-- HEADER & SELECTOR                                                                 -->
-    <!-- ================================================================================= -->
-    <div class="header">
-        <h2>Command Center</h2>
-        <select id="device-select" class="device-selector">
-            <option value="">Loading Neural Links...</option>
-        </select>
-    </div>
-
-    <!-- ================================================================================= -->
-    <!-- VITALS & HEALTH ORB GRID                                                          -->
-    <!-- ================================================================================= -->
-    <div class="vitals-grid">
-        <!-- Box 1: Device / Status -->
-        <div class="vital-box box-blue">
-            <i data-lucide="smartphone" class="vital-icon"></i>
-            <span class="vital-title">Target Device</span>
-            <span class="vital-value" id="ui-device-name">Waiting...</span>
-        </div>
-
-        <!-- Box 2: Battery Core -->
-        <div class="vital-box box-green" id="ui-battery-box">
-            <i data-lucide="battery" class="vital-icon" id="ui-battery-icon"></i>
-            <span class="vital-title" id="ui-battery-state">Power</span>
-            <span class="vital-value" id="ui-battery-val">--%</span>
-        </div>
-
-        <!-- Box 3: Storage / System -->
-        <div class="vital-box box-purple">
-            <i data-lucide="hard-drive" class="vital-icon"></i>
-            <span class="vital-title">Storage Used</span>
-            <span class="vital-value" id="ui-storage-val">--GB</span>
-        </div>
-
-        <!-- The 4th Block: Glowing Health Orb & Settings Gear -->
-        <div class="health-box">
-            <div class="health-left">
-                <div id="ui-health-orb" class="orb orb-red"></div>
-                <div class="health-text" id="ui-health-text" style="color: #e74c3c;">SYSTEM OFFLINE</div>
+    <!-- Top Bar: Selector, Latency, Theme -->
+    <header class="flex flex-col md:flex-row justify-between items-center gap-4 border-b border-[var(--border)] pb-4">
+        <div class="flex items-center gap-4 w-full md:w-auto">
+            <h1 class="text-2xl font-black tracking-widest text-[var(--accent)] uppercase">Command Center</h1>
+            <div class="flex items-center gap-2 px-3 py-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-full text-xs font-bold">
+                <span id="ui-orb" class="orb orb-offline"></span>
+                <span id="ui-latency" class="font-mono">-- ms</span>
             </div>
-            <button class="settings-btn" onclick="openSettingsModal()">
-                <i data-lucide="settings"></i>
+        </div>
+        <div class="flex gap-3 w-full md:w-auto">
+            <select id="device-select" class="flex-1 md:w-64 bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border)] p-2 rounded outline-none font-bold text-sm"></select>
+            <button onclick="engine.cycleTheme()" class="p-2 border border-[var(--border)] rounded bg-[var(--bg-card)] hover:bg-[var(--accent-dim)] transition">
+                <i data-lucide="palette" class="w-5 h-5 text-[var(--text-main)]"></i>
             </button>
         </div>
-    </div>
+    </header>
 
-    <!-- ================================================================================= -->
-    <!-- THE 4 VAULT GATEWAYS                                                              -->
-    <!-- ================================================================================= -->
-    <div class="vault-grid">
-        <a href="/communication.html" class="vault-card gate-blue">
-            <div class="vault-left">
-                <i data-lucide="message-square" class="vault-icon"></i>
+    <!-- Draggable Grid Layout -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="dashboard-grid">
+
+        <!-- 1. Vitals & Fingerprint (Draggable) -->
+        <div class="glass-panel p-4 col-span-1 md:col-span-2 draggable" draggable="true">
+            <div class="flex justify-between items-start mb-4">
                 <div>
-                    <div class="vault-title">Communication Hub</div>
-                    <div class="vault-desc">Calls, SMS, Contacts & Notifications</div>
+                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Target Identity</h3>
+                    <h2 class="text-xl font-bold text-white" id="ui-device-name">Waiting for uplink...</h2>
+                </div>
+                <!-- 6. Threat Score -->
+                <div class="flex flex-col items-center">
+                    <div id="ui-score" class="score-circle score-low">--</div>
+                    <span class="text-[9px] mt-1 font-bold text-gray-500 uppercase">Sys Score</span>
                 </div>
             </div>
-            <i data-lucide="chevron-right" style="color:#555;"></i>
-        </a>
-
-        <a href="/remote_center.html" class="vault-card gate-red">
-            <div class="vault-left">
-                <i data-lucide="cpu" class="vault-icon"></i>
-                <div>
-                    <div class="vault-title">Remote Ops Center</div>
-                    <div class="vault-desc">Live Screen, Camera, Admin Controls</div>
-                </div>
-            </div>
-            <i data-lucide="chevron-right" style="color:#555;"></i>
-        </a>
-
-        <a href="/safety.html" class="vault-card gate-green">
-            <div class="vault-left">
-                <i data-lucide="map-pin" class="vault-icon"></i>
-                <div>
-                    <div class="vault-title">Safety & Geolocation</div>
-                    <div class="vault-desc">GPS Tracker, Geofence & SOS Matrix</div>
-                </div>
-            </div>
-            <i data-lucide="chevron-right" style="color:#555;"></i>
-        </a>
-
-        <a href="/policy.html" class="vault-card gate-yellow">
-            <div class="vault-left">
-                <i data-lucide="lock" class="vault-icon"></i>
-                <div>
-                    <div class="vault-title">Policy Manager</div>
-                    <div class="vault-desc">App Blocking & Execution Restraints</div>
-                </div>
-            </div>
-            <i data-lucide="chevron-right" style="color:#555;"></i>
-        </a>
-    </div>
-
-    <!-- ================================================================================= -->
-    <!-- SETTINGS / PERMISSIONS MODAL                                                      -->
-    <!-- ================================================================================= -->
-    <div class="modal-overlay" id="settings-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>System Architecture Check</h3>
-                <button class="close-btn" onclick="closeSettingsModal()">&times;</button>
-            </div>
-            <div id="diagnostics-content">
-                <p style="color: #aaa; text-align: center; font-size: 13px;">Establishing neural handshake...</p>
+            <!-- 10. Hardware Fingerprint -->
+            <div class="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-[var(--border)] text-xs font-mono">
+                <div class="flex items-center gap-2"><i data-lucide="cpu" class="w-3 h-3 text-[var(--accent)]"></i> OS: <span id="ui-os">Android --</span></div>
+                <div class="flex items-center gap-2"><i data-lucide="thermometer" class="w-3 h-3 text-[var(--accent)]"></i> Temp: <span id="ui-temp">--°C</span></div>
+                <div class="flex items-center gap-2"><i data-lucide="battery" class="w-3 h-3 text-[var(--accent)]"></i> Pwr: <span id="ui-bat">--%</span></div>
+                <div class="flex items-center gap-2"><i data-lucide="info" class="w-3 h-3 text-[var(--accent)]"></i> ID: <span id="ui-uid">--</span></div>
             </div>
         </div>
+
+        <!-- 3. Network & Carrier Matrix -->
+        <div class="glass-panel p-4 col-span-1 md:col-span-1 draggable" draggable="true">
+            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3"><i data-lucide="wifi" class="inline w-3 h-3 mb-0.5"></i> Network Matrix</h3>
+            <div class="flex flex-col gap-3 text-xs font-mono">
+                <div class="flex justify-between"><span>Type:</span> <span class="font-bold text-white" id="net-type">Awaiting Data</span></div>
+                <div class="flex justify-between"><span>Carrier:</span> <span class="font-bold text-white" id="net-sim">--</span></div>
+                <div class="flex justify-between"><span>IP Addr:</span> <span class="font-bold text-[var(--accent)]" id="net-ip">--.--.--.--</span></div>
+            </div>
+        </div>
+
+        <!-- 5. Advanced Storage Visualizer -->
+        <div class="glass-panel p-4 col-span-1 md:col-span-1 draggable" draggable="true">
+            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3"><i data-lucide="hard-drive" class="inline w-3 h-3 mb-0.5"></i> Drive Allocation</h3>
+            <h2 class="text-lg font-bold text-white mb-2" id="ui-storage-txt">-- GB Used</h2>
+            <div class="progress-track mb-2">
+                <div class="bg-[var(--accent)] h-full" style="width: 40%;" id="store-apps" title="Apps"></div>
+                <div class="bg-[#d29922] h-full" style="width: 30%;" id="store-media" title="Media"></div>
+                <div class="bg-[#484f58] h-full flex-1" id="store-free" title="Free"></div>
+            </div>
+            <div class="flex justify-between text-[9px] uppercase font-bold text-gray-500">
+                <span class="text-[var(--accent)]">Apps</span>
+                <span class="text-[#d29922]">Media</span>
+                <span>Free</span>
+            </div>
+        </div>
+
+        <!-- 7. Vault Gateways with Live Badges -->
+        <div class="glass-panel p-4 col-span-1 md:col-span-2 draggable" draggable="true">
+            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Module Gateways</h3>
+            <div class="grid grid-cols-2 gap-3">
+                <a href="/communication.html" class="p-3 border border-[var(--border)] rounded bg-white/5 hover:bg-[var(--accent-dim)] transition relative block">
+                    <span id="badge-comm" class="absolute -top-2 -right-2 bg-[var(--danger)] text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden">0</span>
+                    <i data-lucide="message-square" class="w-5 h-5 text-[var(--accent)] mb-2"></i>
+                    <h4 class="text-sm font-bold text-white">Comm Hub</h4>
+                </a>
+                <a href="/remote_center.html" class="p-3 border border-[var(--border)] rounded bg-white/5 hover:bg-[var(--accent-dim)] transition block">
+                    <i data-lucide="cpu" class="w-5 h-5 text-[var(--accent)] mb-2"></i>
+                    <h4 class="text-sm font-bold text-white">Remote Ops</h4>
+                </a>
+                <a href="/safety.html" class="p-3 border border-[var(--border)] rounded bg-white/5 hover:bg-[var(--accent-dim)] transition relative block">
+                    <span id="badge-loc" class="absolute -top-2 -right-2 bg-[var(--success)] text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden">LIVE</span>
+                    <i data-lucide="map-pin" class="w-5 h-5 text-[var(--accent)] mb-2"></i>
+                    <h4 class="text-sm font-bold text-white">Safety & GPS</h4>
+                </a>
+                <a href="/policy.html" class="p-3 border border-[var(--border)] rounded bg-white/5 hover:bg-[var(--accent-dim)] transition block">
+                    <i data-lucide="lock" class="w-5 h-5 text-[var(--accent)] mb-2"></i>
+                    <h4 class="text-sm font-bold text-white">Policy Engine</h4>
+                </a>
+            </div>
+        </div>
+
+        <!-- 2. Real-Time Telemetry Terminal & 4. Quick Strikes -->
+        <div class="glass-panel p-4 col-span-1 md:col-span-2 flex flex-col draggable" draggable="true">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest"><i data-lucide="terminal" class="inline w-3 h-3 mb-0.5"></i> Live Log Stream</h3>
+                <div class="flex gap-2">
+                    <button class="px-2 py-1 bg-white/5 border border-[var(--border)] rounded text-[10px] hover:bg-[var(--accent-dim)] transition text-white">PING</button>
+                    <button class="px-2 py-1 bg-white/5 border border-[var(--border)] rounded text-[10px] hover:bg-[var(--accent-dim)] transition text-white">SNAP</button>
+                </div>
+            </div>
+            <div class="terminal flex-1 text-green-500" id="ui-terminal">
+                <p>> System initialized.</p>
+                <p>> Waiting for active websocket stream...</p>
+            </div>
+        </div>
+
+        <!-- 1. Live Mini-Map Radar -->
+        <div class="glass-panel p-4 col-span-1 md:col-span-2 draggable" draggable="true">
+            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2"><i data-lucide="crosshair" class="inline w-3 h-3 mb-0.5"></i> Tactical Radar</h3>
+            <div class="w-full h-32 bg-[#050505] border border-[var(--border)] rounded relative flex items-center justify-center overflow-hidden">
+                <div class="absolute w-full h-full border-2 border-[var(--success)] rounded-full opacity-20" style="animation: pulse 3s infinite;"></div>
+                <div class="absolute w-64 h-64 border-2 border-[var(--success)] rounded-full opacity-10" style="animation: pulse 3s infinite; animation-delay: 1s;"></div>
+                <i data-lucide="map-pin" class="w-6 h-6 text-[var(--danger)] z-10"></i>
+                <p class="absolute bottom-2 right-2 text-[9px] font-mono text-[var(--success)]" id="ui-radar-cords">LAT: -- | LNG: --</p>
+            </div>
+        </div>
+
+        <!-- 9. Top 3 Apps Graph -->
+        <div class="glass-panel p-4 col-span-1 md:col-span-2 draggable" draggable="true">
+            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3"><i data-lucide="bar-chart-2" class="inline w-3 h-3 mb-0.5"></i> App Execution Freq</h3>
+            <div class="flex flex-col gap-2">
+                <div class="flex items-center text-xs font-mono"><span class="w-16 truncate text-white">WhatsApp</span><div class="flex-1 bg-white/10 h-2 ml-2 rounded"><div class="bg-[var(--success)] h-full rounded" style="width: 70%;"></div></div></div>
+                <div class="flex items-center text-xs font-mono"><span class="w-16 truncate text-white">YouTube</span><div class="flex-1 bg-white/10 h-2 ml-2 rounded"><div class="bg-[var(--accent)] h-full rounded" style="width: 45%;"></div></div></div>
+                <div class="flex items-center text-xs font-mono"><span class="w-16 truncate text-white">Insta</span><div class="flex-1 bg-white/10 h-2 ml-2 rounded"><div class="bg-[#d29922] h-full rounded" style="width: 25%;"></div></div></div>
+                <p class="text-center text-[10px] text-gray-500 mt-2">Awaiting Python bridge /api/sync/usage...</p>
+            </div>
+        </div>
+
     </div>
 
-    <!-- ================================================================================= -->
-    <!-- MASTER JAVASCRIPT ENGINE (All logic embedded, NO external files)                  -->
-    <!-- ================================================================================= -->
     <script>
         lucide.createIcons();
 
-        class DashboardEngine {
+        class DashboardV3 {
             constructor() {
-                this.activeDeviceId = localStorage.getItem('active_device_id');
-                this.init();
-            }
-
-            async init() {
-                await this.loadDevicesList();
-                if (!this.activeDeviceId) return; 
-                await this.loadDeviceMetrics();
+                this.token = localStorage.getItem('owner_token');
+                this.activeId = localStorage.getItem('active_device_id');
+                this.themes = ['dark', 'tactical', 'matrix'];
+                this.currentThemeIdx = 0;
                 
-                // Telemetry Loop
-                setInterval(() => this.loadDeviceMetrics(), 8000);
+                this.initEngine();
+                this.initDragDrop();
             }
 
-            async loadDevicesList() {
-                const token = localStorage.getItem('owner_token');
+            async initEngine() {
+                // Restore Theme
+                const savedTheme = localStorage.getItem('rs_theme');
+                if(savedTheme) {
+                    document.documentElement.setAttribute('data-theme', savedTheme);
+                    this.currentThemeIdx = this.themes.indexOf(savedTheme);
+                }
+
+                await this.loadDevices();
+                if(this.activeId) {
+                    this.pollVitals();
+                    setInterval(() => this.pollVitals(), 8000);
+                    this.calculateBadgesAndScore(); // Fetch mock/real counts
+                }
+            }
+
+            cycleTheme() {
+                this.currentThemeIdx = (this.currentThemeIdx + 1) % this.themes.length;
+                const newTheme = this.themes[this.currentThemeIdx];
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('rs_theme', newTheme);
+                this.addTerminalLog(`Theme protocol switched to: ${newTheme.toUpperCase()}`);
+            }
+
+            async loadDevices() {
                 try {
-                    const res = await fetch('/api/devices', { headers: { 'Authorization': `Bearer ${token}` } });
+                    const res = await fetch('/api/devices', { headers: { 'Authorization': `Bearer ${this.token}` }});
                     const result = await res.json();
-
-                    if (result.status === 'success') {
-                        const selectEl = document.getElementById('device-select');
-                        selectEl.innerHTML = ''; 
+                    if(result.status === 'success') {
+                        const sel = document.getElementById('device-select');
+                        sel.innerHTML = '';
+                        if(result.data.length === 0) { sel.innerHTML = '<option>No Nodes Detected</option>'; return; }
                         
-                        if (!result.data || result.data.length === 0) {
-                            selectEl.innerHTML = '<option value="">No Active Nodes</option>';
-                            this.setOfflineState();
-                            return;
-                        }
-
-                        let validDevice = result.data.find(d => d.id == this.activeDeviceId);
-                        if (!validDevice) {
-                            this.activeDeviceId = result.data[0].id;
-                            localStorage.setItem('active_device_id', this.activeDeviceId);
-                            validDevice = result.data[0];
-                        }
-
-                        result.data.forEach(dev => {
-                            const option = document.createElement('option');
-                            option.value = dev.id;
-                            option.textContent = `${dev.name} [ID: ${dev.id.substring(0,4)}]`;
-                            selectEl.appendChild(option);
-                        });
-
-                        selectEl.value = this.activeDeviceId;
+                        let valid = result.data.find(d => d.id == this.activeId);
+                        if(!valid) { this.activeId = result.data[0].id; localStorage.setItem('active_device_id', this.activeId); }
                         
-                        selectEl.addEventListener('change', (e) => {
-                            this.activeDeviceId = e.target.value;
-                            localStorage.setItem('active_device_id', this.activeDeviceId);
-                            this.loadDeviceMetrics(); 
+                        result.data.forEach(d => {
+                            sel.innerHTML += `<option value="${d.id}">${d.name} [${d.id.substring(0,6)}]</option>`;
                         });
+                        sel.value = this.activeId;
+                        sel.addEventListener('change', (e) => { this.activeId = e.target.value; localStorage.setItem('active_device_id', this.activeId); this.pollVitals(); });
                     }
-                } catch (e) {
-                    console.error("Device Sync Error", e);
-                }
+                } catch(e) {}
             }
 
-            async loadDeviceMetrics() {
-                const token = localStorage.getItem('owner_token');
-                if (!this.activeDeviceId) return;
-
+            async pollVitals() {
+                const startTime = Date.now();
                 try {
-                    const res = await fetch('/api/devices', { headers: { 'Authorization': `Bearer ${token}` } });
+                    const res = await fetch('/api/devices', { headers: { 'Authorization': `Bearer ${this.token}` }});
                     const result = await res.json();
-                    if (result.status === 'success') {
-                        const dev = result.data.find(d => d.id == this.activeDeviceId);
-                        if (dev) this.updateUI(dev);
+                    
+                    // Latency Calc
+                    const ping = Date.now() - startTime;
+                    document.getElementById('ui-latency').innerText = `${ping}ms`;
+
+                    if(result.status === 'success') {
+                        const dev = result.data.find(d => d.id == this.activeId);
+                        if(dev) this.renderVitals(dev);
                     }
-                } catch (e) { console.error("Telemetry Error", e); }
-            }
-
-            updateUI(dev) {
-                // Vital 1: Name
-                document.getElementById('ui-device-name').innerText = dev.name || 'Unknown';
-
-                // Vital 2: Battery
-                document.getElementById('ui-battery-val').innerText = `${dev.battery_level || 0}%`;
-                const batIcon = document.getElementById('ui-battery-icon');
-                if (dev.is_charging) {
-                    document.getElementById('ui-battery-state').innerText = "Charging";
-                    document.getElementById('ui-battery-box').style.borderLeftColor = "#2ecc71";
-                    batIcon.setAttribute('data-lucide', 'battery-charging');
-                } else {
-                    document.getElementById('ui-battery-state').innerText = "Discharging";
-                    document.getElementById('ui-battery-box').style.borderLeftColor = "#e67e22";
-                    batIcon.setAttribute('data-lucide', 'battery');
-                }
-                lucide.createIcons();
-
-                // Vital 3: Storage
-                document.getElementById('ui-storage-val').innerText = dev.storage_used || 'N/A';
-
-                // Orb System Logic
-                const orb = document.getElementById('ui-health-orb');
-                const orbText = document.getElementById('ui-health-text');
-                
-                if (dev.online_status) {
-                    orb.className = 'orb orb-green';
-                    orbText.innerText = "SYSTEM OPTIMAL";
-                    orbText.style.color = "#2ecc71";
-                } else {
-                    this.setOfflineState();
+                } catch(e) {
+                    document.getElementById('ui-orb').className = 'orb orb-offline';
                 }
             }
 
-            setOfflineState() {
-                const orb = document.getElementById('ui-health-orb');
-                const orbText = document.getElementById('ui-health-text');
-                orb.className = 'orb orb-red';
-                orbText.innerText = "LINK SEVERED";
-                orbText.style.color = "#e74c3c";
+            renderVitals(dev) {
+                document.getElementById('ui-device-name').innerText = dev.name;
+                document.getElementById('ui-os').innerText = dev.android_version || 'Android 10+';
+                document.getElementById('ui-temp').innerText = dev.temperature ? `${dev.temperature}°C` : '32°C';
+                document.getElementById('ui-bat').innerText = `${dev.battery_level || 0}% ${dev.is_charging ? '⚡' : ''}`;
+                document.getElementById('ui-uid').innerText = dev.device_id ? dev.device_id.substring(0,8) : 'Unknown';
+                document.getElementById('ui-storage-txt').innerText = dev.storage_used || '-- GB';
+                document.getElementById('net-type').innerText = dev.network_type || 'WIFI';
+
+                if(dev.online_status) {
+                    document.getElementById('ui-orb').className = 'orb';
+                } else {
+                    document.getElementById('ui-orb').className = 'orb orb-offline';
+                }
+            }
+
+            async calculateBadgesAndScore() {
+                // 6. Security Score Logic & 7. Live Badges
+                try {
+                    // Fetch real counts from calls API (Category A execution)
+                    const res = await fetch(`/api/calls?device_id=${this.activeId}&limit=100`, { headers: { 'Authorization': `Bearer ${this.token}` }});
+                    const result = await res.json();
+                    if(result.status === 'success') {
+                        const count = result.data.length;
+                        const badge = document.getElementById('badge-comm');
+                        if(count > 0) {
+                            badge.innerText = count;
+                            badge.classList.remove('hidden');
+                        }
+                    }
+
+                    // Security Score via Diagnostics API
+                    const diag = await fetch(`/api/devices/diagnostics?device_id=${this.activeId}`, { headers: { 'Authorization': `Bearer ${this.token}` }});
+                    const diagRes = await diag.json();
+                    
+                    let score = 100;
+                    if(diagRes.status === 'success' && diagRes.data.length > 0) {
+                        const perms = diagRes.data[0];
+                        if(!perms.location) score -= 20;
+                        if(!perms.accessibility) score -= 30;
+                        if(!perms.notification_access) score -= 15;
+                        if(!perms.storage) score -= 10;
+                    } else { score = 40; } // Fallback
+
+                    const circle = document.getElementById('ui-score');
+                    circle.innerText = score;
+                    circle.className = 'score-circle ' + (score > 80 ? 'score-high' : score > 50 ? 'score-med' : 'score-low');
+                    this.addTerminalLog(`Sys-Score computed: ${score}/100`);
+
+                } catch(e) {}
+            }
+
+            addTerminalLog(msg) {
+                const term = document.getElementById('ui-terminal');
+                const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+                term.innerHTML += `<p>[${time}] > ${msg}</p>`;
+                term.scrollTop = term.scrollHeight;
+            }
+
+            // 11. HTML5 Drag and Drop logic
+            initDragDrop() {
+                const grid = document.getElementById('dashboard-grid');
+                let draggedItem = null;
+
+                grid.addEventListener('dragstart', (e) => {
+                    draggedItem = e.target.closest('.draggable');
+                    setTimeout(() => draggedItem.style.opacity = '0.5', 0);
+                });
+
+                grid.addEventListener('dragend', (e) => {
+                    setTimeout(() => { draggedItem.style.opacity = '1'; draggedItem = null; }, 0);
+                    grid.querySelectorAll('.draggable').forEach(c => c.classList.remove('drag-over'));
+                });
+
+                grid.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    const afterElement = this.getDragAfterElement(grid, e.clientY, e.clientX);
+                    const currentTarget = e.target.closest('.draggable');
+                    if(currentTarget && currentTarget !== draggedItem) currentTarget.classList.add('drag-over');
+                    
+                    if (afterElement == null) { grid.appendChild(draggedItem); } 
+                    else { grid.insertBefore(draggedItem, afterElement); }
+                });
+
+                grid.addEventListener('dragleave', (e) => {
+                    const currentTarget = e.target.closest('.draggable');
+                    if(currentTarget) currentTarget.classList.remove('drag-over');
+                });
+            }
+
+            getDragAfterElement(container, y, x) {
+                const draggableElements = [...container.querySelectorAll('.draggable:not([style*="opacity: 0.5"])')];
+                return draggableElements.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = y - box.top - box.height / 2;
+                    if (offset < 0 && offset > closest.offset) { return { offset: offset, element: child }; } 
+                    else { return closest; }
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
             }
         }
 
-        // Initialize Engine
-        document.addEventListener('DOMContentLoaded', () => { new DashboardEngine(); });
-
-        // =================================================================================
-        // DIAGNOSTICS MODAL LOGIC (Settings Check)
-        // =================================================================================
-        window.openSettingsModal = async () => {
-            const modal = document.getElementById('settings-modal');
-            const content = document.getElementById('diagnostics-content');
-            const deviceId = localStorage.getItem('active_device_id');
-            const token = localStorage.getItem('owner_token');
-
-            modal.style.display = 'flex';
-            content.innerHTML = '<p style="color: #aaa; text-align: center;">Scanning target security architecture...</p>';
-
-            if (!deviceId) return content.innerHTML = '<p style="color: #e74c3c;">Target context not locked.</p>';
-
-            try {
-                const res = await fetch(`/api/devices/diagnostics?device_id=${deviceId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const result = await res.json();
-
-                if (result.status === 'success' && result.data.length > 0) {
-                    const perms = result.data[0];
-                    const map = {
-                        'Accessibility Engine': perms.accessibility,
-                        'Live GPS Track': perms.location,
-                        'Notification Intercept': perms.notification_access,
-                        'Storage Write': perms.storage,
-                        'Mic & Audio Stream': perms.microphone,
-                        'Camera Hijack Pipeline': perms.camera
-                    };
-
-                    let html = '<div style="display:flex; flex-direction:column; gap:8px;">';
-                    for (const [key, val] of Object.entries(map)) {
-                        const color = val ? '#2ecc71' : '#e74c3c';
-                        html += `
-                            <div style="display:flex; justify-content:space-between; background:#242424; padding:10px 15px; border-radius:4px; border-left:3px solid ${color};">
-                                <span style="font-size:13px; color:#ddd; font-weight:600;">${key}</span>
-                                <span style="color:${color}; font-weight:bold;">${val ? 'ACTIVE' : 'BLOCKED'}</span>
-                            </div>
-                        `;
-                    }
-                    html += '</div>';
-                    content.innerHTML = html;
-                } else {
-                    content.innerHTML = '<p style="color:#f1c40f;">No remote payload data found.</p>';
-                }
-            } catch (e) {
-                content.innerHTML = '<p style="color:#e74c3c;">Execution blocked by host network.</p>';
-            }
-        };
-
-        window.closeSettingsModal = () => { document.getElementById('settings-modal').style.display = 'none'; };
+        const engine = new DashboardV3();
     </script>
 </body>
 </html>
