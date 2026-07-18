@@ -1,16 +1,29 @@
+import os
 from flask import Blueprint, request, jsonify
-from datetime import datetime
-# Apni main app se supabase client aur auth decorator import kar lena
-# from app import supabase, token_required 
+from supabase import create_client, Client
 
 whatsapp_bp = Blueprint('whatsapp', __name__)
 
 # ==========================================================
+# 🚀 SECURE SUPABASE INITIALIZATION (Zero-Crash Architecture)
+# ==========================================================
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY") or os.environ.get("SUPABASE_SERVICE_KEY")
+
+# Create an independent Supabase instance for this module
+if SUPABASE_URL and SUPABASE_KEY:
+    try:
+        supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    except Exception as e:
+        print(f"❌ WhatsApp Module Supabase Engine Failure: {e}", flush=True)
+else:
+    print("⚠️ WARNING: Supabase Environment Variables Missing in WhatsApp Module!", flush=True)
+
+
+# ==========================================================
 # 1. FETCH LOGS (Dashboard Frontend ke liye)
-# GET /api/whatsapp/logs
 # ==========================================================
 @whatsapp_bp.route('/api/whatsapp/logs', methods=['GET'])
-# @token_required  <-- Ensure your auth decorator is active
 def get_whatsapp_logs():
     device_id = request.args.get('device_id')
     limit = request.args.get('limit', 1000)
@@ -19,7 +32,6 @@ def get_whatsapp_logs():
         return jsonify({"status": "error", "message": "Device ID is missing"}), 400
 
     try:
-        # Supabase se exactly match karke fetch
         response = supabase.table('whatsapp_logs') \
             .select('*') \
             .eq('device_id', device_id) \
@@ -29,15 +41,14 @@ def get_whatsapp_logs():
         
         return jsonify({"status": "success", "data": response.data}), 200
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        print(f"WhatsApp Fetch Crash: {str(e)}", flush=True)
+        return jsonify({"status": "error", "message": "Database query failed"}), 500
 
 
 # ==========================================================
 # 2. NUKE DATABASE (Delete button ke liye)
-# DELETE /api/whatsapp/clear
 # ==========================================================
 @whatsapp_bp.route('/api/whatsapp/clear', methods=['DELETE'])
-# @token_required
 def clear_whatsapp_logs():
     device_id = request.args.get('device_id')
 
@@ -53,32 +64,29 @@ def clear_whatsapp_logs():
 
 # ==========================================================
 # 3. INGESTION ENGINE (Android App se data lene ke liye)
-# POST /api/whatsapp/sync
 # ==========================================================
 @whatsapp_bp.route('/api/whatsapp/sync', methods=['POST'])
-# @token_required
 def sync_whatsapp():
-    # Token check ke baad device ID nikalna
-    # If device_id comes from token payload in your system, extract it. Otherwise expect it in JSON.
-    data = request.json
-    device_id = data.get('device_id') 
-    messages = data.get('messages', []) # Android bhejega 'messages' array
-
-    if not device_id:
-        return jsonify({"status": "error", "message": "Device ID required"}), 400
+    # 🚀 FIXED: Android sends the token in the HEADER, not in the JSON body.
+    device_id = request.headers.get('X-Device-Token')
     
+    if not device_id:
+        return jsonify({"status": "error", "message": "X-Device-Token Header Required"}), 400
+        
+    data = request.json or {}
+    messages = data.get('messages', []) 
+
     if not messages:
         return jsonify({"status": "success", "message": "No new messages to sync"}), 200
 
     payloads = []
     
-    # STRICT MAPPING: Android Keys -> Supabase Columns
     for msg in messages:
         payloads.append({
             "device_id": device_id,
-            "number": msg.get("sender", "Unknown"),           # Android 'sender' -> SQL 'number'
-            "contact_name": msg.get("contactName", "Unknown"),# Android 'contactName' -> SQL 'contact_name'
-            "body": msg.get("message", ""),                   # Android 'message' -> SQL 'body'
+            "number": msg.get("sender", "Unknown"),
+            "contact_name": msg.get("contactName", "Unknown"),
+            "body": msg.get("message", ""),
             "type": msg.get("type", "inbox"),
             "protocol": msg.get("protocol", "WHATSAPP"),
             "timestamp": msg.get("timestamp")
@@ -87,7 +95,8 @@ def sync_whatsapp():
     try:
         # BATCH INSERT for heavy performance
         supabase.table('whatsapp_logs').insert(payloads).execute()
+        print(f"✅ WhatsApp Engine: Successfully synced {len(payloads)} messages.", flush=True)
         return jsonify({"status": "success", "message": f"{len(payloads)} WhatsApp logs synced."}), 200
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
+        print(f"❌ WhatsApp Sync Crash: {str(e)}", flush=True)
+        return jsonify({"status": "error", "message": "Database insert failed"}), 500
