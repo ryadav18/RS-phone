@@ -399,16 +399,27 @@
             async executeWipe() {
                 document.getElementById('wipe-modal').classList.add('hidden');
                 try {
-                    const res = await fetch('/api/messages/clear', {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${this.getValidToken()}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ device_id: this.activeDeviceId })
+                    // 🚀 FIXED: Changed to DELETE method and appended device_id to URL
+                    const res = await fetch(`/api/messages/clear?device_id=${this.activeDeviceId}`, {
+                        method: 'DELETE',
+                        headers: { 
+                            'Authorization': `Bearer ${this.getValidToken()}`
+                        }
                     });
-                    this.showToast("SMS LOGS WIPED. All records eradicated.");
-                    document.getElementById('chat-stream-container').innerHTML = '';
-                    this.allData = [];
-                    this.processAndRender();
-                } catch(e) { this.showToast("Server refused connection.", "error"); }
+                    
+                    const result = await res.json();
+                    
+                    if (res.ok && result.status === 'success') {
+                        this.showToast("SMS LOGS WIPED. All records eradicated.");
+                        document.getElementById('chat-stream-container').innerHTML = '';
+                        this.allData = [];
+                        this.processAndRender();
+                    } else {
+                        this.showToast("Wipe Failed: " + (result.message || "Unknown Error"), "error");
+                    }
+                } catch(e) { 
+                    this.showToast("Server refused connection.", "error"); 
+                }
             }
 
             // ================= TXT EXPORT =================
