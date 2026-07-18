@@ -81,6 +81,8 @@ from backend.apps import apps_bp
 from backend.usage import usage_bp
 from backend.settings import settings_bp
 from backend.contacts import contacts_bp
+# 🚀 NEW: WHATSAPP MODULE ADDED HERE
+from backend.whatsapp import whatsapp_bp 
 
 # ================= BLUEPRINTS REGISTRATION =================
 app.register_blueprint(auth_bp)
@@ -98,6 +100,8 @@ app.register_blueprint(apps_bp)
 app.register_blueprint(usage_bp)
 app.register_blueprint(contacts_bp)
 app.register_blueprint(settings_bp)
+# 🚀 NEW: WHATSAPP BLUEPRINT REGISTERED HERE
+app.register_blueprint(whatsapp_bp)
 # ===========================================================
 
 # ================= CORE FRONTEND VIEWS =====================
@@ -120,7 +124,7 @@ def permissions_view():
     return send_from_directory(template_path, 'permissions.html')
 
 # ===========================================================
-# 📥 THE 4 MAIN GATEWAY HUBS ROUTING MATRIX (FIXED VIA VIDEO)
+# 📥 THE 5 MAIN GATEWAY HUBS ROUTING MATRIX
 # ===========================================================
 @app.route('/communication')
 @app.route('/communication.html')
@@ -144,9 +148,21 @@ def safety_and_gps_hub_view():
 def system_policy_manager_view():
     return send_from_directory(template_path, 'policy.html')
 
+# 🚀 NEW: INSTANT MESSAGING HUB ADDED HERE
+@app.route('/instant-messaging')
+@app.route('/instant_messaging.html')
+def instant_messaging_hub_view():
+    return send_from_directory(template_path, 'instant_messaging.html')
+
 # ===========================================================
-# 🚀 SUB-FEATURES ROUTING INSIDE THE HUBS (FIXED VIA VIDEO)
+# 🚀 SUB-FEATURES ROUTING INSIDE THE HUBS
 # ===========================================================
+# 🚀 NEW: WHATSAPP WEB UI ROUTE ADDED HERE
+@app.route('/whatsapp')
+@app.route('/whatsapp.html')
+def whatsapp_matrix_view():
+    return send_from_directory(template_path, 'whatsapp.html')
+
 @app.route('/calls')
 @app.route('/calls.html')
 def calls_view():
