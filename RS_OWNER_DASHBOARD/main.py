@@ -81,8 +81,9 @@ from backend.apps import apps_bp
 from backend.usage import usage_bp
 from backend.settings import settings_bp
 from backend.contacts import contacts_bp
-# 🚀 NEW: WHATSAPP MODULE ADDED HERE
 from backend.whatsapp import whatsapp_bp 
+# 🚀 NEW: UNIVERSAL VAULT ENGINE IMPORTED
+from backend.vault import vault_bp
 
 # ================= BLUEPRINTS REGISTRATION =================
 app.register_blueprint(auth_bp)
@@ -100,8 +101,9 @@ app.register_blueprint(apps_bp)
 app.register_blueprint(usage_bp)
 app.register_blueprint(contacts_bp)
 app.register_blueprint(settings_bp)
-# 🚀 NEW: WHATSAPP BLUEPRINT REGISTERED HERE
 app.register_blueprint(whatsapp_bp)
+# 🚀 NEW: UNIVERSAL VAULT ENGINE REGISTERED
+app.register_blueprint(vault_bp)
 # ===========================================================
 
 # ================= CORE FRONTEND VIEWS =====================
@@ -148,7 +150,6 @@ def safety_and_gps_hub_view():
 def system_policy_manager_view():
     return send_from_directory(template_path, 'policy.html')
 
-# 🚀 NEW: INSTANT MESSAGING HUB ADDED HERE
 @app.route('/instant-messaging')
 @app.route('/instant_messaging.html')
 def instant_messaging_hub_view():
@@ -157,7 +158,6 @@ def instant_messaging_hub_view():
 # ===========================================================
 # 🚀 SUB-FEATURES ROUTING INSIDE THE HUBS
 # ===========================================================
-# 🚀 NEW: WHATSAPP WEB UI ROUTE ADDED HERE
 @app.route('/whatsapp')
 @app.route('/whatsapp.html')
 def whatsapp_matrix_view():
