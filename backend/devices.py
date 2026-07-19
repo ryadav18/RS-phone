@@ -54,8 +54,8 @@ def connect_device():
             "battery_level": data.get('battery_level', 100),
             "is_charging": data.get('is_charging', False),
             "network_type": data.get('network_type', 'WIFI'),
-            "ip_address": data.get('ip_address', '--.--.--.--'), # 🚀 NEW: IP Tracking
-            "sim_provider": data.get('sim_provider', 'Unknown'), # 🚀 NEW: Carrier Tracking
+            "ip_address": data.get('ip_address', '--.--.--.--'), 
+            "sim_provider": data.get('sim_provider', 'Unknown'), 
             "storage_used": data.get('storage_used', '0%'),
             "temperature": data.get('temperature', 30.0),
             "fcm_token": fcm_token 
@@ -112,8 +112,8 @@ def update_status():
             "battery_level": data.get('battery_level', 100),
             "is_charging": data.get('is_charging', False),
             "network_type": data.get('network_type', 'WIFI'),
-            "ip_address": data.get('ip_address', '--.--.--.--'), # 🚀 NEW
-            "sim_provider": data.get('sim_provider', 'Unknown'), # 🚀 NEW
+            "ip_address": data.get('ip_address', '--.--.--.--'), 
+            "sim_provider": data.get('sim_provider', 'Unknown'), 
             "storage_used": data.get('storage_used', '0%'),
             "temperature": data.get('temperature', 30.0)
         }
@@ -225,15 +225,40 @@ def get_pending_commands():
         return jsonify({"status": "success", "commands": cmds.data}), 200
     except Exception as e: return jsonify({"status": "error", "message": str(e)}), 500
 
+
+# 🚀 HIGH-LEVEL CASCADING DELETE ENGINE
 @devices_bp.route('/api/devices/<device_id>', methods=['DELETE'])
 @token_required
 def remove_device(device_id):
     try:
-        check = supabase.table('devices').select('id').eq('id', device_id).eq('owner_id', request.owner_id).execute()
-        if not check.data: return jsonify({"status": "error", "message": "Device not found"}), 404
-        supabase.table('devices').delete().eq('id', device_id).execute()
-        return jsonify({"status": "success", "message": "Device removed successfully"}), 200
-    except Exception as e: return jsonify({"status": "error", "message": str(e)}), 500
+        # Step 1: Verify ownership and get both IDs (Internal ID & Device Token)
+        check = supabase.table('devices').select('id', 'device_token').eq('id', device_id).eq('owner_id', request.owner_id).execute()
+        if not check.data: 
+            return jsonify({"status": "error", "message": "Device not found or unauthorized"}), 404
+        
+        real_db_id = check.data[0]['id']
+        dev_token = check.data[0]['device_token']
+
+        # Step 2: Wipe all associated data to free up Supabase Space
+        tables_to_clean = ['permissions', 'app_usage', 'activity_logs', 'calls', 'messages', 'locations', 'notifications', 'contacts']
+        for table in tables_to_clean:
+            try:
+                supabase.table(table).delete().eq('device_id', real_db_id).execute()
+            except Exception:
+                pass # Silently skip if table doesn't exist yet
+
+        # Step 3: Wipe Universal Vault (Which uses string token instead of int ID)
+        try:
+            supabase.table('universal_sync_vault').delete().eq('device_id', dev_token).execute()
+        except Exception:
+            pass
+            
+        # Step 4: Finally, delete the device core record
+        supabase.table('devices').delete().eq('id', real_db_id).execute()
+        
+        return jsonify({"status": "success", "message": "Device and all related ghost data completely wiped."}), 200
+    except Exception as e: 
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @devices_bp.route('/api/devices/diagnostics', methods=['GET'])
 @token_required
