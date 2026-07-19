@@ -41,6 +41,31 @@ def get_calls():
         print(f"GET CALLS ERROR: {str(e)}", flush=True)
         return jsonify({"status": "error", "message": "Failed to fetch calls"}), 500
 
+# 🚀 THE NEW REAL DELETE ENGINE (Fixes the dummy refresh bug)
+@calls_bp.route('/api/calls', methods=['DELETE'])
+@token_required
+def delete_calls():
+    device_id = request.args.get('device_id')
+    log_id = request.args.get('log_id') # Optional: agar single call delete karni ho
+    
+    if not device_id:
+        return jsonify({"status": "error", "message": "Device ID is required to wipe logs"}), 400
+        
+    try:
+        if log_id:
+            # Single log targeted wipe
+            supabase.table('calls').delete().eq('id', log_id).eq('device_id', str(device_id)).execute()
+            print(f"🗑️ DELETED SINGLE CALL LOG: {log_id} for Device: {device_id}", flush=True)
+        else:
+            # NUKE DB (Wipe all calls for this device)
+            supabase.table('calls').delete().eq('device_id', str(device_id)).execute()
+            print(f"☢️ NUKED ALL CALL LOGS for Device: {device_id}", flush=True)
+            
+        return jsonify({"status": "success", "message": "Call logs permanently wiped from Data Lake."}), 200
+    except Exception as e:
+        print(f"❌ DELETE CALLS ERROR: {str(e)}", flush=True)
+        return jsonify({"status": "error", "message": "Database wipe failed"}), 500
+
 # 🚀 2. THE NEW FCM PUSH NOTIFICATION ENGINE
 @calls_bp.route('/api/calls/trigger', methods=['POST'])
 @token_required
