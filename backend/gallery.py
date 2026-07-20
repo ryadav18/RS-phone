@@ -1,117 +1,81 @@
 import os
-import base64
-import requests
+import uuid
 from flask import Blueprint, request, jsonify
-from backend.auth import token_required
-from backend.devices import verify_device_access
+from werkzeug.utils import secure_filename
 from database import supabase
 
-# Initialize the standalone blueprint module context
 gallery_bp = Blueprint('gallery', __name__)
 
-@gallery_bp.route('/api/files/upload', methods=['POST'])
-def upload_gallery_photo():
+# =========================================================================
+# 🚀 1. RECEIVE MEDIA FROM ANDROID (MediaSyncEngine)
+# =========================================================================
+@gallery_bp.route('/api/gallery/upload', methods=['POST'])
+def upload_gallery_media():
     """
-    Core Proxy Upload Gateway.
-    Intercepts multi-part binary and form-data metadata from Android app, 
-    relays to Google Drive script with correct directory routing, logs reference to Supabase, 
-    and enforces 50-photo limit per device.
+    Android ka MediaSyncEngine silently newly added photos yahan push karega.
     """
-    # 1. Telemetry Header Signature Verification Check
-    token = request.headers.get('X-Device-Token')
-    if not token:
-        return jsonify({"status": "error", "message": "Missing device security signature"}), 401
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    
+    if 'file' not in request.files:
+        return jsonify({"status": "error", "message": "No media payload attached."}), 400
+        
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"status": "error", "message": "Empty media payload."}), 400
 
     try:
-        # Cross reference token validation maps against Supabase target registry
-        dev_check = supabase.table('devices').select('id').eq('device_token', token).execute()
-        if not dev_check.data:
-            return jsonify({"status": "error", "message": "Invalid device token registry match"}), 403
-
-        dev_id = dev_check.data[0]['id']
-
-        # 2. Extract Binary Multi-part Data Array from Request Network Buffers
-        if 'file' not in request.files:
-            return jsonify({"status": "error", "message": "Multipart form-data key 'file' missing"}), 400
-
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({"status": "error", "message": "No stream sequence selected"}), 400
-
-        # 🚀 FIXED: Dynamic form-data extraction aligned perfectly with Android app keys ('file_type' & 'folder_path')
-        upload_type = request.form.get('file_type') or request.form.get('type') or 'gallery'
-        target_folder = request.form.get('folder_path') or request.form.get('folderPath') or 'RollingMediaGallery'
-
-        # Read binary block and encode to raw Base64 string matching Apps Script architecture
-        file_bytes = file.read()
-        base64_image_string = base64.b64encode(file_bytes).decode('utf-8')
-
-        # 3. Retrieve Environment Gateway Endpoint Pointer
-        drive_gateway_url = os.environ.get('DRIVE_GATEWAY_URL')
-        if not drive_gateway_url:
-            return jsonify({"status": "error", "message": "DRIVE_GATEWAY_URL missing in server configurations"}), 500
-
-        # Forward explicit routing maps to the 5TB Drive Setup
-        gateway_payload = {
-            "image_base64": base64_image_string,
-            "file_name": file.filename,
-            "folder_path": target_folder,
-            "upload_type": upload_type
-        }
-
-        # Fire high-speed backend-to-backend HTTP POST routing request
-        apps_script_response = requests.post(drive_gateway_url, json=gateway_payload, timeout=40)
-        
-        if apps_script_response.status_code != 200:
-            return jsonify({"status": "error", "message": "Google Cloud storage node handshake timed out"}), 502
-
-        response_data = apps_script_response.json()
-        if response_data.get('status') != 'success':
-            return jsonify({"status": "error", "message": response_data.get('error_message', 'Apps Script layer execution failure')}), 502
-
-        # Extract rendering token fields returned by Google Apps Script
-        direct_url = response_data.get('direct_url')
-        drive_file_id = response_data.get('drive_file_id')
-
-        # 4. Insert Metadata Pointer to Supabase Table ('photos')
-        photo_payload = {
-            "device_id": dev_id,
-            "file_name": file.filename,
-            "media_url": direct_url,
-            "drive_file_id": drive_file_id
-        }
-        supabase.table('photos').insert(photo_payload).execute()
-
-        # =================================================================================
-        # 🚀 STRICT 50-IMAGE FIFO ROLLING BUFFER CLEANUP ENGINES
-        # =================================================================================
-        photos_query = supabase.table('photos').select('id').eq('device_id', dev_id).order('id', desc=True).execute()
-        
-        if len(photos_query.data) > 50:
-            records_to_purge = photos_query.data[50:]
-            ids_to_purge = [record['id'] for record in records_to_purge]
+        # 1. Target Validation
+        dev_query = supabase.table('devices').select('id').eq('device_token', token).execute()
+        if not dev_query.data:
+            return jsonify({"status": "error", "message": "Unauthorized target node."}), 403
             
-            supabase.table('photos').delete().in_('id', ids_to_purge).execute()
-            print(f"[FIFO Gallery Engine] Purged {len(ids_to_purge)} overflow references successfully.")
+        device_id = dev_query.data[0]['id']
+        
+        # 2. File Name Secure & Path Generation
+        filename = secure_filename(file.filename)
+        # Unique UUID lagaya hai taaki same naam ki 2 photos aapas mein overwrite na ho jayein
+        storage_path = f"{device_id}/{uuid.uuid4()}_{filename}"
+        
+        # 3. Read & Upload to Supabase Storage Bucket ('gallery')
+        file_bytes = file.read()
+        supabase.storage.from_('gallery').upload(storage_path, file_bytes)
+        
+        # 4. Extract Public URL
+        file_url = supabase.storage.from_('gallery').get_public_url(storage_path)
 
-        return jsonify({"status": "success", "message": "Media array frame processed, relayed and buffered successfully"}), 201
+        # 5. Inject metadata into database
+        supabase.table('gallery').insert({
+            "device_id": device_id,
+            "file_name": filename,
+            "file_url": file_url,
+            "media_type": "image" # Future-proof for videos
+        }).execute()
 
-    except Exception as error:
-        return jsonify({"status": "error", "message": f"Global Runtime Anomaly Neutralized: {str(error)}"}), 500
+        print(f"[GALLERY] Media '{filename}' synced securely for device {device_id}", flush=True)
 
-# =================================================================================
-# WEB VIEW FRONTEND DATA POLLING FETCH CONTROLLER
-# =================================================================================
-@gallery_bp.route('/api/gallery', methods=['GET'])
-@token_required
-def get_dashboard_gallery():
-    """Web panel authentication gate to pull the latest 50 image embed tokens."""
-    device_id = request.args.get('device_id')
-    if not device_id or not verify_device_access(request.owner_id, device_id):
-        return jsonify({"status": "error", "message": "Unauthorized client dashboard operation"}), 403
+        return jsonify({
+            "status": "success", 
+            "message": "Media block uploaded & mapped.",
+            "url": file_url
+        }), 200
 
-    try:
-        res = supabase.table('photos').select('*').eq('device_id', device_id).order('id', desc=True).limit(50).execute()
-        return jsonify({"status": "success", "data": res.data}), 200
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        print(f"[GALLERY CRASH] Media pipeline anomaly: {str(e)}", flush=True)
+        return jsonify({"status": "error", "message": "Media pipeline failed."}), 500
+
+
+# =========================================================================
+# 🚀 2. DASHBOARD API: GET GALLERY MEDIA (Frontend calling Backend)
+# =========================================================================
+@gallery_bp.route('/api/devices/<device_id>/gallery', methods=['GET'])
+def get_device_gallery(device_id):
+    """
+    Dashboard (gallery.html) is route se images fetch karega grid me dikhane ke liye.
+    """
+    try:
+        # Latest photos ko sabse upar (descending) bhejenge
+        query = supabase.table('gallery').select('*').eq('device_id', device_id).order('created_at', desc=True).execute()
+        return jsonify({"status": "success", "data": query.data}), 200
+    except Exception as e:
+        print(f"[GALLERY CRASH] Fetch anomaly: {str(e)}", flush=True)
+        return jsonify({"status": "error", "message": "Database read failed."}), 500
