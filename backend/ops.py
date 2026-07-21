@@ -10,7 +10,8 @@ ops_bp = Blueprint('ops', __name__)
 
 # 🚀 MASTER TELEGRAM CREDENTIALS
 TELEGRAM_BOT_TOKEN = "8859136669:AAGRxFrz6biRm0668zMo9Zhi8r5M2BdsX9A"
-AUTHORIZED_CHAT_ID = 310530365
+# 👇 Yahan '8' add kar diya gaya hai (Correct ID)
+AUTHORIZED_CHAT_ID = 3105303865 
 
 def send_telegram_reply(text):
     """Helper function to send status back to your Telegram chat."""
@@ -22,20 +23,21 @@ def send_telegram_reply(text):
         print(f"[TELEGRAM API] Reply failed: {e}")
 
 # =========================================================================
-# 🚀 1. TELEGRAM WEBHOOK COMMAND LISTENER (The New Control Hub)
+# 🚀 1. TELEGRAM WEBHOOK COMMAND LISTENER
 # =========================================================================
 @ops_bp.route('/api/telegram/webhook', methods=['POST'])
 def telegram_webhook():
-    """
-    Listens for commands directly from the Telegram Bot and fires FCM pushes.
-    """
     data = request.json or {}
     message = data.get('message', {})
     chat_id = message.get('chat', {}).get('id')
     text = message.get('text', '').strip().lower()
 
+    # 🟢 DEBUG LOG: Ye Render console mein incoming command dikhayega
+    print(f"[WEBHOOK RECEIVED] ID: {chat_id} | Command: {text}", flush=True)
+
     # 🛡️ SECURITY: Strict authorization. Drop if not from parent's Chat ID.
-    if chat_id != AUTHORIZED_CHAT_ID:
+    if str(chat_id) != str(AUTHORIZED_CHAT_ID):
+        print(f"[SECURITY DROP] Blocked unauthorized request from ID: {chat_id}", flush=True)
         return jsonify({"status": "ignored"}), 200
 
     if not text.startswith('/'):
@@ -61,8 +63,8 @@ def telegram_webhook():
 
     # 📡 FIRE THE FCM PUSH
     try:
-        # Get the most recently active device (for single-target control via Telegram)
-        dev_query = supabase.table('devices').select('device_token, name').order('last_active', desc=True).limit(1).execute()
+        # Get the first active device
+        dev_query = supabase.table('devices').select('device_token, name').limit(1).execute()
         
         if not dev_query.data or not dev_query.data[0].get('device_token'):
             send_telegram_reply("❌ *Error:* No active target devices found in Supabase.")
@@ -91,7 +93,7 @@ def telegram_webhook():
 
 
 # =========================================================================
-# 🚀 2. STANDARD DASHBOARD DISPATCHER (For UI operations)
+# 🚀 2. STANDARD DASHBOARD DISPATCHER
 # =========================================================================
 @ops_bp.route('/api/devices/<device_id>/action', methods=['POST'])
 @token_required
@@ -123,12 +125,6 @@ def dispatch_tactical_command(device_id):
         response = messaging.send(message)
         print(f"[TACTICAL OPS] Command '{action}' successfully injected. Message ID: {response}", flush=True)
 
-        supabase.table('activity_logs').insert({
-            "device_id": device_id,
-            "event_type": "Tactical Command Dispatched",
-            "description": f"Executed zero-lag command: {action}"
-        }).execute()
-
         return jsonify({
             "status": "success", 
             "message": f"Payload delivered via FCM pipeline.",
@@ -137,14 +133,7 @@ def dispatch_tactical_command(device_id):
 
     except exceptions.FirebaseError as fcm_err:
         print(f"[FCM CRASH] Firebase routing failed: {fcm_err}", flush=True)
-        if "registration-token-not-registered" in str(fcm_err):
-             return jsonify({"status": "error", "message": "FCM Token expired."}), 410
         return jsonify({"status": "error", "message": f"FCM failure: {str(fcm_err)}"}), 502
     except Exception as e:
         print(f"[OPS SYSTEM CRASH] {str(e)}", flush=True)
         return jsonify({"status": "error", "message": "Internal command router anomaly."}), 500
-
-# =================================================================================
-# 🚀 3. LEGACY POLLING ROUTES (Truncated for clean architecture)
-# =================================================================================
-# Removed legacy GET/POST queues since the architecture is now 100% FCM + Telegram based.
